@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Game } from '@/types'
+import DeleteGameButton from './DeleteGameButton'
 
 function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium">勝利</span>
@@ -29,28 +30,69 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <p className="text-sm text-gray-400">{game.date}{game.venue && `・${game.venue}`}</p>
-            <h1 className="text-2xl font-bold mt-1">vs {game.opponent}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold mt-1">vs {game.opponent}</h1>
           </div>
           <div className="flex items-center gap-3">
             <ResultBadge result={game.result} />
             {user && (
-              <Link href={`/admin/games/${id}/edit`}
-                className="text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors">
-                編集
-              </Link>
+              <>
+                <Link href={`/admin/games/${id}/edit`}
+                  className="text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors">
+                  編集
+                </Link>
+                <DeleteGameButton gameId={id} />
+              </>
             )}
           </div>
         </div>
         <div className="mt-6 text-center">
-          <span className="text-5xl font-bold">{game.score_us}</span>
-          <span className="text-2xl text-gray-300 mx-4">-</span>
-          <span className="text-5xl font-bold">{game.score_them}</span>
+          <span className="text-4xl sm:text-5xl font-bold">{game.score_us}</span>
+          <span className="text-xl sm:text-2xl text-gray-300 mx-3 sm:mx-4">-</span>
+          <span className="text-4xl sm:text-5xl font-bold">{game.score_them}</span>
         </div>
         {game.notes && <p className="mt-6 text-sm text-gray-500 border-t pt-4">{game.notes}</p>}
       </div>
+
+      {(game.innings_us || game.innings_them) && (() => {
+        const us = game.innings_us ?? []
+        const them = game.innings_them ?? []
+        const len = Math.max(us.length, them.length, 9)
+        const innings = Array.from({ length: len }, (_, i) => i)
+        return (
+          <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+            <table className="text-sm border-collapse mx-auto">
+              <thead className="bg-gray-50 border-b">
+                <tr className="text-center">
+                  <th className="px-4 py-2 text-left text-gray-500 font-medium text-xs"></th>
+                  {innings.map(i => (
+                    <th key={i} className="px-2 py-2 text-gray-500 font-medium text-xs w-8">{i + 1}</th>
+                  ))}
+                  <th className="px-3 py-2 text-gray-700 font-bold text-xs">R</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {[
+                  { label: '小雀シーガーズ', scores: us, total: game.score_us },
+                  { label: game.opponent, scores: them, total: game.score_them },
+                ].map(row => (
+                  <tr key={row.label} className="text-center">
+                    <td className="px-4 py-2.5 text-left text-xs font-medium text-gray-700 whitespace-nowrap">{row.label}</td>
+                    {innings.map(i => (
+                      <td key={i} className="px-2 py-2.5 text-sm">
+                        {row.scores[i] != null ? row.scores[i] : ''}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2.5 font-bold text-sm">{row.total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      })()}
 
       {battingData.length > 0 && (
         <div>

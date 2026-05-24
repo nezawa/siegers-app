@@ -17,6 +17,20 @@ export default function NewPlayerPage() {
     setError('')
 
     const supabase = createClient()
+
+    if (form.number !== '') {
+      const { data: existing } = await supabase
+        .from('players')
+        .select('id')
+        .eq('number', Number(form.number))
+        .maybeSingle()
+      if (existing) {
+        setError(`背番号 ${form.number} はすでに登録されています`)
+        setLoading(false)
+        return
+      }
+    }
+
     const { error } = await supabase.from('players').insert({
       name: form.name,
       number: form.number !== '' ? Number(form.number) : null,

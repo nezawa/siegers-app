@@ -2,11 +2,22 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Game } from '@/types'
 
+const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const y = d.getFullYear()
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  const dow = DOW_JA[d.getDay()]
+  return { label: `${y}/${m}/${day}`, dow, isSat: d.getDay() === 6, isSun: d.getDay() === 0 }
+}
+
 function ResultBadge({ result }: { result: Game['result'] }) {
-  if (result === 'W') return <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-sm font-medium">勝</span>
-  if (result === 'L') return <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-sm font-medium">負</span>
-  if (result === 'D') return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-sm font-medium">分</span>
-  return null
+  if (result === 'W') return <span className="px-3 py-1 bg-red-700 text-white rounded text-sm font-bold">勝ち</span>
+  if (result === 'L') return <span className="px-3 py-1 bg-gray-500 text-white rounded text-sm font-bold">負け</span>
+  if (result === 'D') return <span className="px-3 py-1 bg-green-600 text-white rounded text-sm font-bold">引分け</span>
+  return <span className="px-3 py-1 bg-gray-400 text-white rounded text-sm font-bold">-</span>
 }
 
 export default async function GamesPage() {
@@ -19,33 +30,44 @@ export default async function GamesPage() {
       {!games || games.length === 0 ? (
         <div className="text-center py-16 text-gray-400 bg-white rounded-xl shadow-sm">試合データがありません</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">日付</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">対戦相手</th>
-                <th className="text-center px-6 py-3 text-sm font-medium text-gray-500">スコア</th>
-                <th className="text-center px-6 py-3 text-sm font-medium text-gray-500">結果</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">球場</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {games.map(game => (
-                <tr key={game.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-600">{game.date}</td>
-                  <td className="px-6 py-4">
-                    <Link href={`/games/${game.id}`} className="font-medium text-blue-600 hover:underline">
-                      vs {game.opponent}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-center font-bold">{game.score_us} - {game.score_them}</td>
-                  <td className="px-6 py-4 text-center"><ResultBadge result={game.result} /></td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{game.venue ?? '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
+          {games.map(game => {
+            const { label, dow, isSat, isSun } = formatDate(game.date)
+            const dowColor = isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-blue-500'
+            return (
+              <Link
+                key={game.id}
+                href={`/games/${game.id}`}
+                className="flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors"
+              >
+                {/* 左: 日付・対戦相手 */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-sm font-bold text-gray-800">{label}</span>
+                    <span className={`text-sm font-bold ${dowColor}`}>（{dow}）</span>
+                  </div>
+                  <div className="text-base font-bold text-gray-900 truncate">
+                    {game.opponent}
+                  </div>
+                </div>
+
+                {/* 右: スコア・結果 */}
+                <div className="flex items-center gap-3 ml-4 shrink-0">
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-blue-600 leading-tight">
+                      {game.score_us}-{game.score_them}
+                    </div>
+                    <div className="mt-1 flex justify-end">
+                      <ResultBadge result={game.result} />
+                    </div>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       )}
     </div>

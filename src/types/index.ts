@@ -16,6 +16,8 @@ export type Game = {
   score_them: number
   result: 'W' | 'L' | 'D' | null
   notes: string | null
+  innings_us: number[] | null
+  innings_them: number[] | null
   created_at: string
 }
 
