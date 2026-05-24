@@ -117,6 +117,25 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
     notes: game.notes ?? '',
   })
 
+  const toInningArr = (arr: number[] | null): (number | '')[] => {
+    const base = Array<number | ''>(9).fill('')
+    if (!arr) return base
+    return base.map((_, i) => (arr[i] != null ? arr[i] : ''))
+  }
+  type InningRow = { team: 'us' | 'them'; scores: (number | '')[] }
+  const [inningRows, setInningRows] = useState<InningRow[]>([
+    { team: 'us', scores: toInningArr(game.innings_us) },
+    { team: 'them', scores: toInningArr(game.innings_them) },
+  ])
+  const updateInningScore = (rowIdx: number, col: number, val: number | '') =>
+    setInningRows(rows => rows.map((row, i) => i === rowIdx
+      ? { ...row, scores: row.scores.map((v, j) => j === col ? val : v) }
+      : row))
+  const swapTeam = (rowIdx: number, newTeam: 'us' | 'them') =>
+    setInningRows(rows => rows.map((row, i) => ({
+      ...row, team: i === rowIdx ? newTeam : (newTeam === 'us' ? 'them' : 'us'),
+    })))
+
   const [battingRows, setBattingRows] = useState<BattingRow[]>(
     existingBatting.length > 0
       ? existingBatting.map(s => ({
@@ -166,6 +185,12 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
     try {
       const supabase = createClient()
 
+      const usRow = inningRows.find(r => r.team === 'us')!
+      const themRow = inningRows.find(r => r.team === 'them')!
+      const inningsUs = usRow.scores.map(v => v === '' ? null : Number(v))
+      const inningsThem = themRow.scores.map(v => v === '' ? null : Number(v))
+      const hasInnings = inningsUs.some(v => v !== null) || inningsThem.some(v => v !== null)
+
       const { error: gameError } = await supabase
         .from('games')
         .update({
@@ -176,6 +201,8 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
           score_them: toNum(gameInfo.score_them),
           result: gameInfo.result || null,
           notes: gameInfo.notes || null,
+          innings_us: hasInnings ? inningsUs : null,
+          innings_them: hasInnings ? inningsThem : null,
         })
         .eq('id', game.id)
 
@@ -278,6 +305,52 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
             <textarea rows={2} value={gameInfo.notes}
               onChange={e => setGameInfo({ ...gameInfo, notes: e.target.value })} className={inputCls} />
           </div>
+        </div>
+      </div>
+
+      {/* イニング別スコア */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h2 className="font-bold text-gray-900 mb-4">イニング別スコア</h2>
+        <div className="overflow-x-auto">
+          <table className="text-sm border-collapse w-full">
+            <thead>
+              <tr className="text-gray-500 text-center">
+                <th className="pb-2 pr-3 text-left"></th>
+                {Array.from({ length: 9 }, (_, i) => (
+                  <th key={i} className="pb-2 px-1 w-10">{i + 1}</th>
+                ))}
+                <th className="pb-2 px-2 font-bold text-gray-700">R</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inningRows.map((row, rowIdx) => (
+                <tr key={rowIdx}>
+                  <td className="py-1 pr-2">
+                    <select
+                      value={row.team}
+                      onChange={e => swapTeam(rowIdx, e.target.value as 'us' | 'them')}
+                      className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-36"
+                    >
+                      <option value="us">小雀シーガーズ</option>
+                      <option value="them">{gameInfo.opponent || '対戦相手'}</option>
+                    </select>
+                  </td>
+                  {row.scores.map((val, i) => (
+                    <td key={i} className="py-1 px-1">
+                      <input
+                        type="number" min="0" max="99" value={val}
+                        onChange={e => updateInningScore(rowIdx, i, e.target.value === '' ? '' : Number(e.target.value))}
+                        className="border rounded py-1 text-sm w-10 focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                      />
+                    </td>
+                  ))}
+                  <td className="py-1 px-2 text-center font-bold text-gray-800">
+                    {row.scores.reduce<number>((s, v) => s + (v === '' ? 0 : Number(v)), 0) || '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
