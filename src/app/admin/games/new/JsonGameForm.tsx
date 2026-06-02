@@ -13,29 +13,22 @@ const EXAMPLE = `{
   "score_us": 5,
   "score_them": 2,
   "notes": "",
+  "innings_us":   [0, 2, 0, 1, 0, 0, 2, 0, 0],
+  "innings_them": [0, 0, 1, 0, 1, 0, 0, 0, 0],
   "batting": [
-    {
-      "number": 1,
-      "batting_order": 1,
-      "pa": 4, "ab": 3, "hits": 2,
-      "doubles": 0, "triples": 0, "hr": 1,
-      "rbi": 2, "runs": 1, "sb": 0,
-      "k": 1, "bb": 1, "hbp": 0,
-      "sac_bunt": 0, "sac_fly": 0,
-      "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0,
-      "risp_ab": 2, "risp_hits": 1
-    }
+    { "number": 1,  "batting_order": 1, "pa": 4, "ab": 3, "hits": 1, "doubles": 0, "triples": 0, "hr": 0, "rbi": 0, "runs": 1, "sb": 0, "k": 1, "bb": 1, "hbp": 0, "sac_bunt": 0, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 0, "risp_hits": 0 },
+    { "number": 2,  "batting_order": 2, "pa": 4, "ab": 4, "hits": 2, "doubles": 1, "triples": 0, "hr": 0, "rbi": 1, "runs": 0, "sb": 0, "k": 0, "bb": 0, "hbp": 0, "sac_bunt": 0, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 2, "risp_hits": 1 },
+    { "number": 3,  "batting_order": 3, "pa": 3, "ab": 3, "hits": 0, "doubles": 0, "triples": 0, "hr": 0, "rbi": 0, "runs": 0, "sb": 0, "k": 2, "bb": 0, "hbp": 0, "sac_bunt": 0, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 0, "risp_hits": 0 },
+    { "number": 4,  "batting_order": 4, "pa": 4, "ab": 3, "hits": 1, "doubles": 0, "triples": 0, "hr": 1, "rbi": 2, "runs": 1, "sb": 0, "k": 1, "bb": 1, "hbp": 0, "sac_bunt": 0, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 2, "risp_hits": 1 },
+    { "number": 5,  "batting_order": 5, "pa": 3, "ab": 3, "hits": 0, "doubles": 0, "triples": 0, "hr": 0, "rbi": 0, "runs": 0, "sb": 0, "k": 1, "bb": 0, "hbp": 0, "sac_bunt": 0, "sac_fly": 0, "gidp": 1, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 1, "risp_hits": 0 },
+    { "number": 6,  "batting_order": 6, "pa": 4, "ab": 3, "hits": 1, "doubles": 0, "triples": 0, "hr": 0, "rbi": 1, "runs": 0, "sb": 0, "k": 0, "bb": 0, "hbp": 1, "sac_bunt": 0, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 1, "cs": 0, "risp_ab": 1, "risp_hits": 1 },
+    { "number": 7,  "batting_order": 7, "pa": 3, "ab": 2, "hits": 0, "doubles": 0, "triples": 0, "hr": 0, "rbi": 0, "runs": 0, "sb": 0, "k": 0, "bb": 0, "hbp": 0, "sac_bunt": 1, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 0, "risp_hits": 0 },
+    { "number": 8,  "batting_order": 8, "pa": 3, "ab": 3, "hits": 1, "doubles": 0, "triples": 0, "hr": 0, "rbi": 1, "runs": 1, "sb": 1, "k": 0, "bb": 0, "hbp": 0, "sac_bunt": 0, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 1, "risp_hits": 1 },
+    { "number": 18, "batting_order": 9, "pa": 2, "ab": 2, "hits": 0, "doubles": 0, "triples": 0, "hr": 0, "rbi": 0, "runs": 0, "sb": 0, "k": 1, "bb": 0, "hbp": 0, "sac_bunt": 0, "sac_fly": 0, "gidp": 0, "reach_on_error": 0, "errors": 0, "cs": 0, "risp_ab": 0, "risp_hits": 0 }
   ],
   "pitching": [
-    {
-      "number": 18,
-      "is_win": true, "is_hold": false, "is_save": false, "is_loss": false,
-      "is_cg": false, "is_sho": false,
-      "ip": 7.0, "pitch_count": 95,
-      "runs": 1, "er": 1,
-      "hits_allowed": 5, "hr_allowed": 0,
-      "k": 7, "bb": 2, "hbp": 0, "balk": 0, "wp": 0
-    }
+    { "number": 18, "is_win": true,  "is_hold": false, "is_save": false, "is_loss": false, "is_cg": false, "is_sho": false, "ip": 6.0, "pitch_count": 85, "runs": 2, "er": 2, "hits_allowed": 5, "hr_allowed": 0, "k": 6, "bb": 2, "hbp": 0, "balk": 0, "wp": 0 },
+    { "number": 9,  "is_win": false, "is_hold": false, "is_save": true,  "is_loss": false, "is_cg": false, "is_sho": false, "ip": 3.0, "pitch_count": 38, "runs": 0, "er": 0, "hits_allowed": 1, "hr_allowed": 0, "k": 3, "bb": 0, "hbp": 0, "balk": 0, "wp": 0 }
   ]
 }`
 
@@ -47,6 +40,8 @@ type JsonInput = {
   score_us: number
   score_them: number
   notes?: string
+  innings_us?: (number | null)[]
+  innings_them?: (number | null)[]
   batting?: Record<string, unknown>[]
   pitching?: Record<string, unknown>[]
 }
@@ -122,6 +117,8 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
     try {
       const supabase = createClient()
 
+      const hasInnings = Array.isArray(input.innings_us) || Array.isArray(input.innings_them)
+
       const { data: game, error: gameError } = await supabase
         .from('games')
         .insert({
@@ -132,6 +129,8 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
           score_them: input.score_them,
           result: input.result,
           notes: input.notes || null,
+          innings_us: hasInnings ? (input.innings_us ?? null) : null,
+          innings_them: hasInnings ? (input.innings_them ?? null) : null,
         })
         .select()
         .single()
