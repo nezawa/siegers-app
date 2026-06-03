@@ -90,7 +90,7 @@ const booleanPitchingFields = [
   { field: 'is_sho', label: '完封' },
 ] as const
 
-export default function GameForm({ players }: { players: Player[] }) {
+export default function GameForm({ players, opponents }: { players: Player[]; opponents: string[] }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -217,7 +217,11 @@ export default function GameForm({ players }: { players: Player[] }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">対戦相手 *</label>
             <input type="text" required placeholder="〇〇チーム" value={gameInfo.opponent}
-              onChange={e => setGameInfo({ ...gameInfo, opponent: e.target.value })} className={inputCls} />
+              onChange={e => setGameInfo({ ...gameInfo, opponent: e.target.value })}
+              list="opponent-suggestions" className={inputCls} />
+            <datalist id="opponent-suggestions">
+              {opponents.map(name => <option key={name} value={name} />)}
+            </datalist>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">球場</label>
