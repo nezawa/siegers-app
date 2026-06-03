@@ -23,7 +23,7 @@ export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
     <>
       {/* デスクトップナビ */}
       <div className="hidden sm:flex items-center gap-8">
-        <Link href="/games" className="hover:text-blue-200 transition-colors">試合結果</Link>
+        <Link href="/" className="hover:text-blue-200 transition-colors">試合結果</Link>
         <Link href="/players" className="hover:text-blue-200 transition-colors">選手成績</Link>
         {isLoggedIn ? (
           <div className="flex items-center gap-3">

@@ -10,8 +10,12 @@ export default async function NewGamePage({
 }) {
   const { mode } = await searchParams
   const supabase = await createClient()
-  const { data: players } = await supabase.from('players').select('*').order('number')
+  const [{ data: players }, { data: games }] = await Promise.all([
+    supabase.from('players').select('*').order('number'),
+    supabase.from('games').select('opponent'),
+  ])
   const playerList = players ?? []
+  const opponents = [...new Set((games ?? []).map(g => g.opponent).filter(Boolean))] as string[]
 
   const tabCls = (active: boolean) =>
     `px-5 py-2 text-sm font-medium rounded-t-lg border border-b-0 transition-colors ${
@@ -35,7 +39,7 @@ export default async function NewGamePage({
 
       {mode === 'json'
         ? <JsonGameForm players={playerList} />
-        : <GameForm players={playerList} />
+        : <GameForm players={playerList} opponents={opponents} />
       }
     </div>
   )
