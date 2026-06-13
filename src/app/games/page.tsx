@@ -15,15 +15,15 @@ function formatDate(dateStr: string) {
 
 function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className="inline-flex justify-center rounded-md bg-red-600 px-3 py-1 text-sm font-bold text-white shadow-sm">勝ち</span>
-  if (result === 'L') return <span className="inline-flex justify-center rounded-md bg-gray-500 px-3 py-1 text-sm font-bold text-white shadow-sm">負け</span>
-  if (result === 'D') return <span className="inline-flex justify-center rounded-md bg-green-600 px-3 py-1 text-sm font-bold text-white shadow-sm">引分け</span>
+  if (result === 'L') return <span className="inline-flex justify-center rounded-md bg-blue-600 px-3 py-1 text-sm font-bold text-white shadow-sm">負け</span>
+  if (result === 'D') return <span className="inline-flex justify-center rounded-md bg-gray-500 px-3 py-1 text-sm font-bold text-white shadow-sm">引分け</span>
   return <span className="inline-flex justify-center rounded-md bg-gray-400 px-3 py-1 text-sm font-bold text-white shadow-sm">-</span>
 }
 
 const ACCENT: Record<string, string> = {
   W: 'bg-red-500',
-  L: 'bg-gray-400',
-  D: 'bg-green-500',
+  L: 'bg-blue-500',
+  D: 'bg-gray-400',
 }
 
 export default async function GamesPage() {

@@ -90,6 +90,16 @@ const booleanPitchingFields = [
   { field: 'is_sho', label: '完封' },
 ] as const
 
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object') {
+    const e = err as { message?: string; details?: string; hint?: string; code?: string }
+    const parts = [e.message, e.details, e.hint, e.code && `(${e.code})`].filter(Boolean)
+    if (parts.length > 0) return parts.join(' / ')
+  }
+  return '不明なエラー'
+}
+
 export default function GameForm({ players, opponents }: { players: Player[]; opponents: string[] }) {
   const router = useRouter()
   const pitchers = players.filter(p => p.is_pitcher)
@@ -101,6 +111,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
     score_them: '' as number | '',
     result: '' as 'W' | 'L' | 'D' | '',
     notes: '',
+    is_home: false,
   })
   type InningRow = { team: 'us' | 'them'; scores: (number | '')[] }
   const [inningRows, setInningRows] = useState<InningRow[]>([
@@ -163,6 +174,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
           notes: gameInfo.notes || null,
           innings_us: hasInnings ? inningsUs : null,
           innings_them: hasInnings ? inningsThem : null,
+          is_home: gameInfo.is_home,
         })
         .select()
         .single()
@@ -207,7 +219,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
 
       router.push(`/games/${game.id}`)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '保存に失敗しました')
+      setError(`保存に失敗しました: ${errorMessage(err)}`)
       setLoading(false)
     }
   }
@@ -239,6 +251,15 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
             <label className="block text-sm font-medium text-gray-700 mb-1">球場</label>
             <input type="text" placeholder="〇〇球場" value={gameInfo.venue}
               onChange={e => setGameInfo({ ...gameInfo, venue: e.target.value })} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">先攻 / 後攻</label>
+            <select value={gameInfo.is_home ? 'home' : 'away'}
+              onChange={e => setGameInfo({ ...gameInfo, is_home: e.target.value === 'home' })} className={inputCls}>
+              <option value="away">先攻</option>
+              <option value="home">後攻</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-400">後攻の最終回裏は不要なら「×」、サヨナラ勝ちは「得点+x」で表示されます</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">結果</label>

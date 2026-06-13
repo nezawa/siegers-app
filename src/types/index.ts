@@ -19,6 +19,7 @@ export type Game = {
   notes: string | null
   innings_us: number[] | null
   innings_them: number[] | null
+  is_home: boolean
   created_at: string
 }
 

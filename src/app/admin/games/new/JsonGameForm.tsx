@@ -13,6 +13,7 @@ const EXAMPLE = `{
   "score_us": 5,
   "score_them": 2,
   "notes": "",
+  "is_home": false,
   "innings_us":   [0, 2, 0, 1, 0, 0, 2, 0, 0],
   "innings_them": [0, 0, 1, 0, 1, 0, 0, 0, 0],
   "batting": [
@@ -40,10 +41,21 @@ type JsonInput = {
   score_us: number
   score_them: number
   notes?: string
+  is_home?: boolean
   innings_us?: (number | null)[]
   innings_them?: (number | null)[]
   batting?: Record<string, unknown>[]
   pitching?: Record<string, unknown>[]
+}
+
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  if (err && typeof err === 'object') {
+    const e = err as { message?: string; details?: string; hint?: string; code?: string }
+    const parts = [e.message, e.details, e.hint, e.code && `(${e.code})`].filter(Boolean)
+    if (parts.length > 0) return parts.join(' / ')
+  }
+  return '不明なエラー'
 }
 
 export default function JsonGameForm({ players }: { players: Player[] }) {
@@ -163,6 +175,7 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
           score_them: input.score_them,
           result: input.result,
           notes: input.notes || null,
+          is_home: input.is_home === true,
           innings_us: hasInnings ? (input.innings_us ?? null) : null,
           innings_them: hasInnings ? (input.innings_them ?? null) : null,
         })
@@ -213,7 +226,7 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
 
       router.push(`/games/${game.id}`)
     } catch (err: unknown) {
-      setErrors([err instanceof Error ? err.message : '保存に失敗しました'])
+      setErrors([`保存に失敗しました: ${errorMessage(err)}`])
       setLoading(false)
     }
   }
@@ -226,6 +239,8 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
           省略した数値フィールドは 0 として扱われます。
           <code className="bg-gray-100 px-1 rounded">innings_us</code> / <code className="bg-gray-100 px-1 rounded">innings_them</code> がある場合、
           スコアと結果はその合計から自動判定されます（矛盾する値が指定されているとエラーになります）。
+          <code className="bg-gray-100 px-1 rounded">is_home</code> は後攻なら <code className="bg-gray-100 px-1 rounded">true</code>（省略時は先攻）。
+          後攻の最終回裏が不要なら「×」、サヨナラ勝ちは「得点+x」で表示されます。
         </p>
         <textarea
           value={json}

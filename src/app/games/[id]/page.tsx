@@ -6,8 +6,8 @@ import DeleteGameButton from './DeleteGameButton'
 
 function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className="rounded-full bg-red-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">勝利</span>
-  if (result === 'L') return <span className="rounded-full bg-gray-500 px-3.5 py-1 text-sm font-bold text-white shadow-sm">敗戦</span>
-  if (result === 'D') return <span className="rounded-full bg-green-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">引分</span>
+  if (result === 'L') return <span className="rounded-full bg-blue-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">敗戦</span>
+  if (result === 'D') return <span className="rounded-full bg-gray-500 px-3.5 py-1 text-sm font-bold text-white shadow-sm">引分</span>
   return null
 }
 
@@ -90,6 +90,43 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         const them = game.innings_them ?? []
         const len = Math.max(us.length, them.length, 9)
         const innings = Array.from({ length: len }, (_, i) => i)
+
+        // 先攻（away）が上段、後攻（home）が下段
+        const isHome = game.is_home ?? false
+        const usRow = { label: '小雀シーガーズ', scores: us, total: game.score_us }
+        const themRow = { label: game.opponent, scores: them, total: game.score_them }
+        const awayRow = isHome ? themRow : usRow
+        const homeRow = isHome ? usRow : themRow
+
+        // 後攻（home）の最終回マーカーを算出
+        const lastIdx = (arr: (number | null)[]) => {
+          let last = -1
+          arr.forEach((v, i) => { if (v != null) last = i })
+          return last
+        }
+        const finalIdx = Math.max(lastIdx(awayRow.scores), lastIdx(homeRow.scores))
+        const homeWon = homeRow.total > awayRow.total
+        // crossIdx: 後攻が最終回裏に攻撃不要だった回（×）、walkoffIdx: サヨナラの回（得点+x）
+        let crossIdx = -1
+        let walkoffIdx = -1
+        if (homeWon && finalIdx >= 0) {
+          if (homeRow.scores[finalIdx] == null) crossIdx = finalIdx
+          else walkoffIdx = finalIdx
+        }
+
+        const cell = (scores: (number | null)[], i: number, isHomeRow: boolean): string => {
+          if (isHomeRow && i === crossIdx) return '×'
+          const v = scores[i]
+          if (v == null) return ''
+          if (isHomeRow && i === walkoffIdx) return `${v}x`
+          return String(v)
+        }
+
+        const rows = [
+          { ...awayRow, isHomeRow: false },
+          { ...homeRow, isHomeRow: true },
+        ]
+
         return (
           <div className="mx-auto w-fit max-w-full overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             <table className="border-collapse text-sm sm:text-base">
@@ -103,15 +140,12 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {[
-                  { label: '小雀シーガーズ', scores: us, total: game.score_us },
-                  { label: game.opponent, scores: them, total: game.score_them },
-                ].map(row => (
+                {rows.map(row => (
                   <tr key={row.label} className="text-center odd:bg-white even:bg-slate-50/70">
                     <td className="whitespace-nowrap px-4 py-2.5 sm:px-6 sm:py-4 text-left text-xs sm:text-base font-semibold text-gray-700">{row.label}</td>
                     {innings.map(i => (
                       <td key={i} className="px-2 py-2.5 sm:px-3 sm:py-4 text-sm sm:text-lg tabular-nums">
-                        {row.scores[i] != null ? row.scores[i] : ''}
+                        {cell(row.scores, i, row.isHomeRow)}
                       </td>
                     ))}
                     <td className="px-3 py-2.5 sm:px-5 sm:py-4 text-sm sm:text-xl font-extrabold tabular-nums text-blue-950">{row.total}</td>
