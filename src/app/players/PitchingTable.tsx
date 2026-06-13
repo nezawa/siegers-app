@@ -61,6 +61,11 @@ export default function PitchingTable({ rows }: { rows: PitchingRow[] }) {
 
   const sorted = sort
     ? [...rows].sort((a, b) => {
+        if (sort.col === '#') {
+          const va = a.player?.number ?? -Infinity
+          const vb = b.player?.number ?? -Infinity
+          return sort.dir === 'desc' ? vb - va : va - vb
+        }
         const col = COLS.find(c => c.key === sort.col)!
         const va = toNum(col.getValue(a))
         const vb = toNum(col.getValue(b))
@@ -72,19 +77,27 @@ export default function PitchingTable({ rows }: { rows: PitchingRow[] }) {
   const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-auto max-h-[calc(100vh-13rem)]">
       <table className="text-sm border-collapse">
         <thead className="bg-blue-950">
           <tr>
-            <th className={`${thBase} sticky left-0 bg-blue-950 w-12`}>#</th>
-            <th className={`px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky left-12 bg-blue-950 text-xs select-none`}>選手名</th>
+            <th
+              onClick={() => setSort(nextSort(sort, '#'))}
+              className={`${thBase} sticky top-0 left-0 z-30 bg-blue-950 w-12 cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === '#' ? 'text-amber-300' : ''}`}
+            >
+              #
+              <span className="inline-block w-3 ml-0.5 text-[10px]">
+                {sort?.col === '#' ? (sort.dir === 'desc' ? '▼' : '▲') : ''}
+              </span>
+            </th>
+            <th className={`px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky top-0 left-12 z-30 bg-blue-950 text-xs select-none`}>選手名</th>
             {COLS.map(col => {
               const dir = sort?.col === col.key ? sort.dir : null
               return (
                 <th
                   key={col.key}
                   onClick={() => setSort(nextSort(sort, col.key))}
-                  className={`${thBase} cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === col.key ? 'text-amber-300' : ''}`}
+                  className={`${thBase} sticky top-0 z-20 bg-blue-950 cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === col.key ? 'text-amber-300' : ''}`}
                 >
                   {col.label}
                   <span className="inline-block w-3 ml-0.5 text-[10px]">
@@ -98,8 +111,8 @@ export default function PitchingTable({ rows }: { rows: PitchingRow[] }) {
         <tbody className="divide-y divide-gray-100">
           {sorted.map(({ player, appearances, wins, holds, saves, losses, winPct, era, ip, pitch_count, runs, er, cg, sho, hits_allowed, hr_allowed, k, bb, hbp, balk, wp }) => (
             <tr key={player!.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
-              <td className="px-3 py-3 text-center text-sm text-gray-400 font-bold italic sticky left-0 bg-inherit w-12">{player!.number ?? '-'}</td>
-              <td className="px-4 py-3 font-bold whitespace-nowrap sticky left-12 bg-inherit">
+              <td className="px-3 py-3 text-center text-sm text-gray-400 font-bold italic sticky left-0 z-10 bg-inherit w-12">{player!.number ?? '-'}</td>
+              <td className="px-4 py-3 font-bold whitespace-nowrap sticky left-12 z-10 bg-inherit">
                 <Link href={`/players/${player!.id}`} className="text-gray-900 hover:text-blue-700 hover:underline transition-colors">
                   {player!.name}
                 </Link>

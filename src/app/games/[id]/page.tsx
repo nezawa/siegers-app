@@ -92,14 +92,14 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         const innings = Array.from({ length: len }, (_, i) => i)
         return (
           <div className="mx-auto w-fit max-w-full overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-            <table className="border-collapse text-sm">
+            <table className="border-collapse text-sm sm:text-base">
               <thead className="bg-blue-950 text-white">
                 <tr className="text-center">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-blue-100"></th>
+                  <th className="px-4 py-2.5 sm:px-6 sm:py-4 text-left text-xs sm:text-sm font-semibold text-blue-100"></th>
                   {innings.map(i => (
-                    <th key={i} className="w-8 px-2 py-2.5 text-xs font-semibold text-blue-100">{i + 1}</th>
+                    <th key={i} className="w-8 px-2 py-2.5 sm:w-12 sm:px-3 sm:py-4 text-xs sm:text-sm font-semibold text-blue-100">{i + 1}</th>
                   ))}
-                  <th className="px-3 py-2.5 text-xs font-bold text-amber-300">R</th>
+                  <th className="px-3 py-2.5 sm:px-5 sm:py-4 text-xs sm:text-sm font-bold text-amber-300">R</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -108,13 +108,13 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
                   { label: game.opponent, scores: them, total: game.score_them },
                 ].map(row => (
                   <tr key={row.label} className="text-center odd:bg-white even:bg-slate-50/70">
-                    <td className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold text-gray-700">{row.label}</td>
+                    <td className="whitespace-nowrap px-4 py-2.5 sm:px-6 sm:py-4 text-left text-xs sm:text-base font-semibold text-gray-700">{row.label}</td>
                     {innings.map(i => (
-                      <td key={i} className="px-2 py-2.5 text-sm tabular-nums">
+                      <td key={i} className="px-2 py-2.5 sm:px-3 sm:py-4 text-sm sm:text-lg tabular-nums">
                         {row.scores[i] != null ? row.scores[i] : ''}
                       </td>
                     ))}
-                    <td className="px-3 py-2.5 text-sm font-extrabold tabular-nums text-blue-950">{row.total}</td>
+                    <td className="px-3 py-2.5 sm:px-5 sm:py-4 text-sm sm:text-xl font-extrabold tabular-nums text-blue-950">{row.total}</td>
                   </tr>
                 ))}
               </tbody>

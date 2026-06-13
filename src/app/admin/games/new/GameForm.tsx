@@ -92,6 +92,7 @@ const booleanPitchingFields = [
 
 export default function GameForm({ players, opponents }: { players: Player[]; opponents: string[] }) {
   const router = useRouter()
+  const pitchers = players.filter(p => p.is_pitcher)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [gameInfo, setGameInfo] = useState({
@@ -408,7 +409,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
                     <select value={row.player_id} onChange={e => updatePitching(i, 'player_id', e.target.value)}
                       className="rounded-lg border border-gray-300 px-1.5 py-1 text-sm w-28 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40">
                       <option value="">選択</option>
-                      {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      {pitchers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </td>
                   {booleanPitchingFields.map(({ field }) => (

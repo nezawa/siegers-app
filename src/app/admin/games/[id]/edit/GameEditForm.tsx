@@ -104,6 +104,12 @@ function toVal(v: unknown): number | '' {
 
 export default function GameEditForm({ game, existingBatting, existingPitching, players }: Props) {
   const router = useRouter()
+  const pitchers = players.filter(p => p.is_pitcher)
+  // 投手登録された選手＋既に選択済みの選手（登録解除されても表示を維持）
+  const pitcherOptions = (selectedId: string) =>
+    pitchers.some(p => p.id === selectedId)
+      ? pitchers
+      : [...pitchers, ...players.filter(p => p.id === selectedId)]
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -458,7 +464,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
                     <select value={row.player_id} onChange={e => updatePitching(i, 'player_id', e.target.value)}
                       className="rounded-lg border border-gray-300 px-1.5 py-1 text-sm w-28 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40">
                       <option value="">選択</option>
-                      {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      {pitcherOptions(row.player_id).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </td>
                   {booleanPitchingFields.map(({ field }) => (

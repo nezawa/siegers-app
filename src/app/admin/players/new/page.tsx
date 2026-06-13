@@ -9,7 +9,7 @@ export default function NewPlayerPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ name: '', number: '' as number | '', notes: '' })
+  const [form, setForm] = useState({ name: '', number: '' as number | '', notes: '', is_pitcher: false })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,6 +35,7 @@ export default function NewPlayerPage() {
       name: form.name,
       number: form.number !== '' ? Number(form.number) : null,
       notes: form.notes || null,
+      is_pitcher: form.is_pitcher,
     })
 
     if (error) {
@@ -79,6 +80,12 @@ export default function NewPlayerPage() {
               placeholder="キャプテン、投手兼任など"
               className={inputCls} />
           </div>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+            <input type="checkbox" checked={form.is_pitcher}
+              onChange={e => setForm({ ...form, is_pitcher: e.target.checked })}
+              className="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-500/30" />
+            投手として登録する
+          </label>
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 ring-1 ring-red-200">{error}</p>}
           <button type="submit" disabled={loading}
             className="w-full rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 py-2.5 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg disabled:opacity-50">

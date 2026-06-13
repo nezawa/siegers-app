@@ -3,6 +3,7 @@ export type Player = {
   name: string
   number: number | null
   position: string | null
+  is_pitcher: boolean
   notes: string | null
   created_at: string
 }

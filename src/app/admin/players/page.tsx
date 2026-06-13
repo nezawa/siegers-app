@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import DeletePlayerButton from './DeletePlayerButton'
+import PitcherToggle from './PitcherToggle'
 
 export default async function AdminPlayersPage() {
   const supabase = await createClient()
@@ -31,6 +32,7 @@ export default async function AdminPlayersPage() {
                 <th className="text-left px-6 py-3 text-xs font-semibold text-blue-100">背番号</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-blue-100">名前</th>
                 <th className="text-left px-6 py-3 text-xs font-semibold text-blue-100">備考</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-blue-100">投手</th>
                 <th className="px-6 py-3"></th>
               </tr>
             </thead>
@@ -40,6 +42,9 @@ export default async function AdminPlayersPage() {
                   <td className="px-6 py-4 font-bold italic tabular-nums text-gray-400">{player.number ?? '-'}</td>
                   <td className="px-6 py-4 font-bold text-gray-900">{player.name}</td>
                   <td className="px-6 py-4 text-gray-500 text-sm">{player.notes ?? '-'}</td>
+                  <td className="px-6 py-4 text-center">
+                    <PitcherToggle id={player.id} isPitcher={player.is_pitcher ?? false} />
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <DeletePlayerButton id={player.id} name={player.name} />
                   </td>
