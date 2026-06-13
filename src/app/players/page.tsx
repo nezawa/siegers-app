@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
+import DateRangeFilter from './DateRangeFilter'
 
 function fmt(numerator: number, denominator: number, digits = 3): string {
   if (denominator === 0) return '-'
@@ -35,10 +36,23 @@ function fmtEra(er: number, totalOuts: number): string {
 export default async function PlayersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; year?: string }>
+  searchParams: Promise<{ tab?: string; year?: string; from?: string; to?: string }>
 }) {
-  const { tab, year } = await searchParams
+  const { tab, year, from, to } = await searchParams
   const showPitching = tab === 'pitching'
+  const hasRange = Boolean(from || to)
+
+  // 期間指定（from/to）が優先、なければ年度フィルター
+  const matchesPeriod = (date?: string): boolean => {
+    if (hasRange) {
+      if (!date) return false
+      if (from && date < from) return false
+      if (to && date > to) return false
+      return true
+    }
+    if (year) return Boolean(date?.startsWith(year))
+    return true
+  }
 
   const supabase = await createClient()
 
@@ -58,13 +72,9 @@ export default async function PlayersPage({
     ...allPStats.map(s => (s.games as { date?: string } | null)?.date?.slice(0, 4)),
   ].filter(Boolean))].sort().reverse() as string[]
 
-  // 年度フィルター
-  const bStats = year
-    ? allBStats.filter(s => (s.games as { date?: string } | null)?.date?.startsWith(year))
-    : allBStats
-  const pStats = year
-    ? allPStats.filter(s => (s.games as { date?: string } | null)?.date?.startsWith(year))
-    : allPStats
+  // 期間／年度フィルター
+  const bStats = allBStats.filter(s => matchesPeriod((s.games as { date?: string } | null)?.date))
+  const pStats = allPStats.filter(s => matchesPeriod((s.games as { date?: string } | null)?.date))
 
   // 打撃通算
   const battingRows = playerList.map(player => {
@@ -141,11 +151,13 @@ export default async function PlayersPage({
     }
   }).filter(r => r.player)
 
-  // URLビルダー（tab・yearを組み合わせる）
-  const buildUrl = (params: { tab?: string; year?: string }) => {
+  // URLビルダー（tab・year・期間を組み合わせる）
+  const buildUrl = (params: { tab?: string; year?: string; from?: string; to?: string }) => {
     const p = new URLSearchParams()
     if (params.tab) p.set('tab', params.tab)
     if (params.year) p.set('year', params.year)
+    if (params.from) p.set('from', params.from)
+    if (params.to) p.set('to', params.to)
     const s = p.toString()
     return s ? `/players?${s}` : '/players'
   }
@@ -175,23 +187,26 @@ export default async function PlayersPage({
       {years.length > 0 && (
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-sm text-gray-500">年度：</span>
-          <Link href={buildUrl({ tab: tab })} className={chipCls(!year)}>
+          <Link href={buildUrl({ tab: tab })} className={chipCls(!year && !hasRange)}>
             通算
           </Link>
           {years.map(y => (
-            <Link key={y} href={buildUrl({ tab: tab, year: y })} className={chipCls(year === y)}>
+            <Link key={y} href={buildUrl({ tab: tab, year: y })} className={chipCls(year === y && !hasRange)}>
               {y}
             </Link>
           ))}
         </div>
       )}
 
+      {/* 期間指定フィルター */}
+      <DateRangeFilter tab={tab} from={from} to={to} />
+
       {/* タブ */}
       <div className="mb-5 inline-flex rounded-xl bg-gray-200/70 p-1">
-        <Link href={buildUrl({ year: year })} className={tabCls(!showPitching)}>
+        <Link href={buildUrl({ year, from, to })} className={tabCls(!showPitching)}>
           打撃成績
         </Link>
-        <Link href={buildUrl({ tab: 'pitching', year: year })} className={tabCls(showPitching)}>
+        <Link href={buildUrl({ tab: 'pitching', year, from, to })} className={tabCls(showPitching)}>
           投手成績
         </Link>
       </div>

@@ -11,11 +11,18 @@ function ResultBadge({ result }: { result: Game['result'] }) {
   return null
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function SectionHeading({ children, href }: { children: React.ReactNode; href?: string }) {
   return (
     <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
       <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
-      {children}
+      {href ? (
+        <Link href={href} className="group inline-flex items-center gap-1 transition-colors hover:text-blue-700">
+          {children}
+          <span className="text-gray-400 transition-colors group-hover:text-blue-700">›</span>
+        </Link>
+      ) : (
+        children
+      )}
     </h2>
   )
 }
@@ -118,7 +125,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
 
       {battingData.length > 0 && (
         <div>
-          <SectionHeading>打撃成績</SectionHeading>
+          <SectionHeading href="/players">打撃成績</SectionHeading>
           <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             <table className="border-collapse text-sm">
               <thead className="bg-blue-950">
@@ -163,7 +170,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
 
       {pitchingData.length > 0 && (
         <div>
-          <SectionHeading>投手成績</SectionHeading>
+          <SectionHeading href="/players?tab=pitching">投手成績</SectionHeading>
           <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             <table className="border-collapse text-sm">
               <thead className="bg-blue-950">
