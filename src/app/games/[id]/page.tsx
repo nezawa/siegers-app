@@ -5,10 +5,19 @@ import type { Game } from '@/types'
 import DeleteGameButton from './DeleteGameButton'
 
 function ResultBadge({ result }: { result: Game['result'] }) {
-  if (result === 'W') return <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium">勝利</span>
-  if (result === 'L') return <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full font-medium">敗戦</span>
-  if (result === 'D') return <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">引分</span>
+  if (result === 'W') return <span className="rounded-full bg-red-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">勝利</span>
+  if (result === 'L') return <span className="rounded-full bg-gray-500 px-3.5 py-1 text-sm font-bold text-white shadow-sm">敗戦</span>
+  if (result === 'D') return <span className="rounded-full bg-green-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">引分</span>
   return null
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
+      <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+      {children}
+    </h2>
+  )
 }
 
 export default async function GameDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -27,33 +36,46 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
   const battingData = batting ?? []
   const pitchingData = pitching ?? []
 
+  const thCls = 'px-2 py-3 font-semibold text-blue-100 text-center whitespace-nowrap text-xs'
+  const tdCls = 'px-2 py-3 text-center'
+  const rowCls = 'odd:bg-white even:bg-slate-50/70 hover:bg-blue-50/70 transition-colors'
+
   return (
     <div className="space-y-8">
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <p className="text-sm text-gray-400">{game.date}{game.venue && `・${game.venue}`}</p>
-            <h1 className="text-xl sm:text-2xl font-bold mt-1">vs {game.opponent}</h1>
+      {/* スコアボード */}
+      <div className="relative overflow-hidden rounded-3xl bg-blue-950 text-white shadow-xl shadow-blue-950/20">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.12),transparent_50%)]" />
+        <div className="relative p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <p className="text-sm text-blue-300">{game.date}{game.venue && `・${game.venue}`}</p>
+            <div className="flex items-center gap-3">
+              <ResultBadge result={game.result} />
+              {user && (
+                <>
+                  <Link href={`/admin/games/${id}/edit`}
+                    className="rounded-lg px-3 py-1 text-sm text-white ring-1 ring-white/40 transition-colors hover:bg-white/10">
+                    編集
+                  </Link>
+                  <DeleteGameButton gameId={id} />
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <ResultBadge result={game.result} />
-            {user && (
-              <>
-                <Link href={`/admin/games/${id}/edit`}
-                  className="text-sm text-blue-600 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors">
-                  編集
-                </Link>
-                <DeleteGameButton gameId={id} />
-              </>
-            )}
+          <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6 text-center">
+            <div className="justify-self-end text-right">
+              <p className="text-sm sm:text-lg font-bold text-amber-300">小雀シーガーズ</p>
+            </div>
+            <div className="text-4xl sm:text-6xl font-extrabold tabular-nums">
+              {game.score_us}
+              <span className="mx-2 sm:mx-4 text-2xl sm:text-4xl text-blue-400/60">-</span>
+              {game.score_them}
+            </div>
+            <div className="justify-self-start text-left">
+              <p className="text-sm sm:text-lg font-bold">{game.opponent}</p>
+            </div>
           </div>
+          {game.notes && <p className="mt-6 border-t border-white/10 pt-4 text-sm text-blue-200">{game.notes}</p>}
         </div>
-        <div className="mt-6 text-center">
-          <span className="text-4xl sm:text-5xl font-bold">{game.score_us}</span>
-          <span className="text-xl sm:text-2xl text-gray-300 mx-3 sm:mx-4">-</span>
-          <span className="text-4xl sm:text-5xl font-bold">{game.score_them}</span>
-        </div>
-        {game.notes && <p className="mt-6 text-sm text-gray-500 border-t pt-4">{game.notes}</p>}
       </div>
 
       {(game.innings_us || game.innings_them) && (() => {
@@ -62,30 +84,30 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         const len = Math.max(us.length, them.length, 9)
         const innings = Array.from({ length: len }, (_, i) => i)
         return (
-          <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-            <table className="text-sm border-collapse mx-auto">
-              <thead className="bg-gray-50 border-b">
+          <div className="mx-auto w-fit max-w-full overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+            <table className="border-collapse text-sm">
+              <thead className="bg-blue-950 text-white">
                 <tr className="text-center">
-                  <th className="px-4 py-2 text-left text-gray-500 font-medium text-xs"></th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-blue-100"></th>
                   {innings.map(i => (
-                    <th key={i} className="px-2 py-2 text-gray-500 font-medium text-xs w-8">{i + 1}</th>
+                    <th key={i} className="w-8 px-2 py-2.5 text-xs font-semibold text-blue-100">{i + 1}</th>
                   ))}
-                  <th className="px-3 py-2 text-gray-700 font-bold text-xs">R</th>
+                  <th className="px-3 py-2.5 text-xs font-bold text-amber-300">R</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {[
                   { label: '小雀シーガーズ', scores: us, total: game.score_us },
                   { label: game.opponent, scores: them, total: game.score_them },
                 ].map(row => (
-                  <tr key={row.label} className="text-center">
-                    <td className="px-4 py-2.5 text-left text-xs font-medium text-gray-700 whitespace-nowrap">{row.label}</td>
+                  <tr key={row.label} className="text-center odd:bg-white even:bg-slate-50/70">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold text-gray-700">{row.label}</td>
                     {innings.map(i => (
-                      <td key={i} className="px-2 py-2.5 text-sm">
+                      <td key={i} className="px-2 py-2.5 text-sm tabular-nums">
                         {row.scores[i] != null ? row.scores[i] : ''}
                       </td>
                     ))}
-                    <td className="px-3 py-2.5 font-bold text-sm">{row.total}</td>
+                    <td className="px-3 py-2.5 text-sm font-extrabold tabular-nums text-blue-950">{row.total}</td>
                   </tr>
                 ))}
               </tbody>
@@ -96,41 +118,41 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
 
       {battingData.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">打撃成績</h2>
-          <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-            <table className="text-sm border-collapse">
-              <thead className="bg-gray-50 border-b">
+          <SectionHeading>打撃成績</SectionHeading>
+          <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+            <table className="border-collapse text-sm">
+              <thead className="bg-blue-950">
                 <tr>
                   {['打順', '選手', '打席', '打数', '安打', '本塁打', '打点', '得点', '盗塁', '二塁打', '三塁打', '得点圏打数', '得点圏安打', '三振', '四球', '死球', '犠打', '犠飛', '併殺打', '敵失', '失策', '盗塁阻止'].map(h => (
-                    <th key={h} className="px-2 py-3 font-medium text-gray-500 text-center whitespace-nowrap text-xs">{h}</th>
+                    <th key={h} className={thCls}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {battingData.map(stat => (
-                  <tr key={stat.id} className="hover:bg-gray-50">
-                    <td className="px-2 py-3 text-center text-gray-500">{stat.batting_order ?? '-'}</td>
-                    <td className="px-2 py-3 font-medium whitespace-nowrap">{(stat.players as any)?.name ?? '-'}</td>
-                    <td className="px-2 py-3 text-center">{stat.pa}</td>
-                    <td className="px-2 py-3 text-center">{stat.ab}</td>
-                    <td className="px-2 py-3 text-center">{stat.hits}</td>
-                    <td className="px-2 py-3 text-center">{stat.hr}</td>
-                    <td className="px-2 py-3 text-center">{stat.rbi}</td>
-                    <td className="px-2 py-3 text-center">{stat.runs}</td>
-                    <td className="px-2 py-3 text-center">{stat.sb}</td>
-                    <td className="px-2 py-3 text-center">{stat.doubles}</td>
-                    <td className="px-2 py-3 text-center">{stat.triples}</td>
-                    <td className="px-2 py-3 text-center">{stat.risp_ab}</td>
-                    <td className="px-2 py-3 text-center">{stat.risp_hits}</td>
-                    <td className="px-2 py-3 text-center">{stat.k}</td>
-                    <td className="px-2 py-3 text-center">{stat.bb}</td>
-                    <td className="px-2 py-3 text-center">{stat.hbp}</td>
-                    <td className="px-2 py-3 text-center">{stat.sac_bunt}</td>
-                    <td className="px-2 py-3 text-center">{stat.sac_fly}</td>
-                    <td className="px-2 py-3 text-center">{stat.gidp}</td>
-                    <td className="px-2 py-3 text-center">{stat.reach_on_error}</td>
-                    <td className="px-2 py-3 text-center">{stat.errors}</td>
-                    <td className="px-2 py-3 text-center">{stat.cs}</td>
+                  <tr key={stat.id} className={rowCls}>
+                    <td className={`${tdCls} text-gray-500`}>{stat.batting_order ?? '-'}</td>
+                    <td className="whitespace-nowrap px-2 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
+                    <td className={tdCls}>{stat.pa}</td>
+                    <td className={tdCls}>{stat.ab}</td>
+                    <td className={tdCls}>{stat.hits}</td>
+                    <td className={tdCls}>{stat.hr}</td>
+                    <td className={tdCls}>{stat.rbi}</td>
+                    <td className={tdCls}>{stat.runs}</td>
+                    <td className={tdCls}>{stat.sb}</td>
+                    <td className={tdCls}>{stat.doubles}</td>
+                    <td className={tdCls}>{stat.triples}</td>
+                    <td className={tdCls}>{stat.risp_ab}</td>
+                    <td className={tdCls}>{stat.risp_hits}</td>
+                    <td className={tdCls}>{stat.k}</td>
+                    <td className={tdCls}>{stat.bb}</td>
+                    <td className={tdCls}>{stat.hbp}</td>
+                    <td className={tdCls}>{stat.sac_bunt}</td>
+                    <td className={tdCls}>{stat.sac_fly}</td>
+                    <td className={tdCls}>{stat.gidp}</td>
+                    <td className={tdCls}>{stat.reach_on_error}</td>
+                    <td className={tdCls}>{stat.errors}</td>
+                    <td className={tdCls}>{stat.cs}</td>
                   </tr>
                 ))}
               </tbody>
@@ -141,37 +163,37 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
 
       {pitchingData.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">投手成績</h2>
-          <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-            <table className="text-sm border-collapse">
-              <thead className="bg-gray-50 border-b">
+          <SectionHeading>投手成績</SectionHeading>
+          <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+            <table className="border-collapse text-sm">
+              <thead className="bg-blue-950">
                 <tr>
                   {['選手', '勝', 'H', 'S', '敗', '投球回', '投球数', '失点', '自責点', '完投', '完封', '被安打', '被本塁打', '奪三振', '与四球', '与死球', 'ボーク', '暴投'].map(h => (
-                    <th key={h} className="px-2 py-3 font-medium text-gray-500 text-center whitespace-nowrap text-xs first:text-left first:px-3">{h}</th>
+                    <th key={h} className={`${thCls} first:px-3 first:text-left`}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {pitchingData.map(stat => (
-                  <tr key={stat.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-3 font-medium whitespace-nowrap">{(stat.players as any)?.name ?? '-'}</td>
-                    <td className="px-2 py-3 text-center">{stat.is_win ? <span className="text-green-600 font-bold">○</span> : '-'}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).is_hold ? <span className="text-blue-600 font-bold">○</span> : '-'}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).is_save ? <span className="text-purple-600 font-bold">○</span> : '-'}</td>
-                    <td className="px-2 py-3 text-center">{stat.is_loss ? <span className="text-red-600 font-bold">○</span> : '-'}</td>
-                    <td className="px-2 py-3 text-center">{stat.ip}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).pitch_count ?? '-'}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).runs ?? '-'}</td>
-                    <td className="px-2 py-3 text-center">{stat.er}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).is_cg ? <span className="font-bold">○</span> : '-'}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).is_sho ? <span className="font-bold">○</span> : '-'}</td>
-                    <td className="px-2 py-3 text-center">{stat.hits_allowed}</td>
-                    <td className="px-2 py-3 text-center">{stat.hr_allowed}</td>
-                    <td className="px-2 py-3 text-center">{stat.k}</td>
-                    <td className="px-2 py-3 text-center">{stat.bb}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).hbp ?? '-'}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).balk ?? '-'}</td>
-                    <td className="px-2 py-3 text-center">{(stat as any).wp ?? '-'}</td>
+                  <tr key={stat.id} className={rowCls}>
+                    <td className="whitespace-nowrap px-3 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
+                    <td className={tdCls}>{stat.is_win ? <span className="font-bold text-green-600">○</span> : '-'}</td>
+                    <td className={tdCls}>{(stat as { is_hold?: boolean }).is_hold ? <span className="font-bold text-blue-600">○</span> : '-'}</td>
+                    <td className={tdCls}>{(stat as { is_save?: boolean }).is_save ? <span className="font-bold text-purple-600">○</span> : '-'}</td>
+                    <td className={tdCls}>{stat.is_loss ? <span className="font-bold text-red-600">○</span> : '-'}</td>
+                    <td className={tdCls}>{stat.ip}</td>
+                    <td className={tdCls}>{(stat as { pitch_count?: number }).pitch_count ?? '-'}</td>
+                    <td className={tdCls}>{(stat as { runs?: number }).runs ?? '-'}</td>
+                    <td className={tdCls}>{stat.er}</td>
+                    <td className={tdCls}>{(stat as { is_cg?: boolean }).is_cg ? <span className="font-bold">○</span> : '-'}</td>
+                    <td className={tdCls}>{(stat as { is_sho?: boolean }).is_sho ? <span className="font-bold">○</span> : '-'}</td>
+                    <td className={tdCls}>{stat.hits_allowed}</td>
+                    <td className={tdCls}>{stat.hr_allowed}</td>
+                    <td className={tdCls}>{stat.k}</td>
+                    <td className={tdCls}>{stat.bb}</td>
+                    <td className={tdCls}>{(stat as { hbp?: number }).hbp ?? '-'}</td>
+                    <td className={tdCls}>{(stat as { balk?: number }).balk ?? '-'}</td>
+                    <td className={tdCls}>{(stat as { wp?: number }).wp ?? '-'}</td>
                   </tr>
                 ))}
               </tbody>

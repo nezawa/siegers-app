@@ -63,9 +63,43 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
 
     if (!d.date || typeof d.date !== 'string') errs.push('date が必要です（例: "2025-05-01"）')
     if (!d.opponent || typeof d.opponent !== 'string') errs.push('opponent が必要です')
-    if (!['W', 'L', 'D'].includes(d.result as string)) errs.push('result は "W" / "L" / "D" のいずれかです')
-    if (typeof d.score_us !== 'number') errs.push('score_us（自チームスコア）が必要です')
-    if (typeof d.score_them !== 'number') errs.push('score_them（相手スコア）が必要です')
+
+    // イニング別スコアがある場合、スコア・結果はその合計と統一する
+    const sumInnings = (arr: unknown): number | null =>
+      Array.isArray(arr)
+        ? arr.reduce<number>((s, v) => s + (typeof v === 'number' ? v : 0), 0)
+        : null
+    const usSum = sumInnings(d.innings_us)
+    const themSum = sumInnings(d.innings_them)
+
+    if (usSum !== null) {
+      if (typeof d.score_us === 'number' && d.score_us !== usSum) {
+        errs.push(`score_us (${d.score_us}) が innings_us の合計 (${usSum}) と一致しません`)
+      }
+      d.score_us = usSum
+    } else if (typeof d.score_us !== 'number') {
+      errs.push('score_us（自チームスコア）が必要です')
+    }
+
+    if (themSum !== null) {
+      if (typeof d.score_them === 'number' && d.score_them !== themSum) {
+        errs.push(`score_them (${d.score_them}) が innings_them の合計 (${themSum}) と一致しません`)
+      }
+      d.score_them = themSum
+    } else if (typeof d.score_them !== 'number') {
+      errs.push('score_them（相手スコア）が必要です')
+    }
+
+    // 結果はスコアから自動判定する
+    if (typeof d.score_us === 'number' && typeof d.score_them === 'number') {
+      const derived = d.score_us > d.score_them ? 'W' : d.score_us < d.score_them ? 'L' : 'D'
+      if (d.result != null && d.result !== '' && d.result !== derived) {
+        errs.push(`result ("${d.result}") がスコアから判定した結果 ("${derived}") と一致しません`)
+      }
+      d.result = derived
+    } else if (!['W', 'L', 'D'].includes(d.result as string)) {
+      errs.push('result は "W" / "L" / "D" のいずれかです')
+    }
 
     // batting の選手番号チェック
     if (Array.isArray(d.batting)) {
@@ -186,23 +220,25 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <p className="text-sm text-gray-500 mb-3">
           以下の形式で JSON を貼り付けてください。<code className="bg-gray-100 px-1 rounded">number</code> は背番号です。
           省略した数値フィールドは 0 として扱われます。
+          <code className="bg-gray-100 px-1 rounded">innings_us</code> / <code className="bg-gray-100 px-1 rounded">innings_them</code> がある場合、
+          スコアと結果はその合計から自動判定されます（矛盾する値が指定されているとエラーになります）。
         </p>
         <textarea
           value={json}
           onChange={e => setJson(e.target.value)}
           placeholder={EXAMPLE}
           rows={28}
-          className="w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+          className="w-full rounded-xl border border-gray-300 bg-slate-50 px-3.5 py-2.5 text-sm font-mono shadow-inner transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-y"
           spellCheck={false}
         />
       </div>
 
       {errors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 space-y-1">
+        <div className="space-y-1 rounded-xl bg-red-50 px-4 py-3 ring-1 ring-red-200">
           {errors.map((e, i) => (
             <p key={i} className="text-sm text-red-600">{e}</p>
           ))}
@@ -212,7 +248,7 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
       <button
         onClick={handleSubmit}
         disabled={loading || json.trim() === ''}
-        className="w-full bg-blue-900 text-white py-3 rounded-xl font-medium hover:bg-blue-800 disabled:opacity-50 transition-colors"
+        className="w-full rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg disabled:opacity-50"
       >
         {loading ? '保存中...' : '試合結果を保存'}
       </button>

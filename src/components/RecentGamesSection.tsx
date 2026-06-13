@@ -5,10 +5,16 @@ import Link from 'next/link'
 import type { Game } from '@/types'
 
 function ResultBadge({ result }: { result: Game['result'] }) {
-  if (result === 'W') return <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-sm font-medium">勝</span>
-  if (result === 'L') return <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-sm font-medium">負</span>
-  if (result === 'D') return <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-sm font-medium">分</span>
+  if (result === 'W') return <span className="inline-flex w-9 justify-center rounded-md bg-red-600 py-1 text-xs font-bold text-white shadow-sm">勝</span>
+  if (result === 'L') return <span className="inline-flex w-9 justify-center rounded-md bg-gray-500 py-1 text-xs font-bold text-white shadow-sm">負</span>
+  if (result === 'D') return <span className="inline-flex w-9 justify-center rounded-md bg-green-600 py-1 text-xs font-bold text-white shadow-sm">分</span>
   return null
+}
+
+const ACCENT: Record<string, string> = {
+  W: 'bg-red-500',
+  L: 'bg-gray-400',
+  D: 'bg-green-500',
 }
 
 export default function RecentGamesSection({ games }: { games: Game[] }) {
@@ -42,11 +48,14 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-gray-900">最近の試合</h2>
+          <h2 className="flex items-center gap-2.5 text-lg font-bold text-gray-900">
+            <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+            最近の試合
+          </h2>
           <select
             value={selectedYear}
             onChange={e => handleYearChange(e.target.value)}
-            className="text-sm border border-gray-200 rounded-md px-2 py-1 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           >
             <option value="all">全年度</option>
             {years.map(year => (
@@ -56,29 +65,43 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
         </div>
       </div>
       {pagedGames.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 bg-white rounded-xl shadow-sm">試合データがありません</div>
+        <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">試合データがありません</div>
       ) : (
         <>
-          <div className="bg-white rounded-xl shadow-sm divide-y">
+          <div className="space-y-3">
             {pagedGames.map(game => (
-              <Link key={game.id} href={`/games/${game.id}`} className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <ResultBadge result={game.result} />
-                  <div className="min-w-0">
-                    <div className="font-medium text-gray-900 truncate">vs {game.opponent}</div>
-                    <div className="text-xs sm:text-sm text-gray-400 truncate">{game.date}{game.venue && `・${game.venue}`}</div>
+              <Link
+                key={game.id}
+                href={`/games/${game.id}`}
+                className="group flex items-stretch gap-3 overflow-hidden rounded-2xl bg-white px-4 sm:px-5 py-3.5 sm:py-4 shadow-sm ring-1 ring-gray-900/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-blue-900/15"
+              >
+                <span className={`w-1 shrink-0 self-stretch rounded-full ${ACCENT[game.result ?? ''] ?? 'bg-gray-200'}`} />
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <ResultBadge result={game.result} />
+                    <div className="min-w-0">
+                      <div className="truncate font-bold text-gray-900">vs {game.opponent}</div>
+                      <div className="truncate text-xs sm:text-sm text-gray-400">{game.date}{game.venue && `・${game.venue}`}</div>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="text-xl sm:text-2xl font-extrabold tabular-nums text-blue-950">
+                      {game.score_us}<span className="mx-1 text-gray-300">-</span>{game.score_them}
+                    </div>
+                    <svg className="h-4 w-4 text-gray-300 transition-all group-hover:translate-x-0.5 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-gray-900 shrink-0">{game.score_us} - {game.score_them}</div>
               </Link>
             ))}
           </div>
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-1 mt-4">
+            <div className="mt-5 flex items-center justify-center gap-1.5">
               <button
                 onClick={() => setPage(p => p - 1)}
                 disabled={page === 1}
-                className="px-3 py-1.5 rounded-md text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="h-8 w-8 rounded-full text-sm text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ‹
               </button>
@@ -86,7 +109,11 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium ${p === page ? 'bg-blue-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                  className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
+                    p === page
+                      ? 'bg-blue-950 text-white shadow'
+                      : 'text-gray-600 hover:bg-white hover:shadow-sm'
+                  }`}
                 >
                   {p}
                 </button>
@@ -94,7 +121,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
               <button
                 onClick={() => setPage(p => p + 1)}
                 disabled={page === totalPages}
-                className="px-3 py-1.5 rounded-md text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="h-8 w-8 rounded-full text-sm text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 ›
               </button>
