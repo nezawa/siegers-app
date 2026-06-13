@@ -5,6 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+const desktopLinkCls =
+  'relative py-1 text-sm font-medium text-blue-100 transition-colors hover:text-white ' +
+  'after:absolute after:-bottom-0.5 after:left-0 after:h-0.5 after:w-0 after:rounded-full after:bg-amber-400 after:transition-all after:duration-300 hover:after:w-full'
+
 export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
@@ -22,29 +26,29 @@ export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <>
       {/* デスクトップナビ */}
-      <div className="hidden sm:flex items-center gap-8">
-        <Link href="/" className="hover:text-blue-200 transition-colors">試合結果</Link>
-        <Link href="/players" className="hover:text-blue-200 transition-colors">選手成績</Link>
+      <div className="hidden sm:flex items-center gap-7">
+        <Link href="/" className={desktopLinkCls}>試合結果</Link>
+        <Link href="/players" className={desktopLinkCls}>選手成績</Link>
         {isLoggedIn ? (
           <div className="flex items-center gap-3">
-            <Link href="/admin/players" className="bg-white/20 text-white px-3 py-1.5 rounded text-sm hover:bg-white/30 transition-colors">
+            <Link href="/admin/players" className="rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white ring-1 ring-white/25 transition-colors hover:bg-white/20">
               選手管理
             </Link>
-            <Link href="/admin/games/new" className="bg-white text-blue-900 px-4 py-1.5 rounded font-medium hover:bg-blue-50 transition-colors text-sm">
+            <Link href="/admin/games/new" className="rounded-lg bg-amber-400 px-4 py-1.5 text-sm font-bold text-blue-950 shadow-sm transition-colors hover:bg-amber-300">
               試合入力
             </Link>
-            <button onClick={handleLogout} className="text-blue-200 hover:text-white text-sm transition-colors">
+            <button onClick={handleLogout} className="text-sm text-blue-300 transition-colors hover:text-white">
               ログアウト
             </button>
           </div>
         ) : (
-          <Link href="/admin/login" className="hover:text-blue-200 transition-colors text-sm">管理者</Link>
+          <Link href="/admin/login" className="text-sm text-blue-300 transition-colors hover:text-white">管理者</Link>
         )}
       </div>
 
       {/* モバイルハンバーガーボタン */}
       <button
-        className="sm:hidden p-2 rounded hover:bg-white/10 transition-colors"
+        className="sm:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
         onClick={() => setOpen(!open)}
         aria-label="メニューを開く"
       >
@@ -59,30 +63,30 @@ export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
 
       {/* モバイルドロップダウン */}
       {open && (
-        <div className="sm:hidden absolute top-full left-0 right-0 bg-blue-900 border-t border-blue-800 px-5 py-4 space-y-1 z-50 shadow-lg">
-          <Link href="/games" onClick={close} className="block py-3 border-b border-blue-800 hover:text-blue-200 transition-colors">
+        <div className="sm:hidden absolute top-full left-0 right-0 z-50 bg-blue-950/95 backdrop-blur border-t border-white/10 px-5 py-4 space-y-1 shadow-xl shadow-blue-950/30">
+          <Link href="/games" onClick={close} className="block py-3 border-b border-white/10 text-blue-100 hover:text-white transition-colors">
             試合結果
           </Link>
-          <Link href="/players" onClick={close} className="block py-3 hover:text-blue-200 transition-colors">
+          <Link href="/players" onClick={close} className="block py-3 text-blue-100 hover:text-white transition-colors">
             選手成績
           </Link>
           {isLoggedIn ? (
-            <div className="border-t border-blue-800 pt-3 mt-3 space-y-1">
-              <Link href="/admin/players" onClick={close} className="block py-3 border-b border-blue-800 hover:text-blue-200 transition-colors">
+            <div className="border-t border-white/10 pt-3 mt-3 space-y-1">
+              <Link href="/admin/players" onClick={close} className="block py-3 border-b border-white/10 text-blue-100 hover:text-white transition-colors">
                 選手管理
               </Link>
-              <Link href="/admin/games/new" onClick={close} className="block py-3 border-b border-blue-800 hover:text-blue-200 transition-colors">
+              <Link href="/admin/games/new" onClick={close} className="block py-3 border-b border-white/10 text-amber-300 font-medium hover:text-amber-200 transition-colors">
                 試合入力
               </Link>
               <button
                 onClick={handleLogout}
-                className="block w-full text-left py-3 text-blue-200 hover:text-white transition-colors"
+                className="block w-full text-left py-3 text-blue-300 hover:text-white transition-colors"
               >
                 ログアウト
               </button>
             </div>
           ) : (
-            <Link href="/admin/login" onClick={close} className="block py-3 border-t border-blue-800 mt-3 pt-4 hover:text-blue-200 transition-colors text-sm">
+            <Link href="/admin/login" onClick={close} className="block py-3 border-t border-white/10 mt-3 pt-4 text-sm text-blue-300 hover:text-white transition-colors">
               管理者
             </Link>
           )}

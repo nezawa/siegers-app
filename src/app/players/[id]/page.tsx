@@ -127,45 +127,54 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   }))
   const pitchingTotal = pStats.length > 0 ? computePitching(pStats) : null
 
-  const thCls = 'px-3 py-2 font-medium text-gray-500 text-center whitespace-nowrap text-xs'
-  const tdCls = 'px-3 py-3 text-center text-sm'
-  const totalRowCls = 'bg-blue-50 font-medium border-t-2 border-blue-100'
+  const thCls = 'px-3 py-2.5 font-semibold text-blue-100 text-center whitespace-nowrap text-xs'
+  const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
+  const totalRowCls = 'bg-blue-50 font-semibold border-t-2 border-blue-200'
 
   return (
     <div className="space-y-8">
       <div>
-        <Link href="/players" className="text-sm text-blue-600 hover:underline">← 選手成績一覧</Link>
+        <Link href="/players" className="inline-flex items-center gap-1 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
+          ← 選手成績一覧
+        </Link>
       </div>
 
       {/* 選手ヘッダー */}
-      <div className="bg-white rounded-xl shadow-sm p-6 flex items-center gap-6">
-        <div className="text-4xl font-bold text-gray-200 w-16 text-center">
-          {player.number ?? '-'}
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{player.name}</h1>
-          {player.notes && <p className="text-sm text-gray-500 mt-1">{player.notes}</p>}
+      <div className="relative overflow-hidden rounded-3xl bg-blue-950 text-white shadow-xl shadow-blue-950/20">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.12),transparent_50%)]" />
+        <div className="relative flex items-center gap-5 p-6 sm:p-8">
+          <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20 text-3xl sm:text-4xl font-extrabold italic tabular-nums text-amber-300">
+            {player.number ?? '-'}
+          </div>
+          <div>
+            <p className="text-[10px] tracking-[0.3em] text-blue-300">PLAYER</p>
+            <h1 className="mt-0.5 text-2xl sm:text-3xl font-extrabold">{player.name}</h1>
+            {player.notes && <p className="mt-1 text-sm text-blue-200">{player.notes}</p>}
+          </div>
         </div>
       </div>
 
       {/* 打撃成績 */}
       {battingTotal && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">打撃成績</h2>
-          <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+          <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
+            <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+            打撃成績
+          </h2>
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
             <table className="text-sm border-collapse">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-blue-950">
                 <tr>
-                  <th className="px-4 py-2 font-medium text-gray-500 text-left whitespace-nowrap sticky left-0 bg-gray-50 text-xs">年度</th>
+                  <th className="px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky left-0 bg-blue-950 text-xs">年度</th>
                   {['試合数','打率','打席','打数','安打','本塁打','打点','得点','盗塁','出塁率','長打率','得点圏打率','OPS','二塁打','三塁打','塁打数','三振','四球','死球','犠打','犠飛','併殺打','敵失','失策','盗塁阻止'].map(h => (
                     <th key={h} className={thCls}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {battingYearRows.map(r => (
-                  <tr key={r.label} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium sticky left-0 bg-white whitespace-nowrap">{r.label}</td>
+                  <tr key={r.label} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
+                    <td className="px-4 py-3 font-bold sticky left-0 bg-inherit whitespace-nowrap tabular-nums">{r.label}</td>
                     <td className={tdCls}>{r.games}</td>
                     <td className={`${tdCls} font-medium`}>{r.avg}</td>
                     <td className={tdCls}>{r.pa}</td>
@@ -194,7 +203,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
                   </tr>
                 ))}
                 <tr className={totalRowCls}>
-                  <td className="px-4 py-3 sticky left-0 bg-blue-50 whitespace-nowrap text-sm">通算</td>
+                  <td className="px-4 py-3 sticky left-0 bg-blue-50 whitespace-nowrap text-sm font-bold text-blue-950">通算</td>
                   <td className={tdCls}>{battingTotal.games}</td>
                   <td className={`${tdCls} font-medium`}>{battingTotal.avg}</td>
                   <td className={tdCls}>{battingTotal.pa}</td>
@@ -230,21 +239,24 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       {/* 投手成績 */}
       {pitchingTotal && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">投手成績</h2>
-          <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+          <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
+            <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+            投手成績
+          </h2>
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
             <table className="text-sm border-collapse">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-blue-950">
                 <tr>
-                  <th className="px-4 py-2 font-medium text-gray-500 text-left whitespace-nowrap sticky left-0 bg-gray-50 text-xs">年度</th>
+                  <th className="px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky left-0 bg-blue-950 text-xs">年度</th>
                   {['登板','勝','H','S','敗','勝率','防御率','投球回','投球数','失点','自責点','完投','完封','被安打','被本塁打','奪三振','与四球','与死球','ボーク','暴投'].map(h => (
                     <th key={h} className={thCls}>{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {pitchingYearRows.map(r => (
-                  <tr key={r.label} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium sticky left-0 bg-white whitespace-nowrap">{r.label}</td>
+                  <tr key={r.label} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
+                    <td className="px-4 py-3 font-bold sticky left-0 bg-inherit whitespace-nowrap tabular-nums">{r.label}</td>
                     <td className={tdCls}>{r.appearances}</td>
                     <td className={tdCls}>{r.wins}</td>
                     <td className={tdCls}>{r.holds}</td>
@@ -268,7 +280,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
                   </tr>
                 ))}
                 <tr className={totalRowCls}>
-                  <td className="px-4 py-3 sticky left-0 bg-blue-50 whitespace-nowrap text-sm">通算</td>
+                  <td className="px-4 py-3 sticky left-0 bg-blue-50 whitespace-nowrap text-sm font-bold text-blue-950">通算</td>
                   <td className={tdCls}>{pitchingTotal.appearances}</td>
                   <td className={tdCls}>{pitchingTotal.wins}</td>
                   <td className={tdCls}>{pitchingTotal.holds}</td>
@@ -297,7 +309,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       )}
 
       {!battingTotal && !pitchingTotal && (
-        <div className="text-center py-16 text-gray-400 bg-white rounded-xl shadow-sm">
+        <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">
           成績データがありません
         </div>
       )}

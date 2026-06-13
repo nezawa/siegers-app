@@ -54,16 +54,16 @@ export default async function PlayersPage({
 
   // 利用可能な年度一覧
   const years = [...new Set([
-    ...allBStats.map(s => (s.games as any)?.date?.slice(0, 4)),
-    ...allPStats.map(s => (s.games as any)?.date?.slice(0, 4)),
+    ...allBStats.map(s => (s.games as { date?: string } | null)?.date?.slice(0, 4)),
+    ...allPStats.map(s => (s.games as { date?: string } | null)?.date?.slice(0, 4)),
   ].filter(Boolean))].sort().reverse() as string[]
 
   // 年度フィルター
   const bStats = year
-    ? allBStats.filter(s => (s.games as any)?.date?.startsWith(year))
+    ? allBStats.filter(s => (s.games as { date?: string } | null)?.date?.startsWith(year))
     : allBStats
   const pStats = year
-    ? allPStats.filter(s => (s.games as any)?.date?.startsWith(year))
+    ? allPStats.filter(s => (s.games as { date?: string } | null)?.date?.startsWith(year))
     : allPStats
 
   // 打撃通算
@@ -114,22 +114,22 @@ export default async function PlayersPage({
     const s = pStats.filter(p => p.player_id === pid)
     const appearances = s.length
     const wins = s.filter(p => p.is_win).length
-    const holds = s.filter(p => (p as any).is_hold).length
-    const saves = s.filter(p => (p as any).is_save).length
+    const holds = s.filter(p => (p as { is_hold?: boolean }).is_hold).length
+    const saves = s.filter(p => (p as { is_save?: boolean }).is_save).length
     const losses = s.filter(p => p.is_loss).length
     const { display: ipDisplay, outs: totalOuts } = sumIp(s.map(p => p.ip ?? 0))
-    const pitch_count = s.reduce((sum, p) => sum + ((p as any).pitch_count ?? 0), 0)
-    const runs = s.reduce((sum, p) => sum + ((p as any).runs ?? 0), 0)
+    const pitch_count = s.reduce((sum, p) => sum + ((p as { pitch_count?: number }).pitch_count ?? 0), 0)
+    const runs = s.reduce((sum, p) => sum + ((p as { runs?: number }).runs ?? 0), 0)
     const er = s.reduce((sum, p) => sum + (p.er ?? 0), 0)
-    const cg = s.filter(p => (p as any).is_cg).length
-    const sho = s.filter(p => (p as any).is_sho).length
+    const cg = s.filter(p => (p as { is_cg?: boolean }).is_cg).length
+    const sho = s.filter(p => (p as { is_sho?: boolean }).is_sho).length
     const hits_allowed = s.reduce((sum, p) => sum + (p.hits_allowed ?? 0), 0)
     const hr_allowed = s.reduce((sum, p) => sum + (p.hr_allowed ?? 0), 0)
     const k = s.reduce((sum, p) => sum + (p.k ?? 0), 0)
     const bb = s.reduce((sum, p) => sum + (p.bb ?? 0), 0)
-    const hbp = s.reduce((sum, p) => sum + ((p as any).hbp ?? 0), 0)
-    const balk = s.reduce((sum, p) => sum + ((p as any).balk ?? 0), 0)
-    const wp = s.reduce((sum, p) => sum + ((p as any).wp ?? 0), 0)
+    const hbp = s.reduce((sum, p) => sum + ((p as { hbp?: number }).hbp ?? 0), 0)
+    const balk = s.reduce((sum, p) => sum + ((p as { balk?: number }).balk ?? 0), 0)
+    const wp = s.reduce((sum, p) => sum + ((p as { wp?: number }).wp ?? 0), 0)
     const wl = wins + losses
     return {
       player, appearances, wins, holds, saves, losses,
@@ -150,34 +150,36 @@ export default async function PlayersPage({
     return s ? `/players?${s}` : '/players'
   }
 
+  const chipCls = (active: boolean) =>
+    `px-3.5 py-1.5 rounded-full text-sm transition-all ${
+      active
+        ? 'bg-blue-950 text-white font-medium shadow'
+        : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50 hover:ring-gray-300'
+    }`
+
+  const tabCls = (active: boolean) =>
+    `px-6 py-2 rounded-lg text-sm transition-all ${
+      active
+        ? 'bg-white text-blue-950 font-bold shadow'
+        : 'text-gray-500 font-medium hover:text-gray-800'
+    }`
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">選手成績</h1>
+      <h1 className="mb-5 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
+        <span className="inline-block h-6 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+        選手成績
+      </h1>
 
       {/* 年度フィルター */}
       {years.length > 0 && (
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           <span className="text-sm text-gray-500">年度：</span>
-          <Link
-            href={buildUrl({ tab: tab })}
-            className={`px-3 py-1 rounded-full text-sm transition-colors ${
-              !year
-                ? 'bg-blue-900 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
+          <Link href={buildUrl({ tab: tab })} className={chipCls(!year)}>
             通算
           </Link>
           {years.map(y => (
-            <Link
-              key={y}
-              href={buildUrl({ tab: tab, year: y })}
-              className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                year === y
-                  ? 'bg-blue-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
+            <Link key={y} href={buildUrl({ tab: tab, year: y })} className={chipCls(year === y)}>
               {y}
             </Link>
           ))}
@@ -185,36 +187,22 @@ export default async function PlayersPage({
       )}
 
       {/* タブ */}
-      <div className="flex gap-1 mb-4 border-b border-gray-200">
-        <Link
-          href={buildUrl({ year: year })}
-          className={`px-5 py-2 text-sm font-medium rounded-t-lg border border-b-0 transition-colors ${
-            !showPitching
-              ? 'bg-white border-gray-200 text-blue-900'
-              : 'bg-gray-50 border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
+      <div className="mb-5 inline-flex rounded-xl bg-gray-200/70 p-1">
+        <Link href={buildUrl({ year: year })} className={tabCls(!showPitching)}>
           打撃成績
         </Link>
-        <Link
-          href={buildUrl({ tab: 'pitching', year: year })}
-          className={`px-5 py-2 text-sm font-medium rounded-t-lg border border-b-0 transition-colors ${
-            showPitching
-              ? 'bg-white border-gray-200 text-blue-900'
-              : 'bg-gray-50 border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
+        <Link href={buildUrl({ tab: 'pitching', year: year })} className={tabCls(showPitching)}>
           投手成績
         </Link>
       </div>
 
       {!showPitching ? (
         playerList.length === 0
-          ? <div className="text-center py-16 text-gray-400 bg-white rounded-xl shadow-sm">選手データがありません</div>
+          ? <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">選手データがありません</div>
           : <BattingTable rows={battingRows} />
       ) : (
         pitchingRows.length === 0
-          ? <div className="text-center py-16 text-gray-400 bg-white rounded-xl shadow-sm">投手成績データがありません</div>
+          ? <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">投手成績データがありません</div>
           : <PitchingTable rows={pitchingRows} />
       )}
     </div>

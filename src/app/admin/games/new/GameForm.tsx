@@ -125,6 +125,20 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
 
   const toNum = (v: number | '') => v === '' ? 0 : Number(v)
 
+  // イニング別スコアが入力されている場合、チームスコアと結果はそこから自動算出して統一する
+  const inningTotal = (scores: (number | '')[]) =>
+    scores.reduce<number>((s, v) => s + (v === '' ? 0 : Number(v)), 0)
+  const hasInnings = inningRows.some(r => r.scores.some(v => v !== ''))
+  const usRow = inningRows.find(r => r.team === 'us')!
+  const themRow = inningRows.find(r => r.team === 'them')!
+  const scoreUs: number | '' = hasInnings ? inningTotal(usRow.scores) : gameInfo.score_us
+  const scoreThem: number | '' = hasInnings ? inningTotal(themRow.scores) : gameInfo.score_them
+  const derivedResult: 'W' | 'L' | 'D' | '' =
+    scoreUs !== '' && scoreThem !== ''
+      ? (scoreUs > scoreThem ? 'W' : scoreUs < scoreThem ? 'L' : 'D')
+      : ''
+  const result = derivedResult || gameInfo.result
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -133,11 +147,8 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
     try {
       const supabase = createClient()
 
-      const usRow = inningRows.find(r => r.team === 'us')!
-      const themRow = inningRows.find(r => r.team === 'them')!
       const inningsUs = usRow.scores.map(v => v === '' ? null : Number(v))
       const inningsThem = themRow.scores.map(v => v === '' ? null : Number(v))
-      const hasInnings = inningsUs.some(v => v !== null) || inningsThem.some(v => v !== null)
 
       const { data: game, error: gameError } = await supabase
         .from('games')
@@ -145,9 +156,9 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
           date: gameInfo.date,
           opponent: gameInfo.opponent,
           venue: gameInfo.venue || null,
-          score_us: toNum(gameInfo.score_us),
-          score_them: toNum(gameInfo.score_them),
-          result: gameInfo.result || null,
+          score_us: toNum(scoreUs),
+          score_them: toNum(scoreThem),
+          result: result || null,
           notes: gameInfo.notes || null,
           innings_us: hasInnings ? inningsUs : null,
           innings_them: hasInnings ? inningsThem : null,
@@ -200,14 +211,14 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
     }
   }
 
-  const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-  const cellCls = 'border rounded py-1 text-sm w-11 focus:outline-none focus:ring-1 focus:ring-blue-500 text-center'
+  const inputCls = 'w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-slate-100 disabled:text-gray-500'
+  const cellCls = 'rounded-lg border border-gray-300 py-1 text-sm w-11 text-center transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 試合情報 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="font-bold text-gray-900 mb-4">試合情報</h2>
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 className="mb-4 border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">試合情報</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">日付 *</label>
@@ -230,23 +241,26 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">結果</label>
-            <select value={gameInfo.result}
+            <select value={result} disabled={derivedResult !== ''}
               onChange={e => setGameInfo({ ...gameInfo, result: e.target.value as 'W' | 'L' | 'D' | '' })} className={inputCls}>
               <option value="">選択</option>
               <option value="W">勝利</option>
               <option value="L">敗戦</option>
               <option value="D">引分</option>
             </select>
+            {derivedResult !== '' && <p className="mt-1 text-xs text-gray-400">スコアから自動判定されます</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">自チームスコア</label>
-            <input type="number" min="0" value={gameInfo.score_us}
+            <input type="number" min="0" value={scoreUs} disabled={hasInnings}
               onChange={e => setGameInfo({ ...gameInfo, score_us: e.target.value === '' ? '' : Number(e.target.value) })} className={inputCls} />
+            {hasInnings && <p className="mt-1 text-xs text-gray-400">イニング別スコアの合計から自動入力されます</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">相手スコア</label>
-            <input type="number" min="0" value={gameInfo.score_them}
+            <input type="number" min="0" value={scoreThem} disabled={hasInnings}
               onChange={e => setGameInfo({ ...gameInfo, score_them: e.target.value === '' ? '' : Number(e.target.value) })} className={inputCls} />
+            {hasInnings && <p className="mt-1 text-xs text-gray-400">イニング別スコアの合計から自動入力されます</p>}
           </div>
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">メモ</label>
@@ -257,8 +271,9 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
       </div>
 
       {/* イニング別スコア */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="font-bold text-gray-900 mb-4">イニング別スコア</h2>
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+        <h2 className="mb-1 border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">イニング別スコア</h2>
+        <p className="mb-4 pl-3.5 text-xs text-gray-400">入力すると自チームスコア・相手スコア・結果に自動反映されます</p>
         <div className="overflow-x-auto">
           <table className="text-sm border-collapse w-full">
             <thead>
@@ -277,7 +292,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
                     <select
                       value={row.team}
                       onChange={e => swapTeam(rowIdx, e.target.value as 'us' | 'them')}
-                      className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-36"
+                      className="rounded-lg border border-gray-300 px-2 py-1 text-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40 w-36"
                     >
                       <option value="us">小雀シーガーズ</option>
                       <option value="them">{gameInfo.opponent || '対戦相手'}</option>
@@ -288,7 +303,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
                       <input
                         type="number" min="0" max="99" value={val}
                         onChange={e => updateInningScore(rowIdx, i, e.target.value === '' ? '' : Number(e.target.value))}
-                        className="border rounded py-1 text-sm w-10 focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                        className="rounded-lg border border-gray-300 py-1 text-sm w-10 text-center transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
                       />
                     </td>
                   ))}
@@ -303,9 +318,9 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
       </div>
 
       {/* 打撃成績 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-gray-900">打撃成績</h2>
+          <h2 className="border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">打撃成績</h2>
           <button type="button" onClick={() => setBattingRows([...battingRows, emptyBatting()])}
             className="text-sm text-blue-600 hover:underline">+ 行追加</button>
         </div>
@@ -325,7 +340,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
                 <tr key={i} className="border-b last:border-0">
                   <td className="py-1 pr-2 sticky left-0 bg-white z-10">
                     <select value={row.player_id} onChange={e => updateBatting(i, 'player_id', e.target.value)}
-                      className="border rounded px-1.5 py-1 text-sm w-28 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                      className="rounded-lg border border-gray-300 px-1.5 py-1 text-sm w-28 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40">
                       <option value="">選択</option>
                       {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
@@ -358,9 +373,9 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
       </div>
 
       {/* 投手成績 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-gray-900">投手成績</h2>
+          <h2 className="border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">投手成績</h2>
           <button type="button" onClick={() => setPitchingRows([...pitchingRows, emptyPitching()])}
             className="text-sm text-blue-600 hover:underline">+ 行追加</button>
         </div>
@@ -391,7 +406,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
                 <tr key={i} className="border-b last:border-0">
                   <td className="py-1 pr-2 sticky left-0 bg-white z-10">
                     <select value={row.player_id} onChange={e => updatePitching(i, 'player_id', e.target.value)}
-                      className="border rounded px-1.5 py-1 text-sm w-28 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                      className="rounded-lg border border-gray-300 px-1.5 py-1 text-sm w-28 transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40">
                       <option value="">選択</option>
                       {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
@@ -426,7 +441,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
       {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
 
       <button type="submit" disabled={loading}
-        className="w-full bg-blue-900 text-white py-3 rounded-xl font-medium hover:bg-blue-800 disabled:opacity-50 transition-colors">
+        className="w-full rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg disabled:opacity-50">
         {loading ? '保存中...' : '試合結果を保存'}
       </button>
     </form>

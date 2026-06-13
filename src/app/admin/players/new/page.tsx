@@ -47,16 +47,16 @@ export default function NewPlayerPage() {
     router.refresh()
   }
 
-  const inputCls = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+  const inputCls = 'w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30'
 
   return (
     <div className="max-w-sm mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin/players" className="text-gray-400 hover:text-gray-600 text-sm">← 選手管理</Link>
+        <Link href="/admin/players" className="text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">← 選手管理</Link>
         <h1 className="text-2xl font-bold text-gray-900">選手を追加</h1>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">背番号</label>
@@ -79,9 +79,9 @@ export default function NewPlayerPage() {
               placeholder="キャプテン、投手兼任など"
               className={inputCls} />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 ring-1 ring-red-200">{error}</p>}
           <button type="submit" disabled={loading}
-            className="w-full bg-blue-900 text-white py-2 rounded-lg font-medium hover:bg-blue-800 disabled:opacity-50 transition-colors">
+            className="w-full rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 py-2.5 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg disabled:opacity-50">
             {loading ? '保存中...' : '登録する'}
           </button>
         </form>

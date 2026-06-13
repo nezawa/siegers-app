@@ -14,10 +14,16 @@ function formatDate(dateStr: string) {
 }
 
 function ResultBadge({ result }: { result: Game['result'] }) {
-  if (result === 'W') return <span className="px-3 py-1 bg-red-700 text-white rounded text-sm font-bold">勝ち</span>
-  if (result === 'L') return <span className="px-3 py-1 bg-gray-500 text-white rounded text-sm font-bold">負け</span>
-  if (result === 'D') return <span className="px-3 py-1 bg-green-600 text-white rounded text-sm font-bold">引分け</span>
-  return <span className="px-3 py-1 bg-gray-400 text-white rounded text-sm font-bold">-</span>
+  if (result === 'W') return <span className="inline-flex justify-center rounded-md bg-red-600 px-3 py-1 text-sm font-bold text-white shadow-sm">勝ち</span>
+  if (result === 'L') return <span className="inline-flex justify-center rounded-md bg-gray-500 px-3 py-1 text-sm font-bold text-white shadow-sm">負け</span>
+  if (result === 'D') return <span className="inline-flex justify-center rounded-md bg-green-600 px-3 py-1 text-sm font-bold text-white shadow-sm">引分け</span>
+  return <span className="inline-flex justify-center rounded-md bg-gray-400 px-3 py-1 text-sm font-bold text-white shadow-sm">-</span>
+}
+
+const ACCENT: Record<string, string> = {
+  W: 'bg-red-500',
+  L: 'bg-gray-400',
+  D: 'bg-green-500',
 }
 
 export default async function GamesPage() {
@@ -26,42 +32,47 @@ export default async function GamesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">試合結果</h1>
+      <h1 className="mb-6 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
+        <span className="inline-block h-6 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+        試合結果
+      </h1>
       {!games || games.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 bg-white rounded-xl shadow-sm">試合データがありません</div>
+        <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">試合データがありません</div>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
+        <div className="space-y-3">
           {games.map(game => {
-            const { label, dow, isSat, isSun } = formatDate(game.date)
-            const dowColor = isSun ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-blue-500'
+            const { label, dow, isSun } = formatDate(game.date)
+            const dowColor = isSun ? 'text-red-500' : 'text-blue-500'
             return (
               <Link
                 key={game.id}
                 href={`/games/${game.id}`}
-                className="flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors"
+                className="group flex items-stretch gap-3 rounded-2xl bg-white px-4 sm:px-5 py-4 shadow-sm ring-1 ring-gray-900/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-blue-900/15"
               >
+                <span className={`w-1 shrink-0 self-stretch rounded-full ${ACCENT[game.result ?? ''] ?? 'bg-gray-200'}`} />
+
                 {/* 左: 日付・対戦相手 */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-1">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-1.5">
                     <span className="text-sm font-bold text-gray-800">{label}</span>
                     <span className={`text-sm font-bold ${dowColor}`}>（{dow}）</span>
                   </div>
-                  <div className="text-base font-bold text-gray-900 truncate">
+                  <div className="truncate text-base font-bold text-gray-900">
                     {game.opponent}
                   </div>
                 </div>
 
                 {/* 右: スコア・結果 */}
-                <div className="flex items-center gap-3 ml-4 shrink-0">
+                <div className="ml-4 flex shrink-0 items-center gap-3">
                   <div className="text-right">
-                    <div className="text-xl font-bold text-blue-600 leading-tight">
-                      {game.score_us}-{game.score_them}
+                    <div className="text-xl font-extrabold leading-tight tabular-nums text-blue-950">
+                      {game.score_us}<span className="text-gray-300">-</span>{game.score_them}
                     </div>
                     <div className="mt-1 flex justify-end">
                       <ResultBadge result={game.result} />
                     </div>
                   </div>
-                  <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 shrink-0 text-gray-300 transition-all group-hover:translate-x-0.5 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>

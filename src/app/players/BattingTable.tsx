@@ -72,23 +72,23 @@ export default function BattingTable({ rows }: { rows: BattingRow[] }) {
       })
     : rows
 
-  const thBase = 'px-3 py-2 font-medium text-gray-500 text-center whitespace-nowrap text-xs select-none'
-  const tdCls = 'px-3 py-3 text-center text-sm'
+  const thBase = 'px-3 py-2.5 font-semibold text-blue-100 text-center whitespace-nowrap text-xs select-none'
+  const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
       <table className="text-sm border-collapse">
-        <thead className="bg-gray-50 border-b">
+        <thead className="bg-blue-950">
           <tr>
-            <th className={`${thBase} sticky left-0 bg-gray-50 w-12`}>#</th>
-            <th className={`px-4 py-2 font-medium text-gray-500 text-left whitespace-nowrap sticky left-12 bg-gray-50 text-xs select-none`}>選手名</th>
+            <th className={`${thBase} sticky left-0 bg-blue-950 w-12`}>#</th>
+            <th className={`px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky left-12 bg-blue-950 text-xs select-none`}>選手名</th>
             {COLS.map(col => {
               const dir = sort?.col === col.key ? sort.dir : null
               return (
                 <th
                   key={col.key}
                   onClick={() => setSort(nextSort(sort, col.key))}
-                  className={`${thBase} cursor-pointer hover:bg-gray-100 transition-colors ${sort?.col === col.key ? 'text-blue-700' : ''}`}
+                  className={`${thBase} cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === col.key ? 'text-amber-300' : ''}`}
                 >
                   {col.label}
                   <span className="inline-block w-3 ml-0.5 text-[10px]">
@@ -99,12 +99,12 @@ export default function BattingTable({ rows }: { rows: BattingRow[] }) {
             })}
           </tr>
         </thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-gray-100">
           {sorted.map(({ player, games, pa, ab, hits, doubles, triples, hr, rbi, runs, sb, bb, hbp, sac_fly, sac_bunt, k, gidp, reach_on_error, errors, cs, tb, avg, obp, slg, ops, risp_avg }) => (
-            <tr key={player.id} className="hover:bg-gray-50">
-              <td className="px-3 py-3 text-center text-sm text-gray-500 sticky left-0 bg-white w-12">{player.number ?? '-'}</td>
-              <td className="px-4 py-3 font-medium whitespace-nowrap sticky left-12 bg-white">
-                <Link href={`/players/${player.id}`} className="hover:text-blue-600 hover:underline transition-colors">
+            <tr key={player.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
+              <td className="px-3 py-3 text-center text-sm text-gray-400 font-bold italic sticky left-0 bg-inherit w-12">{player.number ?? '-'}</td>
+              <td className="px-4 py-3 font-bold whitespace-nowrap sticky left-12 bg-inherit">
+                <Link href={`/players/${player.id}`} className="text-gray-900 hover:text-blue-700 hover:underline transition-colors">
                   {player.name}
                 </Link>
               </td>

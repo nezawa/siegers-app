@@ -18,17 +18,20 @@ export default async function NewGamePage({
   const opponents = [...new Set((games ?? []).map(g => g.opponent).filter(Boolean))] as string[]
 
   const tabCls = (active: boolean) =>
-    `px-5 py-2 text-sm font-medium rounded-t-lg border border-b-0 transition-colors ${
+    `px-6 py-2 rounded-lg text-sm transition-all ${
       active
-        ? 'bg-white border-gray-200 text-blue-900'
-        : 'bg-gray-50 border-transparent text-gray-500 hover:text-gray-700'
+        ? 'bg-white text-blue-950 font-bold shadow'
+        : 'text-gray-500 font-medium hover:text-gray-800'
     }`
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">試合結果入力</h1>
+      <h1 className="mb-6 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
+        <span className="inline-block h-6 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+        試合結果入力
+      </h1>
 
-      <div className="flex gap-1 mb-6 border-b border-gray-200">
+      <div className="mb-6 inline-flex rounded-xl bg-gray-200/70 p-1">
         <Link href="/admin/games/new" className={tabCls(mode !== 'json')}>
           フォーム入力
         </Link>

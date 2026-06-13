@@ -24,7 +24,7 @@ export default function DeleteGameButton({ gameId }: { gameId: string }) {
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="text-sm text-red-600 border border-red-600 px-3 py-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+      className="rounded-lg px-3 py-1 text-sm text-red-300 ring-1 ring-red-400/50 transition-colors hover:bg-red-500/10 disabled:opacity-50"
     >
       {loading ? '削除中...' : '削除'}
     </button>

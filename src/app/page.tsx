@@ -8,26 +8,59 @@ export default async function TopPage() {
   const totalWins = games.filter(g => g.result === 'W').length
   const totalLosses = games.filter(g => g.result === 'L').length
   const totalDraws = games.filter(g => g.result === 'D').length
+  const decided = totalWins + totalLosses
+  const winPct = decided > 0 ? totalWins / decided : null
+
+  const records = [
+    { label: '勝', value: totalWins, color: 'text-amber-300' },
+    { label: '敗', value: totalLosses, color: 'text-white' },
+    { label: '分', value: totalDraws, color: 'text-white' },
+  ]
 
   return (
-    <div className="space-y-8">
-      <div className="bg-blue-900 text-white rounded-xl p-6 sm:p-8 text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-6">⚾ Siegers</h1>
-        <div className="flex justify-center gap-8 sm:gap-16">
-          <div>
-            <div className="text-4xl sm:text-5xl font-bold">{totalWins}</div>
-            <div className="text-blue-300 text-sm mt-1">勝</div>
+    <div className="space-y-10">
+      {/* ヒーロー */}
+      <section className="relative overflow-hidden rounded-3xl bg-blue-950 text-white shadow-xl shadow-blue-950/20">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.4),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.18),transparent_50%)]" />
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[18px] border-white/5" />
+        <div className="absolute -bottom-28 -left-12 h-72 w-72 rounded-full border-[22px] border-white/5" />
+        <div className="relative px-6 py-10 sm:px-10 sm:py-14 text-center">
+          <p className="mb-3 text-[11px] font-semibold tracking-[0.35em] text-amber-300">OFFICIAL TEAM SITE</p>
+          <h1 className="text-4xl sm:text-6xl font-extrabold italic tracking-wide drop-shadow-sm">
+            ⚾ SIEGERS
+          </h1>
+          <p className="mt-3 text-sm sm:text-base text-blue-200">草野球チーム シーガーズ</p>
+
+          <div className="mx-auto mt-9 grid max-w-md grid-cols-3 gap-3 sm:gap-4">
+            {records.map(r => (
+              <div
+                key={r.label}
+                className="rounded-2xl bg-white/10 px-4 py-5 ring-1 ring-white/15 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1"
+              >
+                <div className={`text-4xl sm:text-5xl font-extrabold tabular-nums ${r.color}`}>{r.value}</div>
+                <div className="mt-1.5 text-xs sm:text-sm text-blue-200">{r.label}</div>
+              </div>
+            ))}
           </div>
-          <div>
-            <div className="text-4xl sm:text-5xl font-bold">{totalLosses}</div>
-            <div className="text-blue-300 text-sm mt-1">敗</div>
-          </div>
-          <div>
-            <div className="text-4xl sm:text-5xl font-bold">{totalDraws}</div>
-            <div className="text-blue-300 text-sm mt-1">分</div>
-          </div>
+
+          {winPct !== null && (
+            <div className="mx-auto mt-7 max-w-md">
+              <div className="mb-2 flex items-center justify-between text-xs text-blue-200">
+                <span className="tracking-widest">勝率</span>
+                <span className="text-base font-bold tabular-nums text-amber-300">
+                  {winPct.toFixed(3).replace(/^0/, '')}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
+                  style={{ width: `${Math.round(winPct * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
       <RecentGamesSection games={games} />
     </div>
