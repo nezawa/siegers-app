@@ -6,15 +6,15 @@ import type { Game } from '@/types'
 
 function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className="inline-flex w-9 justify-center rounded-md bg-red-600 py-1 text-xs font-bold text-white shadow-sm">勝</span>
-  if (result === 'L') return <span className="inline-flex w-9 justify-center rounded-md bg-gray-500 py-1 text-xs font-bold text-white shadow-sm">負</span>
-  if (result === 'D') return <span className="inline-flex w-9 justify-center rounded-md bg-green-600 py-1 text-xs font-bold text-white shadow-sm">分</span>
+  if (result === 'L') return <span className="inline-flex w-9 justify-center rounded-md bg-blue-600 py-1 text-xs font-bold text-white shadow-sm">負</span>
+  if (result === 'D') return <span className="inline-flex w-9 justify-center rounded-md bg-gray-500 py-1 text-xs font-bold text-white shadow-sm">分</span>
   return null
 }
 
 const ACCENT: Record<string, string> = {
   W: 'bg-red-500',
-  L: 'bg-gray-400',
-  D: 'bg-green-500',
+  L: 'bg-blue-500',
+  D: 'bg-gray-400',
 }
 
 export default function RecentGamesSection({ games }: { games: Game[] }) {
