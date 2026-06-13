@@ -77,8 +77,9 @@ export default function BattingTable({ rows }: { rows: BattingRow[] }) {
       })
     : rows
 
-  const thBase = 'px-3 py-2.5 font-semibold text-blue-100 text-center whitespace-nowrap text-xs select-none'
-  const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
+  const thData = 'px-2.5 py-2 align-bottom font-semibold text-blue-100 select-none sticky top-0 z-20 bg-blue-950 cursor-pointer hover:bg-blue-900 transition-colors'
+  const tdCls = 'px-2.5 py-3 text-center text-sm tabular-nums'
+  const arrow = (dir: 'desc' | 'asc' | null) => (dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : '')
 
   return (
     <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-auto max-h-[calc(100vh-13rem)]">
@@ -87,26 +88,23 @@ export default function BattingTable({ rows }: { rows: BattingRow[] }) {
           <tr>
             <th
               onClick={() => setSort(nextSort(sort, '#'))}
-              className={`${thBase} sticky top-0 left-0 z-30 bg-blue-950 w-12 cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === '#' ? 'text-amber-300' : ''}`}
+              className={`px-2 py-2 font-semibold text-blue-100 text-left whitespace-nowrap select-none sticky top-0 left-0 z-30 bg-blue-950 cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === '#' ? 'text-amber-300' : ''}`}
             >
-              #
-              <span className="inline-block w-3 ml-0.5 text-[10px]">
-                {sort?.col === '#' ? (sort.dir === 'desc' ? '▼' : '▲') : ''}
-              </span>
+              背番号
+              <span className="inline-block w-3 text-[10px]">{sort?.col === '#' ? arrow(sort.dir) : ''}</span>
             </th>
-            <th className={`px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky top-0 left-12 z-30 bg-blue-950 text-xs select-none`}>選手名</th>
             {COLS.map(col => {
               const dir = sort?.col === col.key ? sort.dir : null
               return (
                 <th
                   key={col.key}
                   onClick={() => setSort(nextSort(sort, col.key))}
-                  className={`${thBase} sticky top-0 z-20 bg-blue-950 cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === col.key ? 'text-amber-300' : ''}`}
+                  className={`${thData} ${sort?.col === col.key ? 'text-amber-300' : ''}`}
                 >
-                  {col.label}
-                  <span className="inline-block w-3 ml-0.5 text-[10px]">
-                    {dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : ''}
-                  </span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="[writing-mode:vertical-rl] [text-orientation:upright] tracking-tight text-xs leading-none">{col.label}</span>
+                    <span className="h-2.5 text-[9px] leading-none">{arrow(dir)}</span>
+                  </div>
                 </th>
               )
             })}
@@ -115,10 +113,10 @@ export default function BattingTable({ rows }: { rows: BattingRow[] }) {
         <tbody className="divide-y divide-gray-100">
           {sorted.map(({ player, games, pa, ab, hits, doubles, triples, hr, rbi, runs, sb, bb, hbp, sac_fly, sac_bunt, k, gidp, reach_on_error, errors, cs, tb, avg, obp, slg, ops, risp_avg }) => (
             <tr key={player.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
-              <td className="px-3 py-3 text-center text-sm text-gray-400 font-bold italic sticky left-0 z-10 bg-inherit w-12">{player.number ?? '-'}</td>
-              <td className="px-4 py-3 font-bold whitespace-nowrap sticky left-12 z-10 bg-inherit">
-                <Link href={`/players/${player.id}`} className="text-gray-900 hover:text-blue-700 hover:underline transition-colors">
-                  {player.name}
+              <td className="px-2 py-3 whitespace-nowrap sticky left-0 z-10 bg-inherit">
+                <Link href={`/players/${player.id}`} className="flex items-baseline gap-1.5 hover:text-blue-700 transition-colors">
+                  <span className="text-xs font-bold italic tabular-nums text-gray-400">{player.number ?? '-'}</span>
+                  <span className="font-bold text-gray-900">{player.name}</span>
                 </Link>
               </td>
               <td className={tdCls}>{games}</td>

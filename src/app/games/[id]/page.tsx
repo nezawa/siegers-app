@@ -43,8 +43,8 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
   const battingData = batting ?? []
   const pitchingData = pitching ?? []
 
-  const thCls = 'px-2 py-3 font-semibold text-blue-100 text-center whitespace-nowrap text-xs'
-  const tdCls = 'px-2 py-3 text-center'
+  const thCls = 'px-1 sm:px-2 py-3 font-semibold text-blue-100 text-center whitespace-nowrap text-xs'
+  const tdCls = 'px-1 sm:px-2 py-3 text-center'
   const rowCls = 'odd:bg-white even:bg-slate-50/70 hover:bg-blue-50/70 transition-colors'
 
   return (
@@ -173,7 +173,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
                 {battingData.map(stat => (
                   <tr key={stat.id} className={rowCls}>
                     <td className={`${tdCls} text-gray-500`}>{stat.batting_order ?? '-'}</td>
-                    <td className="whitespace-nowrap px-2 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
+                    <td className="whitespace-nowrap px-1.5 sm:px-2 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
                     <td className={tdCls}>{stat.pa}</td>
                     <td className={tdCls}>{stat.ab}</td>
                     <td className={tdCls}>{stat.hits}</td>
@@ -210,14 +210,14 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
               <thead className="bg-blue-950">
                 <tr>
                   {['選手', '勝', 'H', 'S', '敗', '投球回', '投球数', '失点', '自責点', '完投', '完封', '被安打', '被本塁打', '奪三振', '与四球', '与死球', 'ボーク', '暴投'].map(h => (
-                    <th key={h} className={`${thCls} first:px-3 first:text-left`}>{h}</th>
+                    <th key={h} className={`${thCls} first:px-1.5 sm:first:px-3 first:text-left`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pitchingData.map(stat => (
                   <tr key={stat.id} className={rowCls}>
-                    <td className="whitespace-nowrap px-3 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
+                    <td className="whitespace-nowrap px-1.5 sm:px-3 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
                     <td className={tdCls}>{stat.is_win ? <span className="font-bold text-green-600">○</span> : '-'}</td>
                     <td className={tdCls}>{(stat as { is_hold?: boolean }).is_hold ? <span className="font-bold text-blue-600">○</span> : '-'}</td>
                     <td className={tdCls}>{(stat as { is_save?: boolean }).is_save ? <span className="font-bold text-purple-600">○</span> : '-'}</td>
