@@ -26,6 +26,12 @@ const ACCENT: Record<string, string> = {
   D: 'bg-gray-400',
 }
 
+const GAME_TYPE_LABEL: Record<string, string> = {
+  official: '公式戦',
+  practice: '練習試合',
+  other: 'その他',
+}
+
 export default async function GamesPage() {
   const supabase = await createClient()
   const { data: games } = await supabase.from('games').select('*').order('date', { ascending: false })
@@ -57,8 +63,13 @@ export default async function GamesPage() {
                     <span className="text-sm font-bold text-gray-800">{label}</span>
                     <span className={`text-sm font-bold ${dowColor}`}>（{dow}）</span>
                   </div>
-                  <div className="truncate text-base font-bold text-gray-900">
-                    {game.opponent}
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-base font-bold text-gray-900">{game.opponent}</span>
+                    {game.game_type && (
+                      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                        {GAME_TYPE_LABEL[game.game_type] ?? game.game_type}
+                      </span>
+                    )}
                   </div>
                 </div>
 

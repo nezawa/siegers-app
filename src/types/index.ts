@@ -20,6 +20,7 @@ export type Game = {
   innings_us: number[] | null
   innings_them: number[] | null
   is_home: boolean
+  game_type: 'official' | 'practice' | 'other' | null
   created_at: string
 }
 
