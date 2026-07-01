@@ -132,6 +132,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
     result: (game.result ?? '') as 'W' | 'L' | 'D' | '',
     notes: game.notes ?? '',
     is_home: game.is_home ?? false,
+    game_type: (game.game_type ?? '') as 'official' | 'practice' | 'other' | '',
   })
 
   const toInningArr = (arr: number[] | null): (number | '')[] => {
@@ -232,6 +233,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
           is_home: gameInfo.is_home,
           innings_us: hasInnings ? inningsUs : null,
           innings_them: hasInnings ? inningsThem : null,
+          game_type: gameInfo.game_type || null,
         })
         .eq('id', game.id)
 
@@ -308,6 +310,16 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
             <label className="block text-sm font-medium text-gray-700 mb-1">球場</label>
             <input type="text" value={gameInfo.venue}
               onChange={e => setGameInfo({ ...gameInfo, venue: e.target.value })} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">試合種別</label>
+            <select value={gameInfo.game_type}
+              onChange={e => setGameInfo({ ...gameInfo, game_type: e.target.value as 'official' | 'practice' | 'other' | '' })} className={inputCls}>
+              <option value="">選択</option>
+              <option value="official">公式戦</option>
+              <option value="practice">練習試合</option>
+              <option value="other">その他</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">先攻 / 後攻</label>

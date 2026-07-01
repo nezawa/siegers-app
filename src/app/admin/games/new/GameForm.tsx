@@ -112,6 +112,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
     result: '' as 'W' | 'L' | 'D' | '',
     notes: '',
     is_home: false,
+    game_type: '' as 'official' | 'practice' | 'other' | '',
   })
   type InningRow = { team: 'us' | 'them'; scores: (number | '')[] }
   const [inningRows, setInningRows] = useState<InningRow[]>([
@@ -175,6 +176,7 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
           innings_us: hasInnings ? inningsUs : null,
           innings_them: hasInnings ? inningsThem : null,
           is_home: gameInfo.is_home,
+          game_type: gameInfo.game_type || null,
         })
         .select()
         .single()
@@ -251,6 +253,16 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
             <label className="block text-sm font-medium text-gray-700 mb-1">球場</label>
             <input type="text" placeholder="〇〇球場" value={gameInfo.venue}
               onChange={e => setGameInfo({ ...gameInfo, venue: e.target.value })} className={inputCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">試合種別</label>
+            <select value={gameInfo.game_type}
+              onChange={e => setGameInfo({ ...gameInfo, game_type: e.target.value as 'official' | 'practice' | 'other' | '' })} className={inputCls}>
+              <option value="">選択</option>
+              <option value="official">公式戦</option>
+              <option value="practice">練習試合</option>
+              <option value="other">その他</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">先攻 / 後攻</label>

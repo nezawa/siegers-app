@@ -56,10 +56,12 @@ export default async function PlayersPage({
 
   const supabase = await createClient()
 
-  const [{ data: players }, { data: battingStats }, { data: pitchingStats }] = await Promise.all([
+  const [{ data: players }, { data: battingStats }, { data: pitchingStats }, { data: allGames }, { data: settings }] = await Promise.all([
     supabase.from('players').select('*').order('number'),
-    supabase.from('batting_stats').select('*, games(date)'),
+    supabase.from('batting_stats').select('*, games(date, game_type)'),
     supabase.from('pitching_stats').select('*, games(date)'),
+    supabase.from('games').select('id, date, game_type'),
+    supabase.from('settings').select('qualified_pa').eq('id', 1).single(),
   ])
 
   const playerList = players ?? []
@@ -76,9 +78,17 @@ export default async function PlayersPage({
   const bStats = allBStats.filter(s => matchesPeriod((s.games as { date?: string } | null)?.date))
   const pStats = allPStats.filter(s => matchesPeriod((s.games as { date?: string } | null)?.date))
 
-  // 打撃通算
-  const battingRows = playerList.map(player => {
-    const s = bStats.filter(b => b.player_id === player.id)
+  // フィルター期間内の総試合数と規定打席閾値
+  const filteredGames = (allGames ?? []).filter(g => matchesPeriod(g.date))
+  const qualifiedPaRate = settings?.qualified_pa ?? 3.1
+  type GameRow = { id: string; date: string; game_type?: string | null }
+  const qualifiedPaThreshold = filteredGames.length * qualifiedPaRate
+  const qualifiedPaThresholdOfficial = (filteredGames as GameRow[]).filter(g => g.game_type === 'official').length * qualifiedPaRate
+  const qualifiedPaThresholdPractice = (filteredGames as GameRow[]).filter(g => g.game_type === 'practice').length * qualifiedPaRate
+
+  // 打撃通算ヘルパー
+  const buildBattingRows = (stats: typeof allBStats) => playerList.map(player => {
+    const s = stats.filter(b => b.player_id === player.id)
     const games = s.length
     const pa = s.reduce((sum, b) => sum + (b.pa ?? 0), 0)
     const ab = s.reduce((sum, b) => sum + b.ab, 0)
@@ -116,6 +126,15 @@ export default async function PlayersPage({
       risp_avg: fmt(risp_hits, risp_ab),
     }
   })
+
+  type BStatWithGameType = { date?: string; game_type?: string | null } | null
+  const battingRows = buildBattingRows(bStats)
+  const battingRowsOfficial = buildBattingRows(
+    bStats.filter(s => (s.games as BStatWithGameType)?.game_type === 'official')
+  ).filter(r => r.pa > 0)
+  const battingRowsPractice = buildBattingRows(
+    bStats.filter(s => (s.games as BStatWithGameType)?.game_type === 'practice')
+  ).filter(r => r.pa > 0)
 
   // 投手通算（登板ありの選手のみ）
   const pitcherIds = [...new Set(pStats.map(p => p.player_id))]
@@ -214,7 +233,14 @@ export default async function PlayersPage({
       {!showPitching ? (
         playerList.length === 0
           ? <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">選手データがありません</div>
-          : <BattingTable rows={battingRows} />
+          : <BattingTable
+              rows={battingRows}
+              rowsOfficial={battingRowsOfficial}
+              rowsPractice={battingRowsPractice}
+              qualifiedPaThreshold={qualifiedPaThreshold}
+              qualifiedPaThresholdOfficial={qualifiedPaThresholdOfficial}
+              qualifiedPaThresholdPractice={qualifiedPaThresholdPractice}
+            />
       ) : (
         pitchingRows.length === 0
           ? <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">投手成績データがありません</div>

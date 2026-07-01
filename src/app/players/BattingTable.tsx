@@ -60,11 +60,27 @@ const COLS: ColDef[] = [
   { key: '盗塁阻止',  label: '盗塁阻止',  getValue: r => r.cs },
 ]
 
-export default function BattingTable({ rows }: { rows: BattingRow[] }) {
+type Props = {
+  rows: BattingRow[]
+  rowsOfficial: BattingRow[]
+  rowsPractice: BattingRow[]
+  qualifiedPaThreshold: number
+  qualifiedPaThresholdOfficial: number
+  qualifiedPaThresholdPractice: number
+}
+
+export default function BattingTable({ rows, rowsOfficial, rowsPractice, qualifiedPaThreshold, qualifiedPaThresholdOfficial, qualifiedPaThresholdPractice }: Props) {
   const [sort, setSort] = useState<SortState>(null)
+  const [qualifiedOnly, setQualifiedOnly] = useState(false)
+  const [gameTypeFilter, setGameTypeFilter] = useState<'official' | 'practice' | null>(null)
+
+  const activeRows = gameTypeFilter === 'official' ? rowsOfficial : gameTypeFilter === 'practice' ? rowsPractice : rows
+  const activeThreshold = gameTypeFilter === 'official' ? qualifiedPaThresholdOfficial : gameTypeFilter === 'practice' ? qualifiedPaThresholdPractice : qualifiedPaThreshold
+
+  const filtered = qualifiedOnly ? activeRows.filter(r => r.pa >= activeThreshold) : activeRows
 
   const sorted = sort
-    ? [...rows].sort((a, b) => {
+    ? [...filtered].sort((a, b) => {
         if (sort.col === '#') {
           const va = a.player.number ?? -Infinity
           const vb = b.player.number ?? -Infinity
@@ -75,13 +91,44 @@ export default function BattingTable({ rows }: { rows: BattingRow[] }) {
         const vb = toNum(col.getValue(b))
         return sort.dir === 'desc' ? vb - va : va - vb
       })
-    : rows
+    : filtered
 
   const thData = 'px-2.5 py-2 align-bottom font-semibold text-blue-100 select-none sticky top-0 z-20 bg-blue-950 cursor-pointer hover:bg-blue-900 transition-colors'
   const tdCls = 'px-2.5 py-3 text-center text-sm tabular-nums'
   const arrow = (dir: 'desc' | 'asc' | null) => (dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : '')
 
+  const chipCls = (active: boolean) =>
+    `px-3.5 py-1.5 rounded-full text-sm transition-all ${
+      active
+        ? 'bg-blue-950 text-white font-medium shadow'
+        : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50 hover:ring-gray-300'
+    }`
+
   return (
+    <div className="space-y-3">
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-2">
+        <button onClick={() => setQualifiedOnly(v => !v)} className={chipCls(qualifiedOnly)}>
+          規定打席
+        </button>
+        <div className="h-4 w-px bg-gray-200" />
+        <button
+          onClick={() => setGameTypeFilter(f => f === 'official' ? null : 'official')}
+          className={chipCls(gameTypeFilter === 'official')}
+        >
+          公式戦
+        </button>
+        <button
+          onClick={() => setGameTypeFilter(f => f === 'practice' ? null : 'practice')}
+          className={chipCls(gameTypeFilter === 'practice')}
+        >
+          練習試合
+        </button>
+      </div>
+      {qualifiedOnly && (
+        <p className="text-xs text-gray-400 pl-1">{Math.ceil(activeThreshold)}打席以上</p>
+      )}
+    </div>
     <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-auto max-h-[calc(100vh-13rem)]">
       <table className="text-sm border-collapse">
         <thead className="bg-blue-950">
@@ -148,6 +195,7 @@ export default function BattingTable({ rows }: { rows: BattingRow[] }) {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   )
 }

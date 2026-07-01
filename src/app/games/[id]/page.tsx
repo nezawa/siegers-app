@@ -54,7 +54,14 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.12),transparent_50%)]" />
         <div className="relative p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <p className="text-sm text-blue-300">{game.date}{game.venue && `・${game.venue}`}</p>
+            <p className="text-sm text-blue-300">
+              {game.date}{game.venue && `・${game.venue}`}
+              {game.game_type && (
+                <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-blue-200">
+                  {({ official: '公式戦', practice: '練習試合', other: 'その他' } as Record<string, string>)[game.game_type]}
+                </span>
+              )}
+            </p>
             <div className="flex items-center gap-3">
               <ResultBadge result={game.result} />
               {user && (
