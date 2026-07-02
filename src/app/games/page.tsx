@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import Link from 'next/link'
 import type { Game } from '@/types'
 
@@ -34,7 +35,9 @@ const GAME_TYPE_LABEL: Record<string, string> = {
 
 export default async function GamesPage() {
   const supabase = await createClient()
-  const { data: games } = await supabase.from('games').select('*').order('date', { ascending: false })
+  const games = await fetchAllRows((from, to) =>
+    supabase.from('games').select('*').order('date', { ascending: false }).order('id').range(from, to)
+  )
 
   return (
     <div>
@@ -42,7 +45,7 @@ export default async function GamesPage() {
         <span className="inline-block h-6 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
         試合結果
       </h1>
-      {!games || games.length === 0 ? (
+      {games.length === 0 ? (
         <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">試合データがありません</div>
       ) : (
         <div className="space-y-3">

@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+草野球チーム「Siegers」のホームページ。試合結果・選手成績の公開と、管理者による入力・編集を行う Next.js (App Router) アプリです。
+
+## 技術スタック
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS 4
+- Supabase (PostgreSQL + Auth)
 
 ## Getting Started
 
-First, run the development server:
+環境変数を `.env.local` に設定します（Supabase プロジェクトの値を使用）。
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=xxxx
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxx
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+開発サーバーを起動します。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+[http://localhost:3000](http://localhost:3000) をブラウザで開くと確認できます。
 
-## Learn More
+## 主なスクリプト
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` — 開発サーバー起動
+- `npm run build` — 本番ビルド
+- `npm run start` — 本番サーバー起動
+- `npm run lint` — ESLint 実行
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ページ構成
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+公開ページ:
+- `/` — チーム勝敗数、直近5試合
+- `/games` — 試合一覧
+- `/games/[id]` — 試合詳細（打撃・投手成績）。ログイン中は編集ボタンを表示
+- `/players` — 選手通算成績
+- `/players/[id]` — 選手個人の成績詳細
 
-## Deploy on Vercel
+管理者ページ（`middleware` で認証保護）:
+- `/admin/login` — メール＋パスワード認証
+- `/admin/games/new` — 試合結果の入力
+- `/admin/games/[id]/edit` — 試合結果の編集
+- `/admin/players` — 選手一覧・削除
+- `/admin/players/new` — 選手登録
+- `/admin/settings` — 規定打席・規定投球回率などの設定
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel へのデプロイを想定しています。詳細は [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) を参照してください。

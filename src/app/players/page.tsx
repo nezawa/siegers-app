@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
@@ -56,17 +57,15 @@ export default async function PlayersPage({
 
   const supabase = await createClient()
 
-  const [{ data: players }, { data: battingStats }, { data: pitchingStats }, { data: allGames }, { data: settings }] = await Promise.all([
+  const [{ data: players }, allBStats, allPStats, allGames, { data: settings }] = await Promise.all([
     supabase.from('players').select('*').order('number'),
-    supabase.from('batting_stats').select('*, games(date, game_type)'),
-    supabase.from('pitching_stats').select('*, games(date)'),
-    supabase.from('games').select('id, date, game_type'),
-    supabase.from('settings').select('qualified_pa').eq('id', 1).single(),
+    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date, game_type)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date, game_type)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('games').select('id, date, game_type').order('id').range(from, to)),
+    supabase.from('settings').select('qualified_pa, qualified_ip').eq('id', 1).single(),
   ])
 
   const playerList = players ?? []
-  const allBStats = battingStats ?? []
-  const allPStats = pitchingStats ?? []
 
   // 利用可能な年度一覧
   const years = [...new Set([
@@ -79,7 +78,7 @@ export default async function PlayersPage({
   const pStats = allPStats.filter(s => matchesPeriod((s.games as { date?: string } | null)?.date))
 
   // フィルター期間内の総試合数と規定打席閾値
-  const filteredGames = (allGames ?? []).filter(g => matchesPeriod(g.date))
+  const filteredGames = allGames.filter(g => matchesPeriod(g.date))
   const qualifiedPaRate = settings?.qualified_pa ?? 3.1
   type GameRow = { id: string; date: string; game_type?: string | null }
   const qualifiedPaThreshold = filteredGames.length * qualifiedPaRate
@@ -136,39 +135,56 @@ export default async function PlayersPage({
     bStats.filter(s => (s.games as BStatWithGameType)?.game_type === 'practice')
   ).filter(r => r.pa > 0)
 
-  // 投手通算（登板ありの選手のみ）
-  const pitcherIds = [...new Set(pStats.map(p => p.player_id))]
-  const pitchingRows = pitcherIds.map(pid => {
-    const player = playerList.find(pl => pl.id === pid)
-    const s = pStats.filter(p => p.player_id === pid)
-    const appearances = s.length
-    const wins = s.filter(p => p.is_win).length
-    const holds = s.filter(p => (p as { is_hold?: boolean }).is_hold).length
-    const saves = s.filter(p => (p as { is_save?: boolean }).is_save).length
-    const losses = s.filter(p => p.is_loss).length
-    const { display: ipDisplay, outs: totalOuts } = sumIp(s.map(p => p.ip ?? 0))
-    const pitch_count = s.reduce((sum, p) => sum + ((p as { pitch_count?: number }).pitch_count ?? 0), 0)
-    const runs = s.reduce((sum, p) => sum + ((p as { runs?: number }).runs ?? 0), 0)
-    const er = s.reduce((sum, p) => sum + (p.er ?? 0), 0)
-    const cg = s.filter(p => (p as { is_cg?: boolean }).is_cg).length
-    const sho = s.filter(p => (p as { is_sho?: boolean }).is_sho).length
-    const hits_allowed = s.reduce((sum, p) => sum + (p.hits_allowed ?? 0), 0)
-    const hr_allowed = s.reduce((sum, p) => sum + (p.hr_allowed ?? 0), 0)
-    const k = s.reduce((sum, p) => sum + (p.k ?? 0), 0)
-    const bb = s.reduce((sum, p) => sum + (p.bb ?? 0), 0)
-    const hbp = s.reduce((sum, p) => sum + ((p as { hbp?: number }).hbp ?? 0), 0)
-    const balk = s.reduce((sum, p) => sum + ((p as { balk?: number }).balk ?? 0), 0)
-    const wp = s.reduce((sum, p) => sum + ((p as { wp?: number }).wp ?? 0), 0)
-    const wl = wins + losses
-    return {
-      player, appearances, wins, holds, saves, losses,
-      winPct: wl > 0 ? (wins / wl).toFixed(3).replace(/^0/, '') : '-',
-      era: fmtEra(er, totalOuts),
-      ip: ipDisplay,
-      pitch_count, runs, er, cg, sho,
-      hits_allowed, hr_allowed, k, bb, hbp, balk, wp,
-    }
-  }).filter(r => r.player)
+  // 投球回の規定値（アウト換算）
+  const qualifiedIpRate = settings?.qualified_ip ?? 1.0
+  const qualifiedIpThresholdOuts = filteredGames.length * qualifiedIpRate * 3
+  const qualifiedIpThresholdOutsOfficial = (filteredGames as GameRow[]).filter(g => g.game_type === 'official').length * qualifiedIpRate * 3
+  const qualifiedIpThresholdOutsPractice = (filteredGames as GameRow[]).filter(g => g.game_type === 'practice').length * qualifiedIpRate * 3
+
+  // 投手通算ヘルパー
+  const buildPitchingRows = (stats: typeof allPStats) => {
+    const ids = [...new Set(stats.map(p => p.player_id))]
+    return ids.map(pid => {
+      const player = playerList.find(pl => pl.id === pid)
+      const s = stats.filter(p => p.player_id === pid)
+      const appearances = s.length
+      const wins = s.filter(p => p.is_win).length
+      const holds = s.filter(p => (p as { is_hold?: boolean }).is_hold).length
+      const saves = s.filter(p => (p as { is_save?: boolean }).is_save).length
+      const losses = s.filter(p => p.is_loss).length
+      const { display: ipDisplay, outs: totalOuts } = sumIp(s.map(p => p.ip ?? 0))
+      const pitch_count = s.reduce((sum, p) => sum + ((p as { pitch_count?: number }).pitch_count ?? 0), 0)
+      const runs = s.reduce((sum, p) => sum + ((p as { runs?: number }).runs ?? 0), 0)
+      const er = s.reduce((sum, p) => sum + (p.er ?? 0), 0)
+      const cg = s.filter(p => (p as { is_cg?: boolean }).is_cg).length
+      const sho = s.filter(p => (p as { is_sho?: boolean }).is_sho).length
+      const hits_allowed = s.reduce((sum, p) => sum + (p.hits_allowed ?? 0), 0)
+      const hr_allowed = s.reduce((sum, p) => sum + (p.hr_allowed ?? 0), 0)
+      const k = s.reduce((sum, p) => sum + (p.k ?? 0), 0)
+      const bb = s.reduce((sum, p) => sum + (p.bb ?? 0), 0)
+      const hbp = s.reduce((sum, p) => sum + ((p as { hbp?: number }).hbp ?? 0), 0)
+      const balk = s.reduce((sum, p) => sum + ((p as { balk?: number }).balk ?? 0), 0)
+      const wp = s.reduce((sum, p) => sum + ((p as { wp?: number }).wp ?? 0), 0)
+      const wl = wins + losses
+      return {
+        player, appearances, wins, holds, saves, losses, totalOuts,
+        winPct: wl > 0 ? (wins / wl).toFixed(3).replace(/^0/, '') : '-',
+        era: fmtEra(er, totalOuts),
+        ip: ipDisplay,
+        pitch_count, runs, er, cg, sho,
+        hits_allowed, hr_allowed, k, bb, hbp, balk, wp,
+      }
+    }).filter(r => r.player)
+  }
+
+  type PStatWithGameType = { date?: string; game_type?: string | null } | null
+  const pitchingRows = buildPitchingRows(pStats)
+  const pitchingRowsOfficial = buildPitchingRows(
+    pStats.filter(s => (s.games as PStatWithGameType)?.game_type === 'official')
+  )
+  const pitchingRowsPractice = buildPitchingRows(
+    pStats.filter(s => (s.games as PStatWithGameType)?.game_type === 'practice')
+  )
 
   // URLビルダー（tab・year・期間を組み合わせる）
   const buildUrl = (params: { tab?: string; year?: string; from?: string; to?: string }) => {
@@ -244,7 +260,14 @@ export default async function PlayersPage({
       ) : (
         pitchingRows.length === 0
           ? <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">投手成績データがありません</div>
-          : <PitchingTable rows={pitchingRows} />
+          : <PitchingTable
+              rows={pitchingRows}
+              rowsOfficial={pitchingRowsOfficial}
+              rowsPractice={pitchingRowsPractice}
+              qualifiedIpThresholdOuts={qualifiedIpThresholdOuts}
+              qualifiedIpThresholdOutsOfficial={qualifiedIpThresholdOutsOfficial}
+              qualifiedIpThresholdOutsPractice={qualifiedIpThresholdOutsPractice}
+            />
       )}
     </div>
   )

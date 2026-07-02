@@ -239,45 +239,37 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
 
       if (gameError) throw gameError
 
-      // 既存の成績を削除して再挿入
-      await supabase.from('batting_stats').delete().eq('game_id', game.id)
-      await supabase.from('pitching_stats').delete().eq('game_id', game.id)
-
+      // 既存成績の削除と再挿入を RPC で1トランザクションにまとめる
+      // （途中で失敗しても全てロールバックされ、成績が消えたままにならない）
       const validBatting = battingRows.filter(r => r.player_id && r.pa !== '')
-      if (validBatting.length > 0) {
-        const { error: e } = await supabase.from('batting_stats').insert(
-          validBatting.map(r => ({
-            game_id: game.id, player_id: r.player_id,
-            batting_order: r.batting_order !== '' ? Number(r.batting_order) : null,
-            pa: toNum(r.pa), ab: toNum(r.ab), hits: toNum(r.hits),
-            hr: toNum(r.hr), rbi: toNum(r.rbi), runs: toNum(r.runs),
-            sb: toNum(r.sb), doubles: toNum(r.doubles), triples: toNum(r.triples),
-            risp_ab: toNum(r.risp_ab), risp_hits: toNum(r.risp_hits),
-            k: toNum(r.k), bb: toNum(r.bb), hbp: toNum(r.hbp),
-            sac_bunt: toNum(r.sac_bunt), sac_fly: toNum(r.sac_fly),
-            gidp: toNum(r.gidp), reach_on_error: toNum(r.reach_on_error),
-            errors: toNum(r.errors), cs: toNum(r.cs),
-          }))
-        )
-        if (e) throw e
-      }
-
       const validPitching = pitchingRows.filter(r => r.player_id && r.ip !== '')
-      if (validPitching.length > 0) {
-        const { error: e } = await supabase.from('pitching_stats').insert(
-          validPitching.map(r => ({
-            game_id: game.id, player_id: r.player_id,
-            is_win: r.is_win, is_hold: r.is_hold, is_save: r.is_save, is_loss: r.is_loss,
-            ip: toNum(r.ip), pitch_count: toNum(r.pitch_count),
-            runs: toNum(r.runs), er: toNum(r.er),
-            is_cg: r.is_cg, is_sho: r.is_sho,
-            hits_allowed: toNum(r.hits_allowed), hr_allowed: toNum(r.hr_allowed),
-            k: toNum(r.k), bb: toNum(r.bb),
-            hbp: toNum(r.hbp), balk: toNum(r.balk), wp: toNum(r.wp),
-          }))
-        )
-        if (e) throw e
-      }
+
+      const { error: statsError } = await supabase.rpc('replace_game_stats', {
+        p_game_id: game.id,
+        p_batting: validBatting.map(r => ({
+          player_id: r.player_id,
+          batting_order: r.batting_order !== '' ? Number(r.batting_order) : null,
+          pa: toNum(r.pa), ab: toNum(r.ab), hits: toNum(r.hits),
+          hr: toNum(r.hr), rbi: toNum(r.rbi), runs: toNum(r.runs),
+          sb: toNum(r.sb), doubles: toNum(r.doubles), triples: toNum(r.triples),
+          risp_ab: toNum(r.risp_ab), risp_hits: toNum(r.risp_hits),
+          k: toNum(r.k), bb: toNum(r.bb), hbp: toNum(r.hbp),
+          sac_bunt: toNum(r.sac_bunt), sac_fly: toNum(r.sac_fly),
+          gidp: toNum(r.gidp), reach_on_error: toNum(r.reach_on_error),
+          errors: toNum(r.errors), cs: toNum(r.cs),
+        })),
+        p_pitching: validPitching.map(r => ({
+          player_id: r.player_id,
+          is_win: r.is_win, is_hold: r.is_hold, is_save: r.is_save, is_loss: r.is_loss,
+          ip: toNum(r.ip), pitch_count: toNum(r.pitch_count),
+          runs: toNum(r.runs), er: toNum(r.er),
+          is_cg: r.is_cg, is_sho: r.is_sho,
+          hits_allowed: toNum(r.hits_allowed), hr_allowed: toNum(r.hr_allowed),
+          k: toNum(r.k), bb: toNum(r.bb),
+          hbp: toNum(r.hbp), balk: toNum(r.balk), wp: toNum(r.wp),
+        })),
+      })
+      if (statsError) throw statsError
 
       router.push(`/games/${game.id}`)
       router.refresh()

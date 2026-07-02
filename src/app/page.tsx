@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import RecentGamesSection from '@/components/RecentGamesSection'
 
 export default async function TopPage() {
   const supabase = await createClient()
-  const { data } = await supabase.from('games').select('*').order('date', { ascending: false })
-  const games = data ?? []
+  const games = await fetchAllRows((from, to) =>
+    supabase.from('games').select('*').order('date', { ascending: false }).order('id').range(from, to)
+  )
   const totalWins = games.filter(g => g.result === 'W').length
   const totalLosses = games.filter(g => g.result === 'L').length
   const totalDraws = games.filter(g => g.result === 'D').length
