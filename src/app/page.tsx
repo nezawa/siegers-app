@@ -125,8 +125,9 @@ export default async function TopPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-950" />
               <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[12px] border-white/10" />
               <div className="absolute inset-0 bg-[url('/team.jpg')] bg-cover bg-center" />
-              <div className="absolute inset-0 flex items-center justify-center bg-blue-950/30 transition-colors group-hover:bg-blue-950/15">
-                <span className="rounded-full bg-white/90 px-8 py-2.5 text-sm font-bold text-blue-950 shadow">
+              {/* ホバー時だけ暗くなり「選手成績を見る」が表示される */}
+              <div className="absolute inset-0 flex items-center justify-center transition-colors duration-200 group-hover:bg-blue-950/40">
+                <span className="rounded-full bg-white/90 px-8 py-2.5 text-sm font-bold text-blue-950 shadow opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   選手成績を見る →
                 </span>
               </div>
