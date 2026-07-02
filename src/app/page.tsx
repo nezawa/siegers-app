@@ -1,70 +1,203 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
-import RecentGamesSection from '@/components/RecentGamesSection'
+import Link from 'next/link'
+
+// チーム紹介の文章はここを編集する（slogan は \n で改行できる。行を消す/コメントアウトすると非表示）
+const TEAM: { slogan?: string; name: string; about: string } = {
+  // slogan: '野球を、\n本気で楽しむ。',
+  name: '小雀シーガーズ',
+  about:
+    '小雀シーガーズは、野球好きの仲間が集まって結成された草野球チームです。勝ちにこだわりながら、何より野球を楽しむことを大切に、週末を中心に活動しています。',
+}
+
+// ベースの水色は globals.css の --color-band で定義（bg-band で使用）
+
+const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}（${DOW_JA[d.getDay()]}）`
+}
+
+function SectionHeading({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
+  return (
+    <h2 className={`text-center text-lg sm:text-xl font-semibold tracking-[0.2em] ${light ? 'text-white' : 'text-gray-700'}`}>
+      <span className="mx-3">−</span>{children}<span className="mx-3">−</span>
+    </h2>
+  )
+}
 
 export default async function TopPage() {
   const supabase = await createClient()
   const games = await fetchAllRows((from, to) =>
-    supabase.from('games').select('*').order('date', { ascending: false }).order('id').range(from, to)
+    supabase
+      .from('games')
+      .select('id, date, opponent, venue, score_us, score_them, result')
+      .order('date', { ascending: false })
+      .order('id')
+      .range(from, to)
   )
-  const totalWins = games.filter(g => g.result === 'W').length
-  const totalLosses = games.filter(g => g.result === 'L').length
-  const totalDraws = games.filter(g => g.result === 'D').length
-  const decided = totalWins + totalLosses
-  const winPct = decided > 0 ? totalWins / decided : null
 
-  const records = [
-    { label: '勝', value: totalWins, color: 'text-amber-300' },
-    { label: '敗', value: totalLosses, color: 'text-white' },
-    { label: '分', value: totalDraws, color: 'text-white' },
-  ]
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
+
+  // 次回スケジュール（今日以降で一番近い試合）と直近の試合結果
+  const upcoming = games.filter(g => g.date >= today)
+  const nextGame = upcoming.length > 0 ? upcoming[upcoming.length - 1] : null
+  const recentResults = games.filter(g => g.date < today).slice(0, 3)
+
+  // 年度別成績（直近3年）
+  const yearlyRecords = [...new Set(games.map(g => g.date.slice(0, 4)))]
+    .sort()
+    .reverse()
+    .slice(0, 3)
+    .map(year => {
+      const ys = games.filter(g => g.date.startsWith(year))
+      return {
+        year,
+        w: ys.filter(g => g.result === 'W').length,
+        l: ys.filter(g => g.result === 'L').length,
+        d: ys.filter(g => g.result === 'D').length,
+      }
+    })
 
   return (
-    <div className="space-y-10">
-      {/* ヒーロー */}
-      <section className="relative overflow-hidden rounded-3xl bg-blue-950 text-white shadow-xl shadow-blue-950/20">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.4),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.18),transparent_50%)]" />
-        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[18px] border-white/5" />
-        <div className="absolute -bottom-28 -left-12 h-72 w-72 rounded-full border-[22px] border-white/5" />
-        <div className="relative px-6 py-10 sm:px-10 sm:py-14 text-center">
-          <p className="mb-3 text-[11px] font-semibold tracking-[0.35em] text-amber-300">OFFICIAL TEAM SITE</p>
-          <h1 className="text-4xl sm:text-6xl font-extrabold italic tracking-wide drop-shadow-sm">
-            ⚾ SIEGERS
-          </h1>
-          <p className="mt-3 text-sm sm:text-base text-blue-200">草野球チーム シーガーズ</p>
+    <div className="flex w-full flex-1 flex-col -mb-12 bg-white">
+      {/* ヒーロー（ぼかした写真の帯 + 写真ボックス） */}
+      <section className="relative overflow-hidden bg-band px-4 py-8 sm:py-12">
+        {/* 写真を拡大してぼかした背景（hero.jpg が無い場合は水色のまま） */}
+        <div className="absolute inset-0 scale-110 bg-[url('/hero.jpg')] bg-cover bg-center blur-sm" />
+        <div className="absolute inset-0 bg-blue-950/40" />
+        <div className="relative mx-auto aspect-[4/3] w-full max-w-4xl overflow-hidden shadow-xl shadow-blue-950/20 sm:aspect-[16/9]">
+          {/* public/hero.jpg を置くと背景写真になる */}
+          <div className="absolute inset-0 bg-blue-950" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.4),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.15),transparent_50%)]" />
+          <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full border-[16px] border-white/5" />
+          <div className="absolute -bottom-20 left-1/3 h-64 w-64 rounded-full border-[20px] border-white/5" />
+          <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center" />
 
-          <div className="mx-auto mt-9 grid max-w-md grid-cols-3 gap-3 sm:gap-4">
-            {records.map(r => (
-              <div
-                key={r.label}
-                className="rounded-2xl bg-white/10 px-4 py-5 ring-1 ring-white/15 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1"
-              >
-                <div className={`text-4xl sm:text-5xl font-extrabold tabular-nums ${r.color}`}>{r.value}</div>
-                <div className="mt-1.5 text-xs sm:text-sm text-blue-200">{r.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {winPct !== null && (
-            <div className="mx-auto mt-7 max-w-md">
-              <div className="mb-2 flex items-center justify-between text-xs text-blue-200">
-                <span className="tracking-widest">勝率</span>
-                <span className="text-base font-bold tabular-nums text-amber-300">
-                  {winPct.toFixed(3).replace(/^0/, '')}
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300"
-                  style={{ width: `${Math.round(winPct * 100)}%` }}
-                />
-              </div>
-            </div>
+          {/* 電光掲示板の位置に合わせて配置（left/top の % で微調整できる） */}
+          {TEAM.slogan && (
+            <p className="absolute left-[43%] top-[30%] -translate-x-1/2 -translate-y-1/2 whitespace-pre-line text-center text-3xl font-extrabold leading-snug text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] sm:text-5xl">
+              {TEAM.slogan}
+            </p>
           )}
         </div>
       </section>
 
-      <RecentGamesSection games={games} />
+      {/* シーガーズとは（水色帯・下端だけ斜め） */}
+      <section className="relative py-20 sm:py-24">
+        {/* 上半分はベタ塗りでヒーロー画像と隙間なくつなぐ */}
+        <div className="absolute inset-x-0 top-0 h-1/2 bg-band" />
+        <div className="absolute inset-x-0 inset-y-6 -skew-y-2 bg-band" />
+        <div className="relative mx-auto max-w-3xl px-4 text-center">
+          <SectionHeading light>小雀シーガーズとは</SectionHeading>
+          <p className="mt-8 text-sm sm:text-base leading-8 text-white whitespace-pre-line">
+            {TEAM.about}
+          </p>
+
+          {yearlyRecords.length > 0 && (
+            <div className="mt-8 space-y-1.5 text-sm sm:text-base text-white">
+              <p className="text-xs tracking-widest text-white/70">これまでの成績</p>
+              {yearlyRecords.map(r => (
+                <p key={r.year} className="font-medium tabular-nums">
+                  {r.year}年　{r.w}勝 {r.l}敗 {r.d}分
+                </p>
+              ))}
+            </div>
+          )}
+
+          <Link
+            href="/about"
+            className="mt-10 inline-block rounded bg-white px-10 py-3 text-sm font-bold text-blue-950 shadow-md transition-opacity hover:opacity-85"
+          >
+            詳しくはこちら
+          </Link>
+        </div>
+      </section>
+
+      {/* 選手名鑑 */}
+      <section className="px-4 pb-16 sm:pb-24">
+        <div className="mx-auto max-w-3xl">
+          <SectionHeading>選手名鑑</SectionHeading>
+          <Link href="/players" className="group mt-8 block">
+            <div className="relative aspect-[5/2] w-full overflow-hidden shadow-lg shadow-blue-950/15 transition-transform duration-200 group-hover:-translate-y-1">
+              {/* public/team.jpg を置くとチーム写真になる */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-950" />
+              <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[12px] border-white/10" />
+              <div className="absolute inset-0 bg-[url('/team.jpg')] bg-cover bg-center" />
+              <div className="absolute inset-0 flex items-center justify-center bg-blue-950/30 transition-colors group-hover:bg-blue-950/15">
+                <span className="rounded-full bg-white/90 px-8 py-2.5 text-sm font-bold text-blue-950 shadow">
+                  選手成績を見る →
+                </span>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* スコア（水色帯・上端だけ斜め）。flex-1 で余った高さも水色で埋めてフッターに繋ぐ */}
+      <section className="relative flex-1 py-20 sm:py-24">
+        {/* 下半分はベタ塗りでフッターと隙間なくつなぐ */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-band" />
+        <div className="absolute inset-y-6 inset-x-0 -skew-y-2 bg-band" />
+        <div className="relative mx-auto max-w-4xl px-4">
+          <SectionHeading light>スコア</SectionHeading>
+
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* 次回スケジュール */}
+            <div>
+              <p className="mb-3 text-center text-xs font-semibold tracking-[0.25em] text-white/90">次回スケジュール</p>
+              <div className="bg-white p-5 shadow-md">
+                {nextGame ? (
+                  <div className="text-center">
+                    <p className="text-sm font-bold tabular-nums text-gray-800">{formatDate(nextGame.date)}</p>
+                    <div className="mt-3 flex items-center justify-center gap-3 text-sm font-bold text-blue-950">
+                      <span>{TEAM.name}</span>
+                      <span className="text-xs text-gray-400">VS</span>
+                      <span>{nextGame.opponent}</span>
+                    </div>
+                    {nextGame.venue && <p className="mt-2 text-xs text-gray-500">@ {nextGame.venue}</p>}
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-sm text-gray-400">次の試合は未定です</p>
+                )}
+              </div>
+            </div>
+
+            {/* 試合結果 */}
+            <div>
+              <p className="mb-3 text-center text-xs font-semibold tracking-[0.25em] text-white/90">試合結果</p>
+              <div className="divide-y divide-gray-100 bg-white shadow-md">
+                {recentResults.length === 0 ? (
+                  <p className="py-9 text-center text-sm text-gray-400">試合結果はまだありません</p>
+                ) : (
+                  recentResults.map(g => (
+                    <Link key={g.id} href={`/games/${g.id}`} className="block p-4 text-center transition-colors hover:bg-blue-50">
+                      <p className="text-xs tabular-nums text-gray-500">{formatDate(g.date)}</p>
+                      <div className="mt-1.5 flex items-center justify-center gap-3 text-sm font-bold text-blue-950">
+                        <span>{TEAM.name}</span>
+                        <span className="tabular-nums text-base">
+                          {g.score_us} - {g.score_them}
+                        </span>
+                        <span className="max-w-28 truncate">{g.opponent}</span>
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/games"
+              className="inline-block rounded bg-white px-10 py-3 text-sm font-bold text-blue-950 shadow-md transition-opacity hover:opacity-85"
+            >
+              試合結果一覧へ
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

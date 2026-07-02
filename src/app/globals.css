@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  /* サイト全体のベース水色（ヘッダー・フッター・ホームの帯）。bg-band 等で使う */
+  --color-band: #6c9dc6;
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans), var(--font-noto-sans-jp),
     "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
