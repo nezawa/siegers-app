@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -98,16 +99,16 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: player }, { data: rawBatting }, { data: rawPitching }] = await Promise.all([
+  const [{ data: player }, rawBatting, rawPitching] = await Promise.all([
     supabase.from('players').select('*').eq('id', id).single(),
-    supabase.from('batting_stats').select('*, games(date)').eq('player_id', id),
-    supabase.from('pitching_stats').select('*, games(date)').eq('player_id', id),
+    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date)').eq('player_id', id).order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date)').eq('player_id', id).order('id').range(from, to)),
   ])
 
   if (!player) notFound()
 
-  const bStats = (rawBatting ?? []) as Record<string, unknown>[]
-  const pStats = (rawPitching ?? []) as Record<string, unknown>[]
+  const bStats = rawBatting as Record<string, unknown>[]
+  const pStats = rawPitching as Record<string, unknown>[]
 
   const getYear = (row: Record<string, unknown>) =>
     ((row.games as { date?: string })?.date ?? '').slice(0, 4)
