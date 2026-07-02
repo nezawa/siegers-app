@@ -118,7 +118,7 @@ export default async function TopPage() {
       {/* 選手名鑑 */}
       <section className="px-4 pb-16 sm:pb-24">
         <div className="mx-auto max-w-3xl">
-          <SectionHeading>選手名鑑</SectionHeading>
+          <SectionHeading>選手成績</SectionHeading>
           <Link href="/players" className="group mt-8 block">
             <div className="relative aspect-[5/2] w-full overflow-hidden shadow-lg shadow-blue-950/15 transition-transform duration-200 group-hover:-translate-y-1">
               {/* public/team.jpg を置くとチーム写真になる */}
