@@ -40,9 +40,9 @@ export default async function TopPage() {
 
   const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
 
-  // 次回スケジュール（今日以降で一番近い試合）と直近の試合結果
-  const upcoming = games.filter(g => g.date >= today)
-  const nextGame = upcoming.length > 0 ? upcoming[upcoming.length - 1] : null
+  // 今後のスケジュール（今日以降・近い日付順に3件）と直近の試合結果
+  // games は日付降順なので、末尾3件が「今日以降で近い順」になる
+  const upcomingGames = games.filter(g => g.date >= today).slice(-3).reverse()
   const recentResults = games.filter(g => g.date < today).slice(0, 3)
 
   // 年度別成績（直近3年）
@@ -145,26 +145,6 @@ export default async function TopPage() {
           <SectionHeading light>スコア</SectionHeading>
 
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {/* 次回スケジュール */}
-            <div>
-              <p className="mb-3 text-center text-xs font-semibold tracking-[0.25em] text-white/90">次回スケジュール</p>
-              <div className="bg-white p-5 shadow-md">
-                {nextGame ? (
-                  <div className="text-center">
-                    <p className="text-sm font-bold tabular-nums text-gray-800">{formatDate(nextGame.date)}</p>
-                    <div className="mt-3 flex items-center justify-center gap-3 text-sm font-bold text-blue-950">
-                      <span>{TEAM.name}</span>
-                      <span className="text-xs text-gray-400">VS</span>
-                      <span>{nextGame.opponent}</span>
-                    </div>
-                    {nextGame.venue && <p className="mt-2 text-xs text-gray-500">@ {nextGame.venue}</p>}
-                  </div>
-                ) : (
-                  <p className="py-4 text-center text-sm text-gray-400">次の試合は未定です</p>
-                )}
-              </div>
-            </div>
-
             {/* 試合結果 */}
             <div>
               <p className="mb-3 text-center text-xs font-semibold tracking-[0.25em] text-white/90">試合結果</p>
@@ -174,7 +154,9 @@ export default async function TopPage() {
                 ) : (
                   recentResults.map(g => (
                     <Link key={g.id} href={`/games/${g.id}`} className="block p-4 text-center transition-colors hover:bg-blue-50">
-                      <p className="text-xs tabular-nums text-gray-500">{formatDate(g.date)}</p>
+                      <p className="text-xs tabular-nums text-gray-500">
+                        {formatDate(g.date)}{g.venue && `　@ ${g.venue}`}
+                      </p>
                       <div className="mt-1.5 flex items-center justify-center gap-3 text-sm font-bold text-blue-950">
                         <span>{TEAM.name}</span>
                         <span className="tabular-nums text-base">
@@ -183,6 +165,29 @@ export default async function TopPage() {
                         <span className="max-w-28 truncate">{g.opponent}</span>
                       </div>
                     </Link>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* 今後のスケジュール */}
+            <div>
+              <p className="mb-3 text-center text-xs font-semibold tracking-[0.25em] text-white/90">今後のスケジュール</p>
+              <div className="divide-y divide-gray-100 bg-white shadow-md">
+                {upcomingGames.length === 0 ? (
+                  <p className="py-9 text-center text-sm text-gray-400">次の試合は未定です</p>
+                ) : (
+                  upcomingGames.map(g => (
+                    <div key={g.id} className="p-4 text-center">
+                      <p className="text-xs tabular-nums text-gray-500">
+                        {formatDate(g.date)}{g.venue && `　@ ${g.venue}`}
+                      </p>
+                      <div className="mt-1.5 flex items-center justify-center gap-3 text-sm font-bold text-blue-950">
+                        <span>{TEAM.name}</span>
+                        <span className="text-xs text-gray-400">VS</span>
+                        <span className="max-w-28 truncate">{g.opponent}</span>
+                      </div>
+                    </div>
                   ))
                 )}
               </div>
