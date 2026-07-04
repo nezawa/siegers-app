@@ -164,7 +164,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
                   <th className={`${thCls} w-px text-left`}>種別</th>
                   <th className={`${thCls} text-left`}>対戦チーム</th>
                   <th className={`${thCls} w-px text-right`}>スコア</th>
-                  <th className={`${thCls} w-px text-right`}>勝敗</th>
+                  <th className={`${thCls} w-px text-center`}>勝敗</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
