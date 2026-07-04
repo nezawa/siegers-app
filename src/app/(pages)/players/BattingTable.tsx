@@ -81,7 +81,7 @@ export default function BattingTable({ rows }: Props) {
       })
     : rows
 
-  const thData = 'px-2.5 py-2 align-bottom font-semibold text-white select-none sticky top-0 z-20 bg-band cursor-pointer hover:bg-band/80 transition-colors'
+  const thData = 'px-2.5 py-2 align-bottom font-semibold text-white select-none sticky top-0 z-20 bg-band cursor-pointer hover:bg-[#5e90bc] transition-colors'
   const tdCls = 'px-2.5 py-3 text-center text-sm tabular-nums'
   const arrow = (dir: 'desc' | 'asc' | null) => (dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : '')
 
@@ -92,7 +92,7 @@ export default function BattingTable({ rows }: Props) {
           <tr>
             <th
               onClick={() => setSort(nextSort(sort, '#'))}
-              className={`px-2 py-2 font-semibold text-white text-left whitespace-nowrap select-none sticky top-0 left-0 z-30 bg-band cursor-pointer hover:bg-band/80 transition-colors ${sort?.col === '#' ? 'text-amber-300' : ''}`}
+              className={`px-2 py-2 font-semibold text-white text-left whitespace-nowrap select-none sticky top-0 left-0 z-30 bg-band cursor-pointer hover:bg-[#5e90bc] transition-colors ${sort?.col === '#' ? 'text-amber-300' : ''}`}
             >
               背番号
               <span className="inline-block w-3 text-[10px]">{sort?.col === '#' ? arrow(sort.dir) : ''}</span>

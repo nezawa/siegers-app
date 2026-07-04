@@ -11,8 +11,10 @@ export type Player = {
 export type Game = {
   id: string
   date: string
+  start_time: string | null
   opponent: string
   venue: string | null
+  tournament: string | null
   score_us: number
   score_them: number
   result: 'W' | 'L' | 'D' | null

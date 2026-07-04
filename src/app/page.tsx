@@ -32,7 +32,8 @@ export default async function TopPage() {
   const games = await fetchAllRows((from, to) =>
     supabase
       .from('games')
-      .select('id, date, opponent, venue, score_us, score_them, result')
+      // SQL 未適用の環境でも動くよう、列挙ではなく * で取得（start_time / tournament 追加後も追従）
+      .select('*')
       .order('date', { ascending: false })
       .order('id')
       .range(from, to)
@@ -175,7 +176,7 @@ export default async function TopPage() {
                   upcomingGames.map(g => (
                     <div key={g.id} className="p-4 text-center">
                       <p className="text-xs tabular-nums text-gray-500">
-                        {formatDate(g.date)}{g.venue && `　@ ${g.venue}`}
+                        {formatDate(g.date)}{g.start_time && ` ${g.start_time.slice(0, 5)}〜`}{g.venue && `　@ ${g.venue}`}
                       </p>
                       <div className="mt-1.5 flex items-center justify-center gap-3 text-sm font-bold text-blue-950">
                         <span>{TEAM.name}</span>

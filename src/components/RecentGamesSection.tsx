@@ -1,23 +1,44 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { Game } from '@/types'
 
-function ResultBadge({ result }: { result: Game['result'] }) {
-  if (result === 'W') return <span className="inline-flex w-9 justify-center rounded-md bg-red-600 py-1 text-xs font-bold text-white shadow-sm">勝</span>
-  if (result === 'L') return <span className="inline-flex w-9 justify-center rounded-md bg-blue-600 py-1 text-xs font-bold text-white shadow-sm">負</span>
-  if (result === 'D') return <span className="inline-flex w-9 justify-center rounded-md bg-gray-500 py-1 text-xs font-bold text-white shadow-sm">分</span>
-  return null
+const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  return {
+    // ゼロ埋めで桁数を固定し、後ろに続く（曜日）の位置が縦に揃うようにする
+    label: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`,
+    dow: DOW_JA[d.getDay()],
+    isSat: d.getDay() === 6,
+    isSun: d.getDay() === 0,
+  }
 }
 
-const ACCENT: Record<string, string> = {
-  W: 'bg-red-500',
-  L: 'bg-blue-500',
-  D: 'bg-gray-400',
+// Postgres の time 型（"13:00:00"）を "13:00" 表記にする
+function formatTime(time: string | null) {
+  return time ? time.slice(0, 5) : null
+}
+
+const GAME_TYPE_BADGE: Record<string, { label: string; cls: string }> = {
+  official: { label: '公式戦', cls: 'bg-emerald-600' },
+  practice: { label: '練習試合', cls: 'bg-sky-500' },
+  other: { label: 'その他', cls: 'bg-gray-500' },
+}
+
+function ResultBadge({ result }: { result: Game['result'] }) {
+  const base = 'inline-flex w-16 justify-center rounded-md py-1 text-xs font-bold text-white'
+  if (result === 'W') return <span className={`${base} bg-red-600`}>勝ち</span>
+  if (result === 'L') return <span className={`${base} bg-blue-600`}>負け</span>
+  if (result === 'D') return <span className={`${base} bg-gray-500`}>引分け</span>
+  return <span className={`${base} bg-gray-300 text-gray-600`}>-</span>
 }
 
 export default function RecentGamesSection({ games }: { games: Game[] }) {
+  const router = useRouter()
+
   const years = useMemo(() => {
     const set = new Set(games.map(g => g.date.slice(0, 4)))
     return Array.from(set).sort((a, b) => Number(b) - Number(a))
@@ -44,57 +65,150 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
     setPage(1)
   }
 
+  const thCls = 'px-4 py-3 text-xs font-semibold text-white whitespace-nowrap'
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h2 className="flex items-center gap-2.5 text-lg font-bold text-gray-900">
             <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
-            最近の試合
+            試合結果
           </h2>
-          <select
-            value={selectedYear}
-            onChange={e => handleYearChange(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-          >
-            <option value="all">全年度</option>
-            {years.map(year => (
-              <option key={year} value={year}>{year}年</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedYear}
+              onChange={e => handleYearChange(e.target.value)}
+              aria-label="年度で絞り込む"
+              className="cursor-pointer appearance-none rounded-full border border-gray-200 bg-white py-1.5 pl-4 pr-9 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            >
+              <option value="all">全年度</option>
+              {years.map(year => (
+                <option key={year} value={year}>{year}年</option>
+              ))}
+            </select>
+            <svg
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
       {pagedGames.length === 0 ? (
         <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">試合データがありません</div>
       ) : (
         <>
-          <div className="space-y-3">
-            {pagedGames.map(game => (
-              <Link
-                key={game.id}
-                href={`/games/${game.id}`}
-                className="group flex items-stretch gap-3 overflow-hidden rounded-2xl bg-white px-4 sm:px-5 py-3.5 sm:py-4 shadow-sm ring-1 ring-gray-900/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-blue-900/15"
-              >
-                <span className={`w-1 shrink-0 self-stretch rounded-full ${ACCENT[game.result ?? ''] ?? 'bg-gray-200'}`} />
-                <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <ResultBadge result={game.result} />
+          {/* モバイル: 2段組のコンパクト表示 */}
+          <div className="sm:hidden overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+            <div className="flex items-center justify-between bg-band px-4 py-2.5 text-xs font-semibold text-white">
+              <span>試合日・対戦チーム</span>
+              <span>スコア・勝敗</span>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {pagedGames.map(game => {
+                const d = formatDate(game.date)
+                const badge = game.game_type ? GAME_TYPE_BADGE[game.game_type] : null
+                return (
+                  <div
+                    key={game.id}
+                    onClick={() => router.push(`/games/${game.id}`)}
+                    className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3.5 transition-colors active:bg-blue-50"
+                  >
                     <div className="min-w-0">
-                      <div className="truncate font-bold text-gray-900">vs {game.opponent}</div>
-                      <div className="truncate text-xs sm:text-sm text-gray-400">{game.date}{game.venue && `・${game.venue}`}</div>
+                      <p className="font-bold tabular-nums text-gray-900">
+                        {d.label}
+                        <span className={`ml-1 text-xs ${d.isSun ? 'text-red-500' : d.isSat ? 'text-blue-500' : 'text-gray-400'}`}>
+                          （{d.dow}）
+                        </span>
+                        {formatTime(game.start_time) && (
+                          <span className="ml-1 text-xs font-medium text-gray-500">{formatTime(game.start_time)}〜</span>
+                        )}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        {badge && (
+                          <span className={`inline-flex shrink-0 rounded px-2 py-0.5 text-xs font-bold text-white ${badge.cls}`}>
+                            {badge.label}
+                          </span>
+                        )}
+                        <span className="truncate font-bold text-gray-900">{game.opponent}</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <div className="text-center">
+                        <p className="text-lg font-extrabold tabular-nums text-blue-950">
+                          {game.result ? `${game.score_us} - ${game.score_them}` : '-'}
+                        </p>
+                        <div className="mt-1">
+                          <ResultBadge result={game.result} />
+                        </div>
+                      </div>
+                      <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <div className="text-xl sm:text-2xl font-extrabold tabular-nums text-blue-950">
-                      {game.score_us}<span className="mx-1 text-gray-300">-</span>{game.score_them}
-                    </div>
-                    <svg className="h-4 w-4 text-gray-300 transition-all group-hover:translate-x-0.5 group-hover:text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                )
+              })}
+            </div>
+          </div>
+
+          {/* PC: テーブル表示 */}
+          <div className="hidden sm:block overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-band">
+                <tr>
+                  <th className={`${thCls} w-px text-left`}>試合日</th>
+                  <th className={`${thCls} w-px text-left`}>開始時間</th>
+                  <th className={`${thCls} w-px text-left`}>種別</th>
+                  <th className={`${thCls} text-left`}>対戦チーム</th>
+                  <th className={`${thCls} w-px text-right`}>スコア</th>
+                  <th className={`${thCls} w-px text-right`}>勝敗</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {pagedGames.map(game => {
+                  const d = formatDate(game.date)
+                  const badge = game.game_type ? GAME_TYPE_BADGE[game.game_type] : null
+                  return (
+                    <tr
+                      key={game.id}
+                      onClick={() => router.push(`/games/${game.id}`)}
+                      className="cursor-pointer odd:bg-white even:bg-slate-50/70 hover:bg-blue-50 transition-colors"
+                    >
+                      <td className="px-4 py-4 whitespace-nowrap font-bold tabular-nums text-gray-800">
+                        {d.label}
+                        <span className={`text-xs ${d.isSun ? 'text-red-500' : d.isSat ? 'text-blue-500' : 'text-gray-400'}`}>
+                          （{d.dow}）
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-left whitespace-nowrap tabular-nums text-gray-600">
+                        {formatTime(game.start_time) ?? <span className="text-gray-300">-</span>}
+                      </td>
+                      <td className="px-4 py-4 text-left whitespace-nowrap">
+                        {badge ? (
+                          <span className={`inline-flex rounded px-2 py-0.5 text-xs font-bold text-white ${badge.cls}`}>
+                            {badge.label}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap font-bold text-gray-900">
+                        {game.opponent}
+                      </td>
+                      <td className="px-4 py-4 text-right whitespace-nowrap text-base font-extrabold tabular-nums text-blue-950">
+                        {game.result ? `${game.score_us} - ${game.score_them}` : '-'}
+                      </td>
+                      <td className="px-4 py-4 text-right whitespace-nowrap">
+                        <ResultBadge result={game.result} />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
           {totalPages > 1 && (
             <div className="mt-5 flex items-center justify-center gap-1.5">

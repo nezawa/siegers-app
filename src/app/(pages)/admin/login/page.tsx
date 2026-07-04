@@ -37,9 +37,7 @@ export default function LoginPage() {
     <div className="max-w-sm mx-auto mt-14">
       <div className="overflow-hidden rounded-3xl bg-white shadow-lg shadow-blue-950/5 ring-1 ring-gray-900/5">
         <div className="bg-band px-8 py-6 text-center text-white">
-          <span className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/25 text-xl">⚾</span>
           <h1 className="text-lg font-bold">管理者ログイン</h1>
-          <p className="mt-0.5 text-xs text-white/80">SIEGERS ADMIN</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4 p-8">
           <div>
