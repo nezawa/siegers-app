@@ -4,7 +4,7 @@ import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
 import TeamTable from './TeamTable'
-import DateRangeFilter from './DateRangeFilter'
+import FilterPanel from './FilterPanel'
 
 function fmt(numerator: number, denominator: number, digits = 3): string {
   if (denominator === 0) return '-'
@@ -44,13 +44,15 @@ function outsToIp(outs: number): string {
 export default async function PlayersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; year?: string; from?: string; to?: string; gtype?: string; q?: string }>
+  searchParams: Promise<{ tab?: string; year?: string; from?: string; to?: string; gtype?: string; q?: string; tournament?: string; opponent?: string }>
 }) {
-  const { tab, year, from, to, gtype, q } = await searchParams
+  const { tab, year, from, to, gtype, q, tournament, opponent } = await searchParams
   const showPitching = tab === 'pitching'
   const showTeam = tab === 'team'
   const hasRange = Boolean(from || to)
   const gtypeFilter = gtype === 'official' || gtype === 'practice' ? gtype : null
+  const tournamentFilter = tournament || null
+  const opponentFilter = opponent || null
   const qualifiedOnly = q === '1'
 
   // 期間指定（from/to）が優先、なければ年度フィルター
@@ -69,9 +71,9 @@ export default async function PlayersPage({
 
   const [{ data: players }, allBStats, allPStats, allGames, { data: settings }] = await Promise.all([
     supabase.from('players').select('*').order('number'),
-    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date, game_type)').order('id').range(from, to)),
-    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date, game_type)').order('id').range(from, to)),
-    fetchAllRows((from, to) => supabase.from('games').select('id, date, game_type, score_us, score_them, result').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('games').select('id, date, game_type, tournament, opponent, score_us, score_them, result').order('id').range(from, to)),
     supabase.from('settings').select('qualified_pa, qualified_ip').eq('id', 1).single(),
   ])
 
@@ -87,11 +89,23 @@ export default async function PlayersPage({
   const bStats = allBStats.filter(s => matchesPeriod((s.games as { date?: string } | null)?.date))
   const pStats = allPStats.filter(s => matchesPeriod((s.games as { date?: string } | null)?.date))
 
-  // フィルター（期間＋試合種別）適用後の試合数と規定値の閾値
+  // 試合の属性（種別・大会名・対戦相手）による絞り込み
+  type GameAttrs = { game_type?: string | null; tournament?: string | null; opponent?: string | null } | null
+  const matchesGameAttrs = (g: GameAttrs): boolean =>
+    (!gtypeFilter || g?.game_type === gtypeFilter) &&
+    (!tournamentFilter || g?.tournament === tournamentFilter) &&
+    (!opponentFilter || g?.opponent === opponentFilter)
+  const attrFilterActive = Boolean(gtypeFilter || tournamentFilter || opponentFilter)
+
+  // 絞り込みの選択肢（実際に試合があるものだけ）
+  const tournaments = [...new Set(allGames.map(g => g.tournament).filter(Boolean))].sort() as string[]
+  const opponents = [...new Set(allGames.map(g => g.opponent).filter(Boolean))].sort() as string[]
+
+  // フィルター（期間＋試合属性）適用後の試合数と規定値の閾値
   const filteredGames = allGames.filter(g => matchesPeriod(g.date))
-  type GameRow = { id: string; date: string; game_type?: string | null }
-  const activeGames = gtypeFilter
-    ? (filteredGames as GameRow[]).filter(g => g.game_type === gtypeFilter)
+  type GameRow = { id: string; date: string; game_type?: string | null; tournament?: string | null; opponent?: string | null }
+  const activeGames = attrFilterActive
+    ? (filteredGames as GameRow[]).filter(g => matchesGameAttrs(g))
     : filteredGames
   const qualifiedPaRate = settings?.qualified_pa ?? 3.1
   const qualifiedPaThreshold = activeGames.length * qualifiedPaRate
@@ -137,12 +151,11 @@ export default async function PlayersPage({
     }
   })
 
-  type BStatWithGameType = { date?: string; game_type?: string | null } | null
-  const bStatsActive = gtypeFilter
-    ? bStats.filter(s => (s.games as BStatWithGameType)?.game_type === gtypeFilter)
+  const bStatsActive = attrFilterActive
+    ? bStats.filter(s => matchesGameAttrs(s.games as GameAttrs))
     : bStats
   let battingRows = buildBattingRows(bStatsActive)
-  if (gtypeFilter) battingRows = battingRows.filter(r => r.pa > 0)
+  if (attrFilterActive) battingRows = battingRows.filter(r => r.pa > 0)
   if (qualifiedOnly) battingRows = battingRows.filter(r => r.pa >= qualifiedPaThreshold)
 
   // 投球回の規定値（アウト換算）
@@ -185,9 +198,8 @@ export default async function PlayersPage({
     }).filter(r => r.player)
   }
 
-  type PStatWithGameType = { date?: string; game_type?: string | null } | null
-  const pStatsActive = gtypeFilter
-    ? pStats.filter(s => (s.games as PStatWithGameType)?.game_type === gtypeFilter)
+  const pStatsActive = attrFilterActive
+    ? pStats.filter(s => matchesGameAttrs(s.games as GameAttrs))
     : pStats
   let pitchingRows = buildPitchingRows(pStatsActive)
   if (qualifiedOnly) pitchingRows = pitchingRows.filter(r => r.totalOuts >= qualifiedIpThresholdOuts)
@@ -228,11 +240,11 @@ export default async function PlayersPage({
   }
 
   const teamData = buildTeamDataset(
-    playedGames.filter(g => matchesPeriod(g.date) && (!gtypeFilter || g.game_type === gtypeFilter))
+    playedGames.filter(g => matchesPeriod(g.date) && matchesGameAttrs(g))
   )
 
   // URLビルダー（tab・year・期間・絞り込みを組み合わせる）
-  const buildUrl = (params: { tab?: string; year?: string; from?: string; to?: string; gtype?: string | null; q?: string }) => {
+  const buildUrl = (params: { tab?: string; year?: string; from?: string; to?: string; gtype?: string | null; q?: string; tournament?: string | null; opponent?: string | null }) => {
     const p = new URLSearchParams()
     if (params.tab) p.set('tab', params.tab)
     if (params.year) p.set('year', params.year)
@@ -240,16 +252,11 @@ export default async function PlayersPage({
     if (params.to) p.set('to', params.to)
     if (params.gtype) p.set('gtype', params.gtype)
     if (params.q) p.set('q', params.q)
+    if (params.tournament) p.set('tournament', params.tournament)
+    if (params.opponent) p.set('opponent', params.opponent)
     const s = p.toString()
     return s ? `/players?${s}` : '/players'
   }
-
-  const chipCls = (active: boolean) =>
-    `px-3.5 py-1.5 rounded-full text-sm transition-all ${
-      active
-        ? 'bg-band text-white font-medium shadow'
-        : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50 hover:ring-gray-300'
-    }`
 
   const tabCls = (active: boolean) =>
     `block py-3 text-center text-sm sm:text-base font-bold transition-colors ${
@@ -262,55 +269,17 @@ export default async function PlayersPage({
     <div>
       <h1 className="mb-5 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
         <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
-        選手成績
+        成績
       </h1>
 
       {/* フィルター（タブの上に配置） */}
-      <div className="mb-5 space-y-3">
-        {/* 年度 */}
-        {years.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-500">年度：</span>
-            <Link href={buildUrl({ tab, gtype, q })} className={chipCls(!year && !hasRange)}>
-              通算
-            </Link>
-            {years.map(y => (
-              <Link key={y} href={buildUrl({ tab, year: y, gtype, q })} className={chipCls(year === y && !hasRange)}>
-                {y}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* 期間指定 */}
-        <DateRangeFilter tab={tab} from={from} to={to} gtype={gtype} q={q} />
-
-        {/* 規定・試合種別 */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {!showTeam && (
-            <>
-              <Link
-                href={buildUrl({ tab, year, from, to, gtype, q: qualifiedOnly ? undefined : '1' })}
-                className={chipCls(qualifiedOnly)}
-              >
-                {showPitching ? '規定投球回' : '規定打席'}
-              </Link>
-              <div className="h-4 w-px bg-gray-200" />
-            </>
-          )}
-          <Link
-            href={buildUrl({ tab, year, from, to, q, gtype: gtypeFilter === 'official' ? undefined : 'official' })}
-            className={chipCls(gtypeFilter === 'official')}
-          >
-            公式戦
-          </Link>
-          <Link
-            href={buildUrl({ tab, year, from, to, q, gtype: gtypeFilter === 'practice' ? undefined : 'practice' })}
-            className={chipCls(gtypeFilter === 'practice')}
-          >
-            練習試合
-          </Link>
-        </div>
+      <div className="mb-5 space-y-2">
+        <FilterPanel
+          tab={tab} year={year} from={from} to={to} gtype={gtype} q={q}
+          tournament={tournament} opponent={opponent}
+          years={years} tournaments={tournaments} opponents={opponents}
+          qualifiedLabel={showTeam ? undefined : showPitching ? '規定投球回のみ' : '規定打席のみ'}
+        />
         {qualifiedOnly && !showTeam && (
           <p className="pl-1 text-xs text-gray-400">
             {showPitching
@@ -322,13 +291,13 @@ export default async function PlayersPage({
 
       {/* タブ（成績表と一体のデザイン） */}
       <div className="grid grid-cols-3 gap-1 border-b-4 border-band">
-        <Link href={buildUrl({ tab: 'team', year, from, to, gtype, q })} className={tabCls(showTeam)}>
+        <Link href={buildUrl({ tab: 'team', year, from, to, gtype, q, tournament, opponent })} className={tabCls(showTeam)}>
           チーム成績
         </Link>
-        <Link href={buildUrl({ year, from, to, gtype, q })} className={tabCls(!showPitching && !showTeam)}>
+        <Link href={buildUrl({ year, from, to, gtype, q, tournament, opponent })} className={tabCls(!showPitching && !showTeam)}>
           打撃成績
         </Link>
-        <Link href={buildUrl({ tab: 'pitching', year, from, to, gtype, q })} className={tabCls(showPitching)}>
+        <Link href={buildUrl({ tab: 'pitching', year, from, to, gtype, q, tournament, opponent })} className={tabCls(showPitching)}>
           投手成績
         </Link>
       </div>
