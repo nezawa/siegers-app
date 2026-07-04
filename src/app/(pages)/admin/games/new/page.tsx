@@ -28,7 +28,7 @@ export default async function NewGamePage({
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="mb-6 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
-        <span className="inline-block h-6 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+        <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
         試合結果入力
       </h1>
 

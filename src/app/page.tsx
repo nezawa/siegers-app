@@ -45,34 +45,28 @@ export default async function TopPage() {
   const upcomingGames = games.filter(g => g.date >= today).slice(-3).reverse()
   const recentResults = games.filter(g => g.date < today).slice(0, 3)
 
-  // 年度別成績（直近3年）
-  const yearlyRecords = [...new Set(games.map(g => g.date.slice(0, 4)))]
-    .sort()
-    .reverse()
-    .slice(0, 3)
-    .map(year => {
-      const ys = games.filter(g => g.date.startsWith(year))
-      return {
-        year,
-        w: ys.filter(g => g.result === 'W').length,
-        l: ys.filter(g => g.result === 'L').length,
-        d: ys.filter(g => g.result === 'D').length,
-      }
-    })
+  // 今年の成績と通算成績
+  const currentYear = today.slice(0, 4)
+  const record = (list: typeof games) => ({
+    w: list.filter(g => g.result === 'W').length,
+    l: list.filter(g => g.result === 'L').length,
+    d: list.filter(g => g.result === 'D').length,
+  })
+  const seasonRecord = record(games.filter(g => g.date.startsWith(currentYear)))
+  const totalRecord = record(games)
 
   return (
     <div className="flex w-full flex-1 flex-col -mb-12 bg-white">
-      {/* ヒーロー（ぼかした写真の帯 + 写真ボックス） */}
-      <section className="relative overflow-hidden bg-band px-4 py-8 sm:py-12">
+      {/* ヒーロー（中央は写真そのまま、左右にはみ出た部分だけぼかし背景が見える） */}
+      <section className="relative overflow-hidden bg-band px-4">
         {/* 写真を拡大してぼかした背景（hero.jpg が無い場合は水色のまま） */}
         <div className="absolute inset-0 scale-110 bg-[url('/hero.jpg')] bg-cover bg-center blur-sm" />
-        <div className="absolute inset-0 bg-blue-950/40" />
+        <div className="absolute inset-0 bg-blue-950/1" />
         <div className="relative mx-auto aspect-[4/3] w-full max-w-4xl overflow-hidden shadow-xl shadow-blue-950/20 sm:aspect-[16/9]">
           {/* public/hero.jpg を置くと背景写真になる */}
-          <div className="absolute inset-0 bg-blue-950" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.4),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.15),transparent_50%)]" />
-          <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full border-[16px] border-white/5" />
-          <div className="absolute -bottom-20 left-1/3 h-64 w-64 rounded-full border-[20px] border-white/5" />
+          <div className="absolute inset-0 bg-band" />
+          <div className="absolute -left-10 -top-16 h-56 w-56 rounded-full border-[16px] border-white/10" />
+          <div className="absolute -bottom-20 left-1/3 h-64 w-64 rounded-full border-[20px] border-white/10" />
           <div className="absolute inset-0 bg-[url('/hero.jpg')] bg-cover bg-center" />
 
           {/* 電光掲示板の位置に合わせて配置（left/top の % で微調整できる） */}
@@ -95,14 +89,15 @@ export default async function TopPage() {
             {TEAM.about}
           </p>
 
-          {yearlyRecords.length > 0 && (
+          {games.length > 0 && (
             <div className="mt-8 space-y-1.5 text-sm sm:text-base text-white">
               <p className="text-xs tracking-widest text-white/70">これまでの成績</p>
-              {yearlyRecords.map(r => (
-                <p key={r.year} className="font-medium tabular-nums">
-                  {r.year}年　{r.w}勝 {r.l}敗 {r.d}分
-                </p>
-              ))}
+              <p className="font-medium tabular-nums">
+                {currentYear}年　{seasonRecord.w}勝 {seasonRecord.l}敗 {seasonRecord.d}分
+              </p>
+              <p className="font-medium tabular-nums">
+                通算　{totalRecord.w}勝 {totalRecord.l}敗 {totalRecord.d}分
+              </p>
             </div>
           )}
 
@@ -122,8 +117,8 @@ export default async function TopPage() {
           <Link href="/players" className="group mt-8 block">
             <div className="relative aspect-[5/2] w-full overflow-hidden shadow-lg shadow-blue-950/15 transition-transform duration-200 group-hover:-translate-y-1">
               {/* public/team.jpg を置くとチーム写真になる */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-blue-950" />
-              <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[12px] border-white/10" />
+              <div className="absolute inset-0 bg-band" />
+              <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full border-[12px] border-white/15" />
               <div className="absolute inset-0 bg-[url('/team.jpg')] bg-cover bg-center" />
               {/* ホバー時だけ暗くなり「選手成績を見る」が表示される */}
               <div className="absolute inset-0 flex items-center justify-center transition-colors duration-200 group-hover:bg-blue-950/40">

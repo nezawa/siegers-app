@@ -128,7 +128,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   }))
   const pitchingTotal = pStats.length > 0 ? computePitching(pStats) : null
 
-  const thCls = 'px-3 py-2.5 font-semibold text-blue-100 text-center whitespace-nowrap text-xs'
+  const thCls = 'px-3 py-2.5 font-semibold text-white text-center whitespace-nowrap text-xs'
   const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
   const totalRowCls = 'bg-blue-50 font-semibold border-t-2 border-blue-200'
 
@@ -141,16 +141,15 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       </div>
 
       {/* 選手ヘッダー */}
-      <div className="relative overflow-hidden rounded-3xl bg-blue-950 text-white shadow-xl shadow-blue-950/20">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.12),transparent_50%)]" />
+      <div className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
         <div className="relative flex items-center gap-5 p-6 sm:p-8">
           <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20 text-3xl sm:text-4xl font-extrabold italic tabular-nums text-amber-300">
             {player.number ?? '-'}
           </div>
           <div>
-            <p className="text-[10px] tracking-[0.3em] text-blue-300">PLAYER</p>
+            <p className="text-[10px] tracking-[0.3em] text-white/80">PLAYER</p>
             <h1 className="mt-0.5 text-2xl sm:text-3xl font-extrabold">{player.name}</h1>
-            {player.notes && <p className="mt-1 text-sm text-blue-200">{player.notes}</p>}
+            {player.notes && <p className="mt-1 text-sm text-white/85">{player.notes}</p>}
           </div>
         </div>
       </div>
@@ -159,14 +158,14 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       {battingTotal && (
         <div>
           <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
-            <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+            <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             打撃成績
           </h2>
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
             <table className="text-sm border-collapse">
-              <thead className="bg-blue-950">
+              <thead className="bg-band">
                 <tr>
-                  <th className="px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky left-0 bg-blue-950 text-xs">年度</th>
+                  <th className="px-4 py-2.5 font-semibold text-white text-left whitespace-nowrap sticky left-0 bg-band text-xs">年度</th>
                   {['試合数','打率','打席','打数','安打','本塁打','打点','得点','盗塁','出塁率','長打率','得点圏打率','OPS','二塁打','三塁打','塁打数','三振','四球','死球','犠打','犠飛','併殺打','敵失','失策','盗塁阻止'].map(h => (
                     <th key={h} className={thCls}>{h}</th>
                   ))}
@@ -241,14 +240,14 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       {pitchingTotal && (
         <div>
           <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
-            <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+            <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             投手成績
           </h2>
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
             <table className="text-sm border-collapse">
-              <thead className="bg-blue-950">
+              <thead className="bg-band">
                 <tr>
-                  <th className="px-4 py-2.5 font-semibold text-blue-100 text-left whitespace-nowrap sticky left-0 bg-blue-950 text-xs">年度</th>
+                  <th className="px-4 py-2.5 font-semibold text-white text-left whitespace-nowrap sticky left-0 bg-band text-xs">年度</th>
                   {['登板','勝','H','S','敗','勝率','防御率','投球回','投球数','失点','自責点','完投','完封','被安打','被本塁打','奪三振','与四球','与死球','ボーク','暴投'].map(h => (
                     <th key={h} className={thCls}>{h}</th>
                   ))}

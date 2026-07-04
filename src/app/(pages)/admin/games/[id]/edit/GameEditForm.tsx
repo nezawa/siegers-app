@@ -286,7 +286,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 試合情報 */}
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 className="mb-4 border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">試合情報</h2>
+        <h2 className="mb-4 border-l-4 border-band pl-2.5 font-bold text-gray-900">試合情報</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">日付 *</label>
@@ -355,7 +355,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
 
       {/* イニング別スコア */}
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 className="mb-1 border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">イニング別スコア</h2>
+        <h2 className="mb-1 border-l-4 border-band pl-2.5 font-bold text-gray-900">イニング別スコア</h2>
         <p className="mb-4 pl-3.5 text-xs text-gray-400">入力すると自チームスコア・相手スコア・結果に自動反映されます</p>
         <div className="overflow-x-auto">
           <table className="text-sm border-collapse w-full">
@@ -403,7 +403,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
       {/* 打撃成績 */}
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">打撃成績</h2>
+          <h2 className="border-l-4 border-band pl-2.5 font-bold text-gray-900">打撃成績</h2>
           <button type="button" onClick={() => setBattingRows([...battingRows, emptyBatting()])}
             className="text-sm text-blue-600 hover:underline">+ 行追加</button>
         </div>
@@ -456,7 +456,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
       {/* 投手成績 */}
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">投手成績</h2>
+          <h2 className="border-l-4 border-band pl-2.5 font-bold text-gray-900">投手成績</h2>
           <button type="button" onClick={() => setPitchingRows([...pitchingRows, emptyPitching()])}
             className="text-sm text-blue-600 hover:underline">+ 行追加</button>
         </div>
@@ -522,7 +522,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
       {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
 
       <button type="submit" disabled={loading}
-        className="w-full rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg disabled:opacity-50">
+        className="w-full rounded-xl bg-band py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
         {loading ? '保存中...' : '変更を保存'}
       </button>
     </form>

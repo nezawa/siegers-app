@@ -14,7 +14,7 @@ function ResultBadge({ result }: { result: Game['result'] }) {
 function SectionHeading({ children, href }: { children: React.ReactNode; href?: string }) {
   return (
     <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
-      <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+      <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
       {href ? (
         <Link href={href} className="group inline-flex items-center gap-1 transition-colors hover:text-blue-700">
           {children}
@@ -43,21 +43,20 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
   const battingData = batting ?? []
   const pitchingData = pitching ?? []
 
-  const thCls = 'px-1 sm:px-2 py-3 font-semibold text-blue-100 text-center whitespace-nowrap text-xs'
+  const thCls = 'px-1 sm:px-2 py-3 font-semibold text-white text-center whitespace-nowrap text-xs'
   const tdCls = 'px-1 sm:px-2 py-3 text-center'
   const rowCls = 'odd:bg-white even:bg-slate-50/70 hover:bg-blue-50/70 transition-colors'
 
   return (
     <div className="space-y-8">
       {/* スコアボード */}
-      <div className="relative overflow-hidden rounded-3xl bg-blue-950 text-white shadow-xl shadow-blue-950/20">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.12),transparent_50%)]" />
+      <div className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
         <div className="relative p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-            <p className="text-sm text-blue-300">
+            <p className="text-sm text-white/80">
               {game.date}{game.venue && `・${game.venue}`}
               {game.game_type && (
-                <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-blue-200">
+                <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/85">
                   {({ official: '公式戦', practice: '練習試合', other: 'その他' } as Record<string, string>)[game.game_type]}
                 </span>
               )}
@@ -81,14 +80,14 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
             </div>
             <div className="text-4xl sm:text-6xl font-extrabold tabular-nums">
               {game.score_us}
-              <span className="mx-2 sm:mx-4 text-2xl sm:text-4xl text-blue-400/60">-</span>
+              <span className="mx-2 sm:mx-4 text-2xl sm:text-4xl text-white/60">-</span>
               {game.score_them}
             </div>
             <div className="justify-self-start text-left">
               <p className="text-sm sm:text-lg font-bold">{game.opponent}</p>
             </div>
           </div>
-          {game.notes && <p className="mt-6 border-t border-white/10 pt-4 text-sm text-blue-200">{game.notes}</p>}
+          {game.notes && <p className="mt-6 border-t border-white/10 pt-4 text-sm text-white/85">{game.notes}</p>}
         </div>
       </div>
 
@@ -137,11 +136,11 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         return (
           <div className="mx-auto w-fit max-w-full overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             <table className="border-collapse text-sm sm:text-base">
-              <thead className="bg-blue-950 text-white">
+              <thead className="bg-band text-white">
                 <tr className="text-center">
-                  <th className="px-4 py-2.5 sm:px-6 sm:py-4 text-left text-xs sm:text-sm font-semibold text-blue-100"></th>
+                  <th className="px-4 py-2.5 sm:px-6 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white"></th>
                   {innings.map(i => (
-                    <th key={i} className="w-8 px-2 py-2.5 sm:w-12 sm:px-3 sm:py-4 text-xs sm:text-sm font-semibold text-blue-100">{i + 1}</th>
+                    <th key={i} className="w-8 px-2 py-2.5 sm:w-12 sm:px-3 sm:py-4 text-xs sm:text-sm font-semibold text-white">{i + 1}</th>
                   ))}
                   <th className="px-3 py-2.5 sm:px-5 sm:py-4 text-xs sm:text-sm font-bold text-amber-300">R</th>
                 </tr>
@@ -169,7 +168,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
           <SectionHeading href="/players">打撃成績</SectionHeading>
           <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             <table className="border-collapse text-sm">
-              <thead className="bg-blue-950">
+              <thead className="bg-band">
                 <tr>
                   {['打順', '選手', '打席', '打数', '安打', '本塁打', '打点', '得点', '盗塁', '二塁打', '三塁打', '得点圏打数', '得点圏安打', '三振', '四球', '死球', '犠打', '犠飛', '併殺打', '敵失', '失策', '盗塁阻止'].map(h => (
                     <th key={h} className={thCls}>{h}</th>
@@ -214,7 +213,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
           <SectionHeading href="/players?tab=pitching">投手成績</SectionHeading>
           <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             <table className="border-collapse text-sm">
-              <thead className="bg-blue-950">
+              <thead className="bg-band">
                 <tr>
                   {['選手', '勝', 'H', 'S', '敗', '投球回', '投球数', '失点', '自責点', '完投', '完封', '被安打', '被本塁打', '奪三振', '与四球', '与死球', 'ボーク', '暴投'].map(h => (
                     <th key={h} className={`${thCls} first:px-1.5 sm:first:px-3 first:text-left`}>{h}</th>

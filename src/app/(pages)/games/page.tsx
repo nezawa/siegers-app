@@ -22,13 +22,12 @@ export default async function GamesPage() {
   return (
     <div className="space-y-10">
       <h1 className="mb-0 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
-        <span className="inline-block h-6 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+        <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
         試合結果
       </h1>
 
       {/* 通算成績 */}
-      <section className="relative overflow-hidden rounded-3xl bg-blue-950 text-white shadow-xl shadow-blue-950/20">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.4),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(251,191,36,0.18),transparent_50%)]" />
+      <section className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
         <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[18px] border-white/5" />
         <div className="absolute -bottom-28 -left-12 h-72 w-72 rounded-full border-[22px] border-white/5" />
         <div className="relative px-6 py-8 sm:px-10 sm:py-10 text-center">
@@ -41,14 +40,14 @@ export default async function GamesPage() {
                 className="rounded-2xl bg-white/10 px-4 py-5 ring-1 ring-white/15 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1"
               >
                 <div className={`text-4xl sm:text-5xl font-extrabold tabular-nums ${r.color}`}>{r.value}</div>
-                <div className="mt-1.5 text-xs sm:text-sm text-blue-200">{r.label}</div>
+                <div className="mt-1.5 text-xs sm:text-sm text-white/85">{r.label}</div>
               </div>
             ))}
           </div>
 
           {winPct !== null && (
             <div className="mx-auto mt-7 max-w-md">
-              <div className="mb-2 flex items-center justify-between text-xs text-blue-200">
+              <div className="mb-2 flex items-center justify-between text-xs text-white/85">
                 <span className="tracking-widest">勝率</span>
                 <span className="text-base font-bold tabular-nums text-amber-300">
                   {winPct.toFixed(3).replace(/^0/, '')}
