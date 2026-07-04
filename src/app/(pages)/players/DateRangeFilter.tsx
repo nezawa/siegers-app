@@ -7,10 +7,14 @@ export default function DateRangeFilter({
   tab,
   from,
   to,
+  gtype,
+  q,
 }: {
   tab?: string
   from?: string
   to?: string
+  gtype?: string
+  q?: string
 }) {
   const router = useRouter()
   const [fromDate, setFromDate] = useState(from ?? '')
@@ -21,6 +25,8 @@ export default function DateRangeFilter({
     if (tab) p.set('tab', tab)
     if (params.from) p.set('from', params.from)
     if (params.to) p.set('to', params.to)
+    if (gtype) p.set('gtype', gtype)
+    if (q) p.set('q', q)
     const s = p.toString()
     return s ? `/players?${s}` : '/players'
   }
@@ -61,7 +67,7 @@ export default function DateRangeFilter({
       />
       <button
         onClick={apply}
-        className="rounded-full bg-blue-950 px-3.5 py-1.5 text-sm font-medium text-white shadow transition-colors hover:bg-blue-900"
+        className="rounded-full bg-band px-3.5 py-1.5 text-sm font-medium text-white shadow transition-colors hover:bg-band/80"
       >
         適用
       </button>

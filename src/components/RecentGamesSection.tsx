@@ -49,7 +49,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h2 className="flex items-center gap-2.5 text-lg font-bold text-gray-900">
-            <span className="inline-block h-5 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+            <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             最近の試合
           </h2>
           <select
@@ -111,7 +111,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
                   onClick={() => setPage(p)}
                   className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
                     p === page
-                      ? 'bg-blue-950 text-white shadow'
+                      ? 'bg-band text-white shadow'
                       : 'text-gray-600 hover:bg-white hover:shadow-sm'
                   }`}
                 >

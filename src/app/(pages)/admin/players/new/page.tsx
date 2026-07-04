@@ -88,7 +88,7 @@ export default function NewPlayerPage() {
           </label>
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 ring-1 ring-red-200">{error}</p>}
           <button type="submit" disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 py-2.5 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg disabled:opacity-50">
+            className="w-full rounded-xl bg-band py-2.5 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
             {loading ? '保存中...' : '登録する'}
           </button>
         </form>

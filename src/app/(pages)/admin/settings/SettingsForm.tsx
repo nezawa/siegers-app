@@ -50,7 +50,7 @@ export default function SettingsForm({ qualifiedIpRate, qualifiedPaRate }: Props
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <h2 className="mb-1 border-l-4 border-blue-900 pl-2.5 font-bold text-gray-900">成績規定値</h2>
+        <h2 className="mb-1 border-l-4 border-band pl-2.5 font-bold text-gray-900">成績規定値</h2>
         <p className="mb-5 pl-3.5 text-xs text-gray-400">規定値 = 試合数 × 倍率で計算されます</p>
         <div className="space-y-4">
           <div>
@@ -84,7 +84,7 @@ export default function SettingsForm({ qualifiedIpRate, qualifiedPaRate }: Props
       {saved && <p className="text-sm text-green-600 bg-green-50 px-4 py-3 rounded-lg">保存しました</p>}
 
       <button type="submit" disabled={loading}
-        className="w-full rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg disabled:opacity-50">
+        className="w-full rounded-xl bg-band py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
         {loading ? '保存中...' : '設定を保存'}
       </button>
     </form>

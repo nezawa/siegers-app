@@ -59,38 +59,13 @@ const COLS: ColDef[] = [
 
 type Props = {
   rows: PitchingRow[]
-  rowsOfficial: PitchingRow[]
-  rowsPractice: PitchingRow[]
-  qualifiedIpThresholdOuts: number
-  qualifiedIpThresholdOutsOfficial: number
-  qualifiedIpThresholdOutsPractice: number
 }
 
-function outsToIp(outs: number): string {
-  const inn = Math.floor(outs / 3)
-  const rem = outs % 3
-  return rem === 0 ? `${inn}` : `${inn}.${rem}`
-}
-
-export default function PitchingTable({ rows, rowsOfficial, rowsPractice, qualifiedIpThresholdOuts, qualifiedIpThresholdOutsOfficial, qualifiedIpThresholdOutsPractice }: Props) {
+export default function PitchingTable({ rows }: Props) {
   const [sort, setSort] = useState<SortState>(null)
-  const [qualifiedOnly, setQualifiedOnly] = useState(false)
-  const [gameTypeFilter, setGameTypeFilter] = useState<'official' | 'practice' | null>(null)
-
-  const activeRows = gameTypeFilter === 'official' ? rowsOfficial : gameTypeFilter === 'practice' ? rowsPractice : rows
-  const activeThresholdOuts = gameTypeFilter === 'official' ? qualifiedIpThresholdOutsOfficial : gameTypeFilter === 'practice' ? qualifiedIpThresholdOutsPractice : qualifiedIpThresholdOuts
-
-  const filtered = qualifiedOnly ? activeRows.filter(r => r.totalOuts >= activeThresholdOuts) : activeRows
-
-  const chipCls = (active: boolean) =>
-    `px-3.5 py-1.5 rounded-full text-sm transition-all ${
-      active
-        ? 'bg-blue-950 text-white font-medium shadow'
-        : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50 hover:ring-gray-300'
-    }`
 
   const sorted = sort
-    ? [...filtered].sort((a, b) => {
+    ? [...rows].sort((a, b) => {
         if (sort.col === '#') {
           const va = a.player?.number ?? -Infinity
           const vb = b.player?.number ?? -Infinity
@@ -101,44 +76,20 @@ export default function PitchingTable({ rows, rowsOfficial, rowsPractice, qualif
         const vb = toNum(col.getValue(b))
         return sort.dir === 'desc' ? vb - va : va - vb
       })
-    : filtered
+    : rows
 
-  const thData = 'px-2.5 py-2 align-bottom font-semibold text-blue-100 select-none sticky top-0 z-20 bg-blue-950 cursor-pointer hover:bg-blue-900 transition-colors'
+  const thData = 'px-2.5 py-2 align-bottom font-semibold text-white select-none sticky top-0 z-20 bg-band cursor-pointer hover:bg-band/80 transition-colors'
   const tdCls = 'px-2.5 py-3 text-center text-sm tabular-nums'
   const arrow = (dir: 'desc' | 'asc' | null) => (dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : '')
 
   return (
-    <div className="space-y-3">
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-2">
-        <button onClick={() => setQualifiedOnly(v => !v)} className={chipCls(qualifiedOnly)}>
-          規定投球回
-        </button>
-        <div className="h-4 w-px bg-gray-200" />
-        <button
-          onClick={() => setGameTypeFilter(f => f === 'official' ? null : 'official')}
-          className={chipCls(gameTypeFilter === 'official')}
-        >
-          公式戦
-        </button>
-        <button
-          onClick={() => setGameTypeFilter(f => f === 'practice' ? null : 'practice')}
-          className={chipCls(gameTypeFilter === 'practice')}
-        >
-          練習試合
-        </button>
-      </div>
-      {qualifiedOnly && (
-        <p className="text-xs text-gray-400 pl-1">{outsToIp(Math.ceil(activeThresholdOuts))}回以上</p>
-      )}
-    </div>
-    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-auto max-h-[calc(100vh-13rem)]">
-      <table className="text-sm border-collapse">
-        <thead className="bg-blue-950">
+    <div className="bg-white rounded-b-2xl shadow-sm ring-1 ring-gray-900/5 overflow-auto max-h-[calc(100vh-13rem)]">
+      <table className="w-full text-sm border-collapse">
+        <thead className="bg-band">
           <tr>
             <th
               onClick={() => setSort(nextSort(sort, '#'))}
-              className={`px-2 py-2 font-semibold text-blue-100 text-left whitespace-nowrap select-none sticky top-0 left-0 z-30 bg-blue-950 cursor-pointer hover:bg-blue-900 transition-colors ${sort?.col === '#' ? 'text-amber-300' : ''}`}
+              className={`px-2 py-2 font-semibold text-white text-left whitespace-nowrap select-none sticky top-0 left-0 z-30 bg-band cursor-pointer hover:bg-band/80 transition-colors ${sort?.col === '#' ? 'text-amber-300' : ''}`}
             >
               背番号
               <span className="inline-block w-3 text-[10px]">{sort?.col === '#' ? arrow(sort.dir) : ''}</span>
@@ -193,7 +144,9 @@ export default function PitchingTable({ rows, rowsOfficial, rowsPractice, qualif
           ))}
         </tbody>
       </table>
-    </div>
+      <p className="sticky left-0 border-t border-gray-100 px-3 py-2 text-xs text-gray-400">
+        ※ 左右にスクロールすると全ての項目を確認できます
+      </p>
     </div>
   )
 }

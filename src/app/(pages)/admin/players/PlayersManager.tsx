@@ -97,14 +97,14 @@ export default function PlayersManager({ players }: { players: Player[] }) {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="flex items-center gap-2.5 text-2xl font-bold text-gray-900">
-          <span className="inline-block h-6 w-1.5 rounded-full bg-gradient-to-b from-blue-700 to-blue-950" />
+          <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
           選手管理
         </h1>
         <div className="flex items-center gap-3">
           {editing ? (
             <>
               <button onClick={save} disabled={loading}
-                className="rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 disabled:opacity-50">
+                className="rounded-xl bg-band px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 disabled:opacity-50">
                 {loading ? '保存中...' : '保存'}
               </button>
               <button onClick={cancel} disabled={loading}
@@ -119,7 +119,7 @@ export default function PlayersManager({ players }: { players: Player[] }) {
             </button>
           )}
           <Link href="/admin/players/new"
-            className="rounded-xl bg-gradient-to-r from-blue-900 to-blue-950 px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:from-blue-800 hover:to-blue-900 hover:shadow-lg">
+            className="rounded-xl bg-band px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg">
             + 選手を追加
           </Link>
         </div>
@@ -136,12 +136,12 @@ export default function PlayersManager({ players }: { players: Player[] }) {
       ) : (
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
           <table className="w-full">
-            <thead className="bg-blue-950">
+            <thead className="bg-band">
               <tr>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-blue-100">背番号</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-blue-100">名前</th>
-                <th className="text-left px-6 py-3 text-xs font-semibold text-blue-100">備考</th>
-                <th className="text-center px-6 py-3 text-xs font-semibold text-blue-100">投手</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-white">背番号</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-white">名前</th>
+                <th className="text-left px-6 py-3 text-xs font-semibold text-white">備考</th>
+                <th className="text-center px-6 py-3 text-xs font-semibold text-white">投手</th>
                 <th className="px-6 py-3"></th>
               </tr>
             </thead>

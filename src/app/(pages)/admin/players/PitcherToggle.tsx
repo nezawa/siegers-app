@@ -32,7 +32,7 @@ export default function PitcherToggle({ id, isPitcher }: { id: string; isPitcher
       className={
         'rounded-full px-3 py-1 text-xs font-medium transition-all disabled:opacity-50 ' +
         (on
-          ? 'bg-blue-950 text-white shadow-sm hover:bg-blue-900'
+          ? 'bg-band text-white shadow-sm hover:bg-band/80'
           : 'bg-white text-gray-500 ring-1 ring-gray-300 hover:bg-gray-50 hover:ring-gray-400')
       }
     >

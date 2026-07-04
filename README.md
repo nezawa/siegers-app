@@ -24,6 +24,25 @@ npm run dev
 
 [http://localhost:3000](http://localhost:3000) をブラウザで開くと確認できます。
 
+### Supabase 側のセットアップ
+
+[supabase/](supabase/) ディレクトリの SQL を Supabase Dashboard → SQL Editor で実行してください。
+
+- `replace_game_stats.sql` — 試合成績を一括更新する関数。**未実行だと試合編集の保存が失敗します**
+- `rls_settings_policies.sql` — settings テーブルの RLS ポリシー（公開ページに規定値を反映するために必要）
+
+## 画像アセット
+
+[public/](public/) に以下のファイル名で画像を置くと、各所に反映されます（無い場合はプレースホルダー表示）。
+
+- `logo.png` — ヘッダーのロゴ（背景透過 PNG 推奨）
+- `hero.jpg` — トップページのメイン写真
+- `team.jpg` — トップページ「選手成績」カードの写真
+
+※ 拡張子は必ず**小文字**にすること（`hero.JPG` だと Vercel 上で 404 になる）。
+
+トップページのチーム紹介文・スローガンは [src/app/page.tsx](src/app/page.tsx) 冒頭の `TEAM` 定数で編集できます。
+
 ## 主なスクリプト
 
 - `npm run dev` — 開発サーバー起動
@@ -34,13 +53,14 @@ npm run dev
 ## ページ構成
 
 公開ページ:
-- `/` — チーム勝敗数、直近5試合
-- `/games` — 試合一覧
+- `/` — トップ（メイン写真・チーム紹介・年度別成績・試合結果/今後のスケジュール）
+- `/about` — 小雀シーガーズとは（準備中）
+- `/games` — チーム勝敗数と試合一覧（年度フィルター付き）
 - `/games/[id]` — 試合詳細（打撃・投手成績）。ログイン中は編集ボタンを表示
 - `/players` — 選手通算成績
 - `/players/[id]` — 選手個人の成績詳細
 
-管理者ページ（`middleware` で認証保護）:
+管理者ページ（`src/proxy.ts` で認証保護）:
 - `/admin/login` — メール＋パスワード認証
 - `/admin/games/new` — 試合結果の入力
 - `/admin/games/[id]/edit` — 試合結果の編集
