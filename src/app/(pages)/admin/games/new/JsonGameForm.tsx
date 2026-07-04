@@ -7,13 +7,16 @@ import type { Player } from '@/types'
 
 const EXAMPLE = `{
   "date": "2025-05-01",
+  "start_time": "09:00",       // 開始時間（"HH:MM" 形式。省略可）
   "opponent": "対戦相手名",
+  "tournament": "〇〇リーグ",     // 大会名（省略可）
+  "game_type": "official",     // "official"=公式戦 / "practice"=練習試合 / "other"=その他（省略可）
   "venue": "球場名",
-  "result": "W",
+  "result": "W",               // "W"=勝ち / "L"=負け / "D"=引き分け（イニング別スコアがあれば省略可）
   "score_us": 5,
   "score_them": 2,
   "notes": "",
-  "is_home": false,
+  "is_home": false,            // false=先攻 / true=後攻（省略時は先攻）
   "innings_us":   [0, 2, 0, 1, 0, 0, 2, 0, 0],
   "innings_them": [0, 0, 1, 0, 1, 0, 0, 0, 0],
   "batting": [
@@ -35,7 +38,10 @@ const EXAMPLE = `{
 
 type JsonInput = {
   date: string
+  start_time?: string
   opponent: string
+  tournament?: string
+  game_type?: 'official' | 'practice' | 'other'
   venue?: string
   result: 'W' | 'L' | 'D'
   score_us: number
@@ -46,6 +52,33 @@ type JsonInput = {
   innings_them?: (number | null)[]
   batting?: Record<string, unknown>[]
   pitching?: Record<string, unknown>[]
+}
+
+// 入力例のコメント（// 〜）を残したまま貼り付けても動くように、パース前に除去する。
+// 文字列リテラル内の "//"（URL など）はコメント扱いしない
+function stripLineComments(src: string): string {
+  let out = ''
+  let inString = false
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i]
+    if (inString) {
+      out += c
+      if (c === '\\' && i + 1 < src.length) {
+        out += src[++i]
+      } else if (c === '"') {
+        inString = false
+      }
+    } else if (c === '"') {
+      inString = true
+      out += c
+    } else if (c === '/' && src[i + 1] === '/') {
+      while (i < src.length && src[i] !== '\n') i++
+      out += '\n'
+    } else {
+      out += c
+    }
+  }
+  return out
 }
 
 function errorMessage(err: unknown): string {
@@ -75,6 +108,16 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
 
     if (!d.date || typeof d.date !== 'string') errs.push('date が必要です（例: "2025-05-01"）')
     if (!d.opponent || typeof d.opponent !== 'string') errs.push('opponent が必要です')
+
+    if (d.start_time != null && d.start_time !== '') {
+      if (typeof d.start_time !== 'string' || !/^\d{1,2}:\d{2}(:\d{2})?$/.test(d.start_time)) {
+        errs.push('start_time は "HH:MM" 形式です（例: "09:00"）')
+      }
+    }
+
+    if (d.game_type != null && d.game_type !== '' && !['official', 'practice', 'other'].includes(d.game_type as string)) {
+      errs.push('game_type は "official"（公式戦） / "practice"（練習試合） / "other" のいずれかです')
+    }
 
     // イニング別スコアがある場合、スコア・結果はその合計と統一する
     const sumInnings = (arr: unknown): number | null =>
@@ -146,7 +189,7 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
 
     let parsed: unknown
     try {
-      parsed = JSON.parse(json)
+      parsed = JSON.parse(stripLineComments(json))
     } catch {
       setErrors(['JSONの形式が正しくありません'])
       setLoading(false)
@@ -169,7 +212,10 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
         .from('games')
         .insert({
           date: input.date,
+          start_time: input.start_time || null,
           opponent: input.opponent,
+          tournament: input.tournament || null,
+          game_type: input.game_type || null,
           venue: input.venue || null,
           score_us: input.score_us,
           score_them: input.score_them,
@@ -224,6 +270,14 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
         if (error) throw error
       }
 
+      // 対戦相手・大会名をマスタへ自動登録（次回から候補に出す）。失敗しても保存処理は止めない
+      if (input.opponent) {
+        await supabase.from('opponents').upsert({ name: input.opponent }, { onConflict: 'name', ignoreDuplicates: true })
+      }
+      if (input.tournament) {
+        await supabase.from('tournaments').upsert({ name: input.tournament }, { onConflict: 'name', ignoreDuplicates: true })
+      }
+
       router.push(`/games/${game.id}`)
     } catch (err: unknown) {
       setErrors([`保存に失敗しました: ${errorMessage(err)}`])
@@ -241,6 +295,10 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
           スコアと結果はその合計から自動判定されます（矛盾する値が指定されているとエラーになります）。
           <code className="bg-gray-100 px-1 rounded">is_home</code> は後攻なら <code className="bg-gray-100 px-1 rounded">true</code>（省略時は先攻）。
           後攻の最終回裏が不要なら「×」、サヨナラ勝ちは「得点+x」で表示されます。
+          <code className="bg-gray-100 px-1 rounded">start_time</code>（開始時間 &quot;HH:MM&quot;）・
+          <code className="bg-gray-100 px-1 rounded">tournament</code>（大会名）・
+          <code className="bg-gray-100 px-1 rounded">game_type</code>（&quot;official&quot; / &quot;practice&quot; / &quot;other&quot;）は任意です。
+          <code className="bg-gray-100 px-1 rounded">{'//'}</code> 以降はコメントとして無視されるので、入力例をそのまま貼り付けても動きます。
         </p>
         <textarea
           value={json}
