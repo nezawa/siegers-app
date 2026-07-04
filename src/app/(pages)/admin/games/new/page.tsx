@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import Link from 'next/link'
 import GameForm from './GameForm'
 import JsonGameForm from './JsonGameForm'
@@ -11,12 +10,14 @@ export default async function NewGamePage({
 }) {
   const { mode } = await searchParams
   const supabase = await createClient()
-  const [{ data: players }, games] = await Promise.all([
+  const [{ data: players }, { data: opponentRows }, { data: tournamentRows }] = await Promise.all([
     supabase.from('players').select('*').order('number'),
-    fetchAllRows((from, to) => supabase.from('games').select('opponent').order('id').range(from, to)),
+    supabase.from('opponents').select('name').order('name'),
+    supabase.from('tournaments').select('name').order('name'),
   ])
   const playerList = players ?? []
-  const opponents = [...new Set(games.map(g => g.opponent).filter(Boolean))] as string[]
+  const opponents = (opponentRows ?? []).map(o => o.name) as string[]
+  const tournaments = (tournamentRows ?? []).map(t => t.name) as string[]
 
   const tabCls = (active: boolean) =>
     `px-6 py-2 rounded-lg text-sm transition-all ${
@@ -43,7 +44,7 @@ export default async function NewGamePage({
 
       {mode === 'json'
         ? <JsonGameForm players={playerList} />
-        : <GameForm players={playerList} opponents={opponents} />
+        : <GameForm players={playerList} opponents={opponents} tournaments={tournaments} />
       }
     </div>
   )

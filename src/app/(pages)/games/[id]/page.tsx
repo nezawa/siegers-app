@@ -54,10 +54,17 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         <div className="relative p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <p className="text-sm text-white/80">
-              {game.date}{game.venue && `・${game.venue}`}
+              {game.date}
+              {game.start_time && ` ${game.start_time.slice(0, 5)}〜`}
+              {game.venue && `・${game.venue}`}
               {game.game_type && (
                 <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/85">
                   {({ official: '公式戦', practice: '練習試合', other: 'その他' } as Record<string, string>)[game.game_type]}
+                </span>
+              )}
+              {game.tournament && (
+                <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/85">
+                  {game.tournament}
                 </span>
               )}
             </p>

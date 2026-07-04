@@ -100,13 +100,17 @@ function errorMessage(err: unknown): string {
   return '不明なエラー'
 }
 
-export default function GameForm({ players, opponents }: { players: Player[]; opponents: string[] }) {
+// 開始時間の選択肢（7:00〜20:00 の1時間刻み。それ以外は「その他」で自由入力）
+const TIME_OPTIONS = Array.from({ length: 14 }, (_, i) => `${String(7 + i).padStart(2, '0')}:00`)
+
+export default function GameForm({ players, opponents, tournaments }: { players: Player[]; opponents: string[]; tournaments: string[] }) {
   const router = useRouter()
   const pitchers = players.filter(p => p.is_pitcher)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [customStartTime, setCustomStartTime] = useState(false)
   const [gameInfo, setGameInfo] = useState({
-    date: '', opponent: '', venue: '',
+    date: '', start_time: '', opponent: '', venue: '', tournament: '',
     score_us: '' as number | '',
     score_them: '' as number | '',
     result: '' as 'W' | 'L' | 'D' | '',
@@ -167,8 +171,10 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
         .from('games')
         .insert({
           date: gameInfo.date,
+          start_time: gameInfo.start_time || null,
           opponent: gameInfo.opponent,
           venue: gameInfo.venue || null,
+          tournament: gameInfo.tournament || null,
           score_us: toNum(scoreUs),
           score_them: toNum(scoreThem),
           result: result || null,
@@ -219,6 +225,14 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
         if (e) throw e
       }
 
+      // 対戦相手・大会名をマスタへ自動登録（次回から候補に出す）。失敗しても保存処理は止めない
+      if (gameInfo.opponent) {
+        await supabase.from('opponents').upsert({ name: gameInfo.opponent }, { onConflict: 'name', ignoreDuplicates: true })
+      }
+      if (gameInfo.tournament) {
+        await supabase.from('tournaments').upsert({ name: gameInfo.tournament }, { onConflict: 'name', ignoreDuplicates: true })
+      }
+
       router.push(`/games/${game.id}`)
     } catch (err: unknown) {
       setError(`保存に失敗しました: ${errorMessage(err)}`)
@@ -241,6 +255,31 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
               onChange={e => setGameInfo({ ...gameInfo, date: e.target.value })} className={inputCls} />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">開始時間</label>
+            <select
+              value={customStartTime ? 'custom' : gameInfo.start_time}
+              onChange={e => {
+                if (e.target.value === 'custom') {
+                  setCustomStartTime(true)
+                  setGameInfo({ ...gameInfo, start_time: '' })
+                } else {
+                  setCustomStartTime(false)
+                  setGameInfo({ ...gameInfo, start_time: e.target.value })
+                }
+              }}
+              className={inputCls}
+            >
+              <option value="">未定</option>
+              {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              <option value="custom">その他</option>
+            </select>
+            {customStartTime && (
+              <input type="time" value={gameInfo.start_time}
+                onChange={e => setGameInfo({ ...gameInfo, start_time: e.target.value })}
+                className={`${inputCls} mt-2`} />
+            )}
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">対戦相手 *</label>
             <input type="text" required placeholder="〇〇チーム" value={gameInfo.opponent}
               onChange={e => setGameInfo({ ...gameInfo, opponent: e.target.value })}
@@ -250,9 +289,13 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
             </datalist>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">球場</label>
-            <input type="text" placeholder="〇〇球場" value={gameInfo.venue}
-              onChange={e => setGameInfo({ ...gameInfo, venue: e.target.value })} className={inputCls} />
+            <label className="block text-sm font-medium text-gray-700 mb-1">大会名</label>
+            <input type="text" placeholder="〇〇リーグ" value={gameInfo.tournament}
+              onChange={e => setGameInfo({ ...gameInfo, tournament: e.target.value })}
+              list="tournament-suggestions" className={inputCls} />
+            <datalist id="tournament-suggestions">
+              {tournaments.map(name => <option key={name} value={name} />)}
+            </datalist>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">試合種別</label>
@@ -263,6 +306,11 @@ export default function GameForm({ players, opponents }: { players: Player[]; op
               <option value="practice">練習試合</option>
               <option value="other">その他</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">球場</label>
+            <input type="text" placeholder="〇〇球場" value={gameInfo.venue}
+              onChange={e => setGameInfo({ ...gameInfo, venue: e.target.value })} className={inputCls} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">先攻 / 後攻</label>
