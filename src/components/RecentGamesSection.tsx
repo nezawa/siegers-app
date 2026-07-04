@@ -104,7 +104,8 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
           <div className="sm:hidden overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             <div className="flex items-center justify-between bg-band px-4 py-2.5 text-xs font-semibold text-white">
               <span>試合日・対戦チーム</span>
-              <span>スコア・勝敗</span>
+              {/* pr は行側の「>」アイコン幅 + 間隔ぶん。スコア・勝敗ブロックと中心を揃える */}
+              <span className="pr-[22px]">スコア・勝敗</span>
             </div>
             <div className="divide-y divide-gray-100">
               {pagedGames.map(game => {

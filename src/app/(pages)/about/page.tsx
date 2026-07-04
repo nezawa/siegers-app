@@ -6,7 +6,7 @@ export default function AboutPage() {
         小雀シーガーズとは
       </h1>
       <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">
-        コンテンツ準備中。快君に任せたいですね。
+        準備中。誰かに任せたいですね。
       </div>
     </div>
   )
