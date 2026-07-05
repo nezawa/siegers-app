@@ -11,7 +11,7 @@ Server Component では `server.ts`、Client Component では `client.ts` を使
 ## 書くときの規約(既存コードの流儀)
 
 - 複数テーブルを取得するページでは `Promise.all` で並列取得する
-  (例: `src/app/players/page.tsx`、`src/app/admin/games/[id]/edit/page.tsx`)
+  (例: `src/app/(pages)/players/page.tsx`、`src/app/(pages)/admin/games/[id]/edit/page.tsx`)
 - リレーションは JOIN 構文で1クエリにまとめる:
   `select('*, games(date, game_type)')` のように書く。ループ内での逐次取得(N+1)は書かない
 - 単一行の取得は `.eq(...).single()` を使う
