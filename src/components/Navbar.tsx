@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import NavClient from './NavClient'
 
@@ -11,8 +12,7 @@ export default async function Navbar() {
       {/* ロゴは左端、ナビは中央、管理系・ハンバーガーは右端に絶対配置 */}
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center">
         <Link href="/" className="group flex items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="小雀シーガーズ" className="h-10 w-auto" />
+          <Image src="/logo.png" alt="小雀シーガーズ" width={2828} height={1192} priority className="h-10 w-auto" />
         </Link>
         <NavClient isLoggedIn={!!user} />
       </div>

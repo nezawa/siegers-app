@@ -164,7 +164,7 @@ export default function MasterSection({ title, table, items }: Props) {
         ) : (
           <ul className="divide-y divide-gray-100">
             {items.map(item => (
-              <li key={item.id} className="flex items-center justify-between gap-3 px-5 py-3">
+              <li key={item.id} className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-gray-50">
                 {editing ? (
                   <input type="text" value={drafts[item.id] ?? ''}
                     onChange={e => setDrafts(d => ({ ...d, [item.id]: e.target.value }))}

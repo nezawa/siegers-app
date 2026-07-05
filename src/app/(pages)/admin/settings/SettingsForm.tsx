@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { errorMessage } from '@/lib/errorMessage'
 
 type Props = {
   qualifiedIpRate: number
@@ -31,15 +32,7 @@ export default function SettingsForm({ qualifiedIpRate, qualifiedPaRate }: Props
       if (err) throw err
       setSaved(true)
     } catch (err: unknown) {
-      if (err && typeof err === 'object') {
-        const e = err as { message?: string; details?: string; hint?: string; code?: string }
-        const parts = [e.message, e.details, e.hint, e.code && `(${e.code})`].filter(Boolean)
-        setError(parts.join(' / ') || '保存に失敗しました')
-      } else if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('保存に失敗しました')
-      }
+      setError(`保存に失敗しました: ${errorMessage(err)}`)
     } finally {
       setLoading(false)
     }
