@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
+import { errorMessage } from '@/lib/errorMessage'
 import type { Player } from '@/types'
 
 const EXAMPLE = `{
@@ -36,22 +38,75 @@ const EXAMPLE = `{
   ]
 }`
 
-type JsonInput = {
-  date: string
-  start_time?: string
-  opponent: string
-  tournament?: string
-  game_type?: 'official' | 'practice' | 'other'
-  venue?: string
-  result: 'W' | 'L' | 'D'
+// 個数系スタッツ（省略可・0以上の整数）
+const stat = z.number({ error: '0以上の整数で入力してください' }).int('整数で入力してください').min(0, '0以上で入力してください').optional()
+
+// 打撃行。定義外のキー（タイプミス）は「不明な項目」としてエラーにする
+const battingRowSchema = z.strictObject({
+  number: z.number({ error: 'number（背番号）が必要です' }),
+  batting_order: stat,
+  pa: stat, ab: stat, hits: stat, doubles: stat, triples: stat, hr: stat,
+  rbi: stat, runs: stat, sb: stat, k: stat, bb: stat, hbp: stat,
+  sac_bunt: stat, sac_fly: stat, gidp: stat, reach_on_error: stat,
+  errors: stat, cs: stat, risp_ab: stat, risp_hits: stat,
+})
+
+const pitchingRowSchema = z.strictObject({
+  number: z.number({ error: 'number（背番号）が必要です' }),
+  is_win: z.boolean().optional(), is_hold: z.boolean().optional(),
+  is_save: z.boolean().optional(), is_loss: z.boolean().optional(),
+  is_cg: z.boolean().optional(), is_sho: z.boolean().optional(),
+  ip: z.number({ error: '数値で入力してください（1/3回は .1、2/3回は .2）' }).min(0).optional(),
+  pitch_count: stat, runs: stat, er: stat,
+  hits_allowed: stat, hr_allowed: stat,
+  k: stat, bb: stat, hbp: stat, balk: stat, wp: stat,
+})
+
+const jsonGameSchema = z.strictObject({
+  date: z
+    .string({ error: 'date が必要です（例: "2025-05-01"）' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '"YYYY-MM-DD" 形式で入力してください（例: "2025-05-01"）'),
+  start_time: z
+    .string()
+    .regex(/^\d{1,2}:\d{2}(:\d{2})?$/, '"HH:MM" 形式で入力してください（例: "09:00"）')
+    .optional()
+    .or(z.literal('')),
+  opponent: z.string({ error: 'opponent が必要です' }).min(1, 'opponent が必要です'),
+  tournament: z.string().optional(),
+  game_type: z
+    .enum(['official', 'practice', 'other'], { error: '"official"（公式戦） / "practice"（練習試合） / "other" のいずれかです' })
+    .optional()
+    .or(z.literal('')),
+  venue: z.string().optional(),
+  result: z
+    .enum(['W', 'L', 'D'], { error: '"W" / "L" / "D" のいずれかです' })
+    .optional()
+    .or(z.literal('')),
+  score_us: z.number({ error: '数値で入力してください' }).int().min(0).optional(),
+  score_them: z.number({ error: '数値で入力してください' }).int().min(0).optional(),
+  notes: z.string().optional(),
+  is_home: z.boolean({ error: 'true（後攻）か false（先攻）で入力してください' }).optional(),
+  innings_us: z.array(z.number().int().min(0).nullable()).optional(),
+  innings_them: z.array(z.number().int().min(0).nullable()).optional(),
+  batting: z.array(battingRowSchema).optional(),
+  pitching: z.array(pitchingRowSchema).optional(),
+})
+
+type JsonInput = z.infer<typeof jsonGameSchema> & {
   score_us: number
   score_them: number
-  notes?: string
-  is_home?: boolean
-  innings_us?: (number | null)[]
-  innings_them?: (number | null)[]
-  batting?: Record<string, unknown>[]
-  pitching?: Record<string, unknown>[]
+  result: 'W' | 'L' | 'D'
+}
+
+// ZodError を「項目名: メッセージ」の日本語一覧へ整形
+function zodIssues(error: z.ZodError): string[] {
+  return error.issues.map(issue => {
+    const at = issue.path.length ? `${issue.path.join('.')}: ` : ''
+    if (issue.code === 'unrecognized_keys') {
+      return `${at}不明な項目があります: ${issue.keys.join(', ')}（項目名を確認してください）`
+    }
+    return `${at}${issue.message}`
+  })
 }
 
 // 入力例のコメント（// 〜）を残したまま貼り付けても動くように、パース前に除去する。
@@ -81,16 +136,6 @@ function stripLineComments(src: string): string {
   return out
 }
 
-function errorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message
-  if (err && typeof err === 'object') {
-    const e = err as { message?: string; details?: string; hint?: string; code?: string }
-    const parts = [e.message, e.details, e.hint, e.code && `(${e.code})`].filter(Boolean)
-    if (parts.length > 0) return parts.join(' / ')
-  }
-  return '不明なエラー'
-}
-
 export default function JsonGameForm({ players }: { players: Player[] }) {
   const router = useRouter()
   const [json, setJson] = useState('')
@@ -102,85 +147,64 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
     return player?.id ?? null
   }
 
-  const validate = (data: unknown): { input: JsonInput; errors: string[] } => {
+  const validate = (data: unknown): { input: JsonInput | null; errors: string[] } => {
+    // 形式・型のチェックはスキーマに任せる（不正な型はここで全て弾かれる）
+    const parsed = jsonGameSchema.safeParse(data)
+    if (!parsed.success) return { input: null, errors: zodIssues(parsed.error) }
+
+    const d = parsed.data
     const errs: string[] = []
-    const d = data as Record<string, unknown>
-
-    if (!d.date || typeof d.date !== 'string') errs.push('date が必要です（例: "2025-05-01"）')
-    if (!d.opponent || typeof d.opponent !== 'string') errs.push('opponent が必要です')
-
-    if (d.start_time != null && d.start_time !== '') {
-      if (typeof d.start_time !== 'string' || !/^\d{1,2}:\d{2}(:\d{2})?$/.test(d.start_time)) {
-        errs.push('start_time は "HH:MM" 形式です（例: "09:00"）')
-      }
-    }
-
-    if (d.game_type != null && d.game_type !== '' && !['official', 'practice', 'other'].includes(d.game_type as string)) {
-      errs.push('game_type は "official"（公式戦） / "practice"（練習試合） / "other" のいずれかです')
-    }
 
     // イニング別スコアがある場合、スコア・結果はその合計と統一する
-    const sumInnings = (arr: unknown): number | null =>
-      Array.isArray(arr)
-        ? arr.reduce<number>((s, v) => s + (typeof v === 'number' ? v : 0), 0)
-        : null
+    const sumInnings = (arr: (number | null)[] | undefined): number | null =>
+      arr ? arr.reduce<number>((s, v) => s + (v ?? 0), 0) : null
     const usSum = sumInnings(d.innings_us)
     const themSum = sumInnings(d.innings_them)
 
+    let score_us = d.score_us
     if (usSum !== null) {
-      if (typeof d.score_us === 'number' && d.score_us !== usSum) {
-        errs.push(`score_us (${d.score_us}) が innings_us の合計 (${usSum}) と一致しません`)
+      if (score_us !== undefined && score_us !== usSum) {
+        errs.push(`score_us (${score_us}) が innings_us の合計 (${usSum}) と一致しません`)
       }
-      d.score_us = usSum
-    } else if (typeof d.score_us !== 'number') {
+      score_us = usSum
+    } else if (score_us === undefined) {
       errs.push('score_us（自チームスコア）が必要です')
     }
 
+    let score_them = d.score_them
     if (themSum !== null) {
-      if (typeof d.score_them === 'number' && d.score_them !== themSum) {
-        errs.push(`score_them (${d.score_them}) が innings_them の合計 (${themSum}) と一致しません`)
+      if (score_them !== undefined && score_them !== themSum) {
+        errs.push(`score_them (${score_them}) が innings_them の合計 (${themSum}) と一致しません`)
       }
-      d.score_them = themSum
-    } else if (typeof d.score_them !== 'number') {
+      score_them = themSum
+    } else if (score_them === undefined) {
       errs.push('score_them（相手スコア）が必要です')
     }
 
     // 結果はスコアから自動判定する
-    if (typeof d.score_us === 'number' && typeof d.score_them === 'number') {
-      const derived = d.score_us > d.score_them ? 'W' : d.score_us < d.score_them ? 'L' : 'D'
-      if (d.result != null && d.result !== '' && d.result !== derived) {
-        errs.push(`result ("${d.result}") がスコアから判定した結果 ("${derived}") と一致しません`)
+    let result = d.result || undefined
+    if (score_us !== undefined && score_them !== undefined) {
+      const derived = score_us > score_them ? 'W' : score_us < score_them ? 'L' : 'D'
+      if (result && result !== derived) {
+        errs.push(`result ("${result}") がスコアから判定した結果 ("${derived}") と一致しません`)
       }
-      d.result = derived
-    } else if (!['W', 'L', 'D'].includes(d.result as string)) {
+      result = derived
+    } else if (!result) {
       errs.push('result は "W" / "L" / "D" のいずれかです')
     }
 
-    // batting の選手番号チェック
-    if (Array.isArray(d.batting)) {
-      d.batting.forEach((row, i) => {
-        const r = row as Record<string, unknown>
-        if (r.number === undefined) {
-          errs.push(`batting[${i}]: number（背番号）が必要です`)
-        } else if (!numberToId(r.number)) {
-          errs.push(`batting[${i}]: 背番号 ${r.number} の選手が見つかりません`)
-        }
-      })
-    }
+    // 背番号が実在する選手か（number の必須・型チェックはスキーマ側で済んでいる）
+    d.batting?.forEach((r, i) => {
+      if (!numberToId(r.number)) errs.push(`batting[${i}]: 背番号 ${r.number} の選手が見つかりません`)
+    })
+    d.pitching?.forEach((r, i) => {
+      if (!numberToId(r.number)) errs.push(`pitching[${i}]: 背番号 ${r.number} の選手が見つかりません`)
+    })
 
-    // pitching の選手番号チェック
-    if (Array.isArray(d.pitching)) {
-      d.pitching.forEach((row, i) => {
-        const r = row as Record<string, unknown>
-        if (r.number === undefined) {
-          errs.push(`pitching[${i}]: number（背番号）が必要です`)
-        } else if (!numberToId(r.number)) {
-          errs.push(`pitching[${i}]: 背番号 ${r.number} の選手が見つかりません`)
-        }
-      })
+    return {
+      input: { ...d, score_us: score_us ?? 0, score_them: score_them ?? 0, result: result as 'W' | 'L' | 'D' },
+      errors: errs,
     }
-
-    return { input: d as unknown as JsonInput, errors: errs }
   }
 
   const handleSubmit = async () => {
@@ -197,7 +221,7 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
     }
 
     const { input, errors: validationErrors } = validate(parsed)
-    if (validationErrors.length > 0) {
+    if (!input || validationErrors.length > 0) {
       setErrors(validationErrors)
       setLoading(false)
       return

@@ -1,45 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
+import { fmt, fmtEra, sumIp, outsToIp, computeBatting, computePitching } from '@/lib/stats'
 import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
 import TeamTable from './TeamTable'
 import FilterPanel from './FilterPanel'
-
-function fmt(numerator: number, denominator: number, digits = 3): string {
-  if (denominator === 0) return '-'
-  const val = numerator / denominator
-  return val.toFixed(digits).replace(/^0/, '')
-}
-
-function fmtOps(obp: number | null, slg: number | null): string {
-  if (obp === null || slg === null) return '-'
-  return (obp + slg).toFixed(3)
-}
-
-function ipToOuts(ip: number): number {
-  const innings = Math.floor(ip)
-  const outs = Math.round((ip - innings) * 10)
-  return innings * 3 + outs
-}
-
-function sumIp(ips: number[]): { display: string; outs: number } {
-  const totalOuts = ips.reduce((sum, ip) => sum + ipToOuts(ip), 0)
-  const innings = Math.floor(totalOuts / 3)
-  const rem = totalOuts % 3
-  return { display: rem === 0 ? `${innings}` : `${innings}.${rem}`, outs: totalOuts }
-}
-
-function fmtEra(er: number, totalOuts: number): string {
-  if (totalOuts === 0) return '-'
-  return (er * 27 / totalOuts).toFixed(2)
-}
-
-function outsToIp(outs: number): string {
-  const inn = Math.floor(outs / 3)
-  const rem = outs % 3
-  return rem === 0 ? `${inn}` : `${inn}.${rem}`
-}
 
 export default async function PlayersPage({
   searchParams,
@@ -111,45 +77,10 @@ export default async function PlayersPage({
   const qualifiedPaThreshold = activeGames.length * qualifiedPaRate
 
   // 打撃通算ヘルパー
-  const buildBattingRows = (stats: typeof allBStats) => playerList.map(player => {
-    const s = stats.filter(b => b.player_id === player.id)
-    const games = s.length
-    const pa = s.reduce((sum, b) => sum + (b.pa ?? 0), 0)
-    const ab = s.reduce((sum, b) => sum + b.ab, 0)
-    const hits = s.reduce((sum, b) => sum + b.hits, 0)
-    const doubles = s.reduce((sum, b) => sum + b.doubles, 0)
-    const triples = s.reduce((sum, b) => sum + b.triples, 0)
-    const hr = s.reduce((sum, b) => sum + b.hr, 0)
-    const rbi = s.reduce((sum, b) => sum + b.rbi, 0)
-    const runs = s.reduce((sum, b) => sum + b.runs, 0)
-    const sb = s.reduce((sum, b) => sum + b.sb, 0)
-    const bb = s.reduce((sum, b) => sum + b.bb, 0)
-    const hbp = s.reduce((sum, b) => sum + (b.hbp ?? 0), 0)
-    const sac_fly = s.reduce((sum, b) => sum + (b.sac_fly ?? 0), 0)
-    const sac_bunt = s.reduce((sum, b) => sum + (b.sac_bunt ?? 0), 0)
-    const k = s.reduce((sum, b) => sum + b.k, 0)
-    const gidp = s.reduce((sum, b) => sum + (b.gidp ?? 0), 0)
-    const reach_on_error = s.reduce((sum, b) => sum + (b.reach_on_error ?? 0), 0)
-    const errors = s.reduce((sum, b) => sum + (b.errors ?? 0), 0)
-    const cs = s.reduce((sum, b) => sum + (b.cs ?? 0), 0)
-    const risp_ab = s.reduce((sum, b) => sum + (b.risp_ab ?? 0), 0)
-    const risp_hits = s.reduce((sum, b) => sum + (b.risp_hits ?? 0), 0)
-    const tb = hits + doubles + 2 * triples + 3 * hr
-    const obpDenom = ab + bb + hbp + sac_fly
-    const obpNum = hits + bb + hbp
-    const obp = obpDenom > 0 ? obpNum / obpDenom : null
-    const slg = ab > 0 ? tb / ab : null
-    return {
-      player, games, pa, ab, hits, doubles, triples, hr, rbi, runs, sb,
-      bb, hbp, sac_fly, sac_bunt, k, gidp, reach_on_error, errors, cs,
-      risp_ab, risp_hits, tb,
-      avg: fmt(hits, ab),
-      obp: obpDenom > 0 ? fmt(obpNum, obpDenom) : '-',
-      slg: ab > 0 ? fmt(tb, ab) : '-',
-      ops: fmtOps(obp, slg),
-      risp_avg: fmt(risp_hits, risp_ab),
-    }
-  })
+  const buildBattingRows = (stats: typeof allBStats) => playerList.map(player => ({
+    player,
+    ...computeBatting(stats.filter(b => b.player_id === player.id)),
+  }))
 
   const bStatsActive = attrFilterActive
     ? bStats.filter(s => matchesGameAttrs(s.games as GameAttrs))
@@ -165,37 +96,10 @@ export default async function PlayersPage({
   // 投手通算ヘルパー
   const buildPitchingRows = (stats: typeof allPStats) => {
     const ids = [...new Set(stats.map(p => p.player_id))]
-    return ids.map(pid => {
-      const player = playerList.find(pl => pl.id === pid)
-      const s = stats.filter(p => p.player_id === pid)
-      const appearances = s.length
-      const wins = s.filter(p => p.is_win).length
-      const holds = s.filter(p => (p as { is_hold?: boolean }).is_hold).length
-      const saves = s.filter(p => (p as { is_save?: boolean }).is_save).length
-      const losses = s.filter(p => p.is_loss).length
-      const { display: ipDisplay, outs: totalOuts } = sumIp(s.map(p => p.ip ?? 0))
-      const pitch_count = s.reduce((sum, p) => sum + ((p as { pitch_count?: number }).pitch_count ?? 0), 0)
-      const runs = s.reduce((sum, p) => sum + ((p as { runs?: number }).runs ?? 0), 0)
-      const er = s.reduce((sum, p) => sum + (p.er ?? 0), 0)
-      const cg = s.filter(p => (p as { is_cg?: boolean }).is_cg).length
-      const sho = s.filter(p => (p as { is_sho?: boolean }).is_sho).length
-      const hits_allowed = s.reduce((sum, p) => sum + (p.hits_allowed ?? 0), 0)
-      const hr_allowed = s.reduce((sum, p) => sum + (p.hr_allowed ?? 0), 0)
-      const k = s.reduce((sum, p) => sum + (p.k ?? 0), 0)
-      const bb = s.reduce((sum, p) => sum + (p.bb ?? 0), 0)
-      const hbp = s.reduce((sum, p) => sum + ((p as { hbp?: number }).hbp ?? 0), 0)
-      const balk = s.reduce((sum, p) => sum + ((p as { balk?: number }).balk ?? 0), 0)
-      const wp = s.reduce((sum, p) => sum + ((p as { wp?: number }).wp ?? 0), 0)
-      const wl = wins + losses
-      return {
-        player, appearances, wins, holds, saves, losses, totalOuts,
-        winPct: wl > 0 ? (wins / wl).toFixed(3).replace(/^0/, '') : '-',
-        era: fmtEra(er, totalOuts),
-        ip: ipDisplay,
-        pitch_count, runs, er, cg, sho,
-        hits_allowed, hr_allowed, k, bb, hbp, balk, wp,
-      }
-    }).filter(r => r.player)
+    return ids.map(pid => ({
+      player: playerList.find(pl => pl.id === pid),
+      ...computePitching(stats.filter(p => p.player_id === pid)),
+    })).filter(r => r.player)
   }
 
   const pStatsActive = attrFilterActive
@@ -290,7 +194,7 @@ export default async function PlayersPage({
       </div>
 
       {/* タブ（成績表と一体のデザイン） */}
-      <div className="grid grid-cols-3 gap-1 border-b-4 border-band">
+      <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-t-2xl border-b-4 border-band">
         <Link href={buildUrl({ tab: 'team', year, from, to, gtype, q, tournament, opponent })} className={tabCls(showTeam)}>
           チーム成績
         </Link>

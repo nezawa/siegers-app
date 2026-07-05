@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import { GeistSans } from 'geist/font/sans'
 import { Noto_Sans_JP } from 'next/font/google'
 import './globals.css'
@@ -29,8 +30,8 @@ export default function RootLayout({
         <footer className="mt-12 bg-band">
           <div className="h-0.5 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
           <div className="flex flex-wrap items-center justify-center gap-8 px-4 py-8">
-            <img src="/logo1.png" alt="小雀シーガーズロゴ" className="h-20 w-auto" />
-            <img src="/logo2.png" alt="小雀シーガーズロゴ" className="h-20 w-auto" />
+            <Image src="/logo1.png" alt="小雀シーガーズロゴ" width={1125} height={1059} className="h-20 w-auto" />
+            <Image src="/logo2.png" alt="小雀シーガーズロゴ" width={624} height={624} className="h-20 w-auto" />
             <a
               href="https://www.instagram.com/kosuzume_siegers/"
               target="_blank"

@@ -35,5 +35,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  // /admin のガードだけでなく、期限切れ認証トークンのリフレッシュ（getUser）を全ページで
+  // 行う必要があるため、静的アセットを除く全リクエストで実行する。
+  // /admin だけを対象にすると、ログイン中に公開ページを開いたとき期限切れ JWT のまま
+  // Supabase へクエリして「JWT expired」で落ちる。
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
 }
