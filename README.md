@@ -1,5 +1,7 @@
 草野球チーム「Siegers」のホームページ。試合結果・選手成績の公開と、管理者による入力・編集を行う Next.js (App Router) アプリです。
 
+Git Hubに草を生やすためにはgit config user.emailとGithubアカウントに同じメールアドレスを追加しなくてはいけない
+
 ## 技術スタック
 
 - Next.js (App Router) + TypeScript
