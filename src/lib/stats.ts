@@ -1,6 +1,11 @@
 // 野球成績の計算・表示ヘルパー。
 // 通算成績（/players）と個人成績（/players/[id]）で同じ式を使うための単一の置き場。
 // 率系は分母0のとき「-」を返す（NaN/Infinity を画面に出さない）。
+//
+// 記録の流儀（入力時のチェックは lib/validateStats.ts）:
+//   - hits は二塁打・三塁打・本塁打を含む総安打数（単打 = hits - doubles - triples - hr）
+//   - risp_ab / risp_hits は「打数」ベース（四球・死球・犠打・犠飛は含まない）
+//   - 敵失（reach_on_error）での出塁は ab に含む
 
 export function fmt(numerator: number, denominator: number, digits = 3): string {
   if (denominator === 0) return '-'
@@ -72,6 +77,7 @@ export function computeBatting(rows: StatRow[]) {
   const cs = sum(rows, 'cs')
   const risp_ab = sum(rows, 'risp_ab')
   const risp_hits = sum(rows, 'risp_hits')
+  // 塁打数 = 単打 + 2×二塁打 + 3×三塁打 + 4×本塁打。hits が長打を含む前提なのでこの形に畳める
   const tb = hits + doubles + 2 * triples + 3 * hr
   const obpDenom = ab + bb + hbp + sac_fly
   const obpNum = hits + bb + hbp

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import { errorMessage } from '@/lib/errorMessage'
+import { validateBatting, validatePitching, mergeIssues } from '@/lib/validateStats'
 import type { Player } from '@/types'
 
 const EXAMPLE = `{
@@ -141,16 +142,19 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
   const [json, setJson] = useState('')
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+  // 成績の整合性チェックの警告。2回目の送信で承知のうえ保存できる
+  const [warnings, setWarnings] = useState<string[]>([])
+  const [warningsAcked, setWarningsAcked] = useState(false)
 
   const numberToId = (num: unknown): string | null => {
     const player = players.find(p => p.number === Number(num))
     return player?.id ?? null
   }
 
-  const validate = (data: unknown): { input: JsonInput | null; errors: string[] } => {
+  const validate = (data: unknown): { input: JsonInput | null; errors: string[]; warnings: string[] } => {
     // 形式・型のチェックはスキーマに任せる（不正な型はここで全て弾かれる）
     const parsed = jsonGameSchema.safeParse(data)
-    if (!parsed.success) return { input: null, errors: zodIssues(parsed.error) }
+    if (!parsed.success) return { input: null, errors: zodIssues(parsed.error), warnings: [] }
 
     const d = parsed.data
     const errs: string[] = []
@@ -201,14 +205,36 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
       if (!numberToId(r.number)) errs.push(`pitching[${i}]: 背番号 ${r.number} の選手が見つかりません`)
     })
 
+    // 成績の整合性（打率・塁打数などの計算が狂う入力ミスを保存前に止める）。省略された項目は 0 扱い
+    const n0 = (v: number | undefined) => v ?? 0
+    const statIssues = mergeIssues(
+      validateBatting((d.batting ?? []).map((r, i) => ({
+        label: `batting[${i}]（背番号 ${r.number}）`,
+        pa: n0(r.pa), ab: n0(r.ab), hits: n0(r.hits),
+        doubles: n0(r.doubles), triples: n0(r.triples), hr: n0(r.hr),
+        bb: n0(r.bb), hbp: n0(r.hbp), sac_bunt: n0(r.sac_bunt), sac_fly: n0(r.sac_fly),
+        k: n0(r.k), gidp: n0(r.gidp), reach_on_error: n0(r.reach_on_error),
+        risp_ab: n0(r.risp_ab), risp_hits: n0(r.risp_hits),
+      }))),
+      validatePitching((d.pitching ?? []).map((r, i) => ({
+        label: `pitching[${i}]（背番号 ${r.number}）`,
+        is_win: r.is_win ?? false, is_loss: r.is_loss ?? false, is_sho: r.is_sho ?? false,
+        ip: n0(r.ip), runs: n0(r.runs), er: n0(r.er),
+        hits_allowed: n0(r.hits_allowed), hr_allowed: n0(r.hr_allowed),
+      }))),
+    )
+    errs.push(...statIssues.errors)
+
     return {
       input: { ...d, score_us: score_us ?? 0, score_them: score_them ?? 0, result: result as 'W' | 'L' | 'D' },
       errors: errs,
+      warnings: statIssues.warnings,
     }
   }
 
   const handleSubmit = async () => {
     setErrors([])
+    setWarnings([])
     setLoading(true)
 
     let parsed: unknown
@@ -220,9 +246,16 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
       return
     }
 
-    const { input, errors: validationErrors } = validate(parsed)
+    const { input, errors: validationErrors, warnings: validationWarnings } = validate(parsed)
     if (!input || validationErrors.length > 0) {
       setErrors(validationErrors)
+      setWarnings(validationWarnings)
+      setLoading(false)
+      return
+    }
+    if (validationWarnings.length > 0 && !warningsAcked) {
+      setWarnings(validationWarnings)
+      setWarningsAcked(true)
       setLoading(false)
       return
     }
@@ -323,10 +356,17 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
           <code className="bg-gray-100 px-1 rounded">tournament</code>（大会名）・
           <code className="bg-gray-100 px-1 rounded">game_type</code>（&quot;official&quot; / &quot;practice&quot; / &quot;other&quot;）は任意です。
           <code className="bg-gray-100 px-1 rounded">{'//'}</code> 以降はコメントとして無視されるので、入力例をそのまま貼り付けても動きます。
+          <br />
+          <span className="font-medium text-gray-600">
+            記録の流儀: <code className="bg-gray-100 px-1 rounded">hits</code>（安打）は二塁打・三塁打・本塁打を含めた総安打数、
+            <code className="bg-gray-100 px-1 rounded">risp_ab</code>（得点圏打数）は打数ベース（四球・死球・犠打・犠飛は除く）、
+            敵失での出塁も <code className="bg-gray-100 px-1 rounded">ab</code>（打数）に含めます。
+            塁打数・長打率・OPS・得点圏打率はこの前提で計算されます。
+          </span>
         </p>
         <textarea
           value={json}
-          onChange={e => setJson(e.target.value)}
+          onChange={e => { setJson(e.target.value); setWarningsAcked(false) }}
           placeholder={EXAMPLE}
           rows={28}
           className="w-full rounded-xl border border-gray-300 bg-slate-50 px-3.5 py-2.5 text-sm font-mono shadow-inner transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-y"
@@ -339,6 +379,18 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
           {errors.map((e, i) => (
             <p key={i} className="text-sm text-red-600">{e}</p>
           ))}
+        </div>
+      )}
+
+      {errors.length === 0 && warnings.length > 0 && (
+        <div className="space-y-1 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+          <p className="text-sm font-bold text-amber-800">入力漏れの可能性があります</p>
+          {warnings.map((w, i) => <p key={i} className="text-sm text-amber-700">{w}</p>)}
+          {warningsAcked && (
+            <p className="pt-1 text-sm font-medium text-amber-800">
+              このまま保存する場合は、もう一度「試合結果を保存」を押してください
+            </p>
+          )}
         </div>
       )}
 

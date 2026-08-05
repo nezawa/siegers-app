@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { errorMessage } from '@/lib/errorMessage'
 import { createClient } from '@/lib/supabase/client'
+import { validateBatting, validatePitching, mergeIssues } from '@/lib/validateStats'
 import type { Player, Game } from '@/types'
 
 // 試合入力（新規）と試合編集で共有するフォーム本体。
@@ -214,6 +215,10 @@ export default function GameFormBase({
       : [...pitchers, ...players.filter(p => p.id === selectedId)]
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // 成績の整合性チェック結果。warnings は2回目の送信で承知のうえ保存できる
+  const [statErrors, setStatErrors] = useState<string[]>([])
+  const [statWarnings, setStatWarnings] = useState<string[]>([])
+  const [warningsAcked, setWarningsAcked] = useState(false)
 
   // time 型は "18:00:00" 形式で返るので HH:MM へ切り詰める
   const initialStartTime = (initialGame?.start_time ?? '').slice(0, 5)
@@ -288,11 +293,18 @@ export default function GameFormBase({
       : [emptyPitching()]
   )
 
-  const updateBatting = (i: number, field: keyof BattingRow, value: unknown) =>
-    setBattingRows(rows => rows.map((row, j) => j === i ? { ...row, [field]: value } : row))
+  // 成績を編集したら「警告を承知した」状態は解除し、再チェックさせる
+  const resetWarningAck = () => setWarningsAcked(false)
 
-  const updatePitching = (i: number, field: keyof PitchingRow, value: unknown) =>
+  const updateBatting = (i: number, field: keyof BattingRow, value: unknown) => {
+    resetWarningAck()
+    setBattingRows(rows => rows.map((row, j) => j === i ? { ...row, [field]: value } : row))
+  }
+
+  const updatePitching = (i: number, field: keyof PitchingRow, value: unknown) => {
+    resetWarningAck()
     setPitchingRows(rows => rows.map((row, j) => j === i ? { ...row, [field]: value } : row))
+  }
 
   const toNum = (v: number | '') => v === '' ? 0 : Number(v)
 
@@ -314,6 +326,8 @@ export default function GameFormBase({
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    const playerName = (id: string) => players.find(p => p.id === id)?.name ?? '選手未選択'
 
     try {
       const payload: GameSavePayload = {
@@ -358,6 +372,23 @@ export default function GameFormBase({
             k: toNum(r.k), bb: toNum(r.bb),
             hbp: toNum(r.hbp), balk: toNum(r.balk), wp: toNum(r.wp),
           })),
+      }
+
+      // 成績の整合性チェック（打率・塁打数などの計算が狂う入力ミスを保存前に止める）
+      const { errors: vErrors, warnings: vWarnings } = mergeIssues(
+        validateBatting(payload.batting.map(r => ({ ...r, label: playerName(r.player_id) }))),
+        validatePitching(payload.pitching.map(r => ({ ...r, label: playerName(r.player_id) }))),
+      )
+      setStatErrors(vErrors)
+      setStatWarnings(vWarnings)
+      if (vErrors.length > 0) {
+        setLoading(false)
+        return
+      }
+      if (vWarnings.length > 0 && !warningsAcked) {
+        setWarningsAcked(true)
+        setLoading(false)
+        return
       }
 
       await onSave(payload)
@@ -642,6 +673,25 @@ export default function GameFormBase({
           </table>
         </div>
       </div>
+
+      {statErrors.length > 0 && (
+        <div className="space-y-1 rounded-xl bg-red-50 px-4 py-3 ring-1 ring-red-200">
+          <p className="text-sm font-bold text-red-700">成績の内容に矛盾があります（修正してください）</p>
+          {statErrors.map((e, i) => <p key={i} className="text-sm text-red-600">{e}</p>)}
+        </div>
+      )}
+
+      {statErrors.length === 0 && statWarnings.length > 0 && (
+        <div className="space-y-1 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+          <p className="text-sm font-bold text-amber-800">入力漏れの可能性があります</p>
+          {statWarnings.map((w, i) => <p key={i} className="text-sm text-amber-700">{w}</p>)}
+          {warningsAcked && (
+            <p className="pt-1 text-sm font-medium text-amber-800">
+              このまま保存する場合は、もう一度「{submitLabel}」を押してください
+            </p>
+          )}
+        </div>
+      )}
 
       {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
 
