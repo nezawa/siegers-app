@@ -63,7 +63,7 @@ export type GameFields = {
   tournament: string | null
   score_us: number
   score_them: number
-  result: 'W' | 'L' | 'D' | null
+  result: 'W' | 'L' | 'D' | 'O' | null
   notes: string | null
   innings_us: (number | null)[] | null
   innings_them: (number | null)[] | null
@@ -235,10 +235,20 @@ export default function GameFormBase({
     tournament: initialGame?.tournament ?? '',
     score_us: (initialGame?.score_us ?? '') as number | '',
     score_them: (initialGame?.score_them ?? '') as number | '',
-    result: (initialGame?.result ?? '') as 'W' | 'L' | 'D' | '',
+    result: (initialGame?.result ?? '') as 'W' | 'L' | 'D' | 'O' | '',
     notes: initialGame?.notes ?? '',
     is_home: initialGame?.is_home ?? false,
     game_type: (initialGame?.game_type ?? '') as 'official' | 'practice' | 'other' | '',
+  })
+
+  // 保存済みの結果がスコアと食い違っていれば、手動で指定されたものとみなす
+  // （編集画面を開いただけで自動判定に上書きされないようにする）
+  const [resultManual, setResultManual] = useState(() => {
+    const saved = initialGame?.result
+    if (!saved) return false
+    const { score_us: us, score_them: them } = initialGame
+    if (us == null || them == null) return true
+    return saved !== (us > them ? 'W' : us < them ? 'L' : 'D')
   })
 
   const toInningArr = (arr: number[] | null | undefined): (number | '')[] => {
@@ -320,7 +330,16 @@ export default function GameFormBase({
     scoreUs !== '' && scoreThem !== ''
       ? (scoreUs > scoreThem ? 'W' : scoreUs < scoreThem ? 'L' : 'D')
       : ''
-  const result = derivedResult || gameInfo.result
+  // 結果はスコアから自動判定するが、手動で選び直したらそちらを優先する
+  // （没収試合・コールドなど、スコアと結果が一致しないケースがあるため）
+  const result = resultManual ? gameInfo.result : (derivedResult || gameInfo.result)
+  const resultConflicts = resultManual && derivedResult !== '' && result !== derivedResult
+
+  const changeResult = (value: 'W' | 'L' | 'D' | 'O' | '') => {
+    // 「スコアから自動判定」を選び直したら自動に戻す
+    setResultManual(value !== '')
+    setGameInfo({ ...gameInfo, result: value })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -485,14 +504,23 @@ export default function GameFormBase({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">結果</label>
-            <select value={result} disabled={derivedResult !== ''}
-              onChange={e => setGameInfo({ ...gameInfo, result: e.target.value as 'W' | 'L' | 'D' | '' })} className={inputCls}>
-              <option value="">選択</option>
+            <select value={result}
+              onChange={e => changeResult(e.target.value as 'W' | 'L' | 'D' | 'O' | '')} className={inputCls}>
+              <option value="">{derivedResult !== '' ? 'スコアから自動判定' : '選択'}</option>
               <option value="W">勝利</option>
               <option value="L">敗戦</option>
               <option value="D">引分</option>
+              <option value="O">その他</option>
             </select>
-            {derivedResult !== '' && <p className="mt-1 text-xs text-gray-400">スコアから自動判定されます</p>}
+            {result === 'O' ? (
+              <p className="mt-1 text-xs text-gray-500">試合数には数えますが、勝敗・勝率には数えません</p>
+            ) : resultConflicts ? (
+              <p className="mt-1 text-xs text-amber-600">
+                スコア（{scoreUs} - {scoreThem}）の判定と異なる結果を指定しています
+              </p>
+            ) : derivedResult !== '' && !resultManual ? (
+              <p className="mt-1 text-xs text-gray-400">スコアから自動判定されています（変更できます）</p>
+            ) : null}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">自チームスコア</label>

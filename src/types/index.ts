@@ -17,7 +17,8 @@ export type Game = {
   tournament: string | null
   score_us: number
   score_them: number
-  result: 'W' | 'L' | 'D' | null
+  // O = その他（中止・没収試合など。勝敗には数えないが試合数には含める）
+  result: 'W' | 'L' | 'D' | 'O' | null
   notes: string | null
   innings_us: number[] | null
   innings_them: number[] | null

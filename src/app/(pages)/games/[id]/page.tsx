@@ -8,6 +8,7 @@ function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className="rounded-full bg-red-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">勝利</span>
   if (result === 'L') return <span className="rounded-full bg-blue-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">敗戦</span>
   if (result === 'D') return <span className="rounded-full bg-gray-500 px-3.5 py-1 text-sm font-bold text-white shadow-sm">引分</span>
+  if (result === 'O') return <span className="rounded-full bg-slate-400 px-3.5 py-1 text-sm font-bold text-white shadow-sm">その他</span>
   return null
 }
 

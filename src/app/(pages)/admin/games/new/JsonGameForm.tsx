@@ -15,7 +15,7 @@ const EXAMPLE = `{
   "tournament": "〇〇リーグ",     // 大会名（省略可）
   "game_type": "official",     // "official"=公式戦 / "practice"=練習試合 / "other"=その他（省略可）
   "venue": "球場名",
-  "result": "W",               // "W"=勝ち / "L"=負け / "D"=引き分け（イニング別スコアがあれば省略可）
+  "result": "W",               // "W"=勝ち / "L"=負け / "D"=引き分け / "O"=その他（イニング別スコアがあれば省略可）
   "score_us": 5,
   "score_them": 2,
   "notes": "",
@@ -80,7 +80,7 @@ const jsonGameSchema = z.strictObject({
     .or(z.literal('')),
   venue: z.string().optional(),
   result: z
-    .enum(['W', 'L', 'D'], { error: '"W" / "L" / "D" のいずれかです' })
+    .enum(['W', 'L', 'D', 'O'], { error: '"W" / "L" / "D" / "O" のいずれかです' })
     .optional()
     .or(z.literal('')),
   score_us: z.number({ error: '数値で入力してください' }).int().min(0).optional(),
@@ -96,7 +96,7 @@ const jsonGameSchema = z.strictObject({
 type JsonInput = z.infer<typeof jsonGameSchema> & {
   score_us: number
   score_them: number
-  result: 'W' | 'L' | 'D'
+  result: 'W' | 'L' | 'D' | 'O'
 }
 
 // ZodError を「項目名: メッセージ」の日本語一覧へ整形
@@ -185,16 +185,22 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
       errs.push('score_them（相手スコア）が必要です')
     }
 
-    // 結果はスコアから自動判定する
+    // 結果はスコアから自動判定する。
+    // ただし "O"（その他：中止・没収試合など）はスコアと一致しないのが前提なので、明示指定を尊重する
     let result = d.result || undefined
-    if (score_us !== undefined && score_them !== undefined) {
+    if (result === 'O') {
+      // 何もしない（指定された "O" をそのまま使う）
+    } else if (score_us !== undefined && score_them !== undefined) {
       const derived = score_us > score_them ? 'W' : score_us < score_them ? 'L' : 'D'
       if (result && result !== derived) {
-        errs.push(`result ("${result}") がスコアから判定した結果 ("${derived}") と一致しません`)
+        errs.push(
+          `result ("${result}") がスコアから判定した結果 ("${derived}") と一致しません` +
+          `（勝敗に数えない試合なら "O" を指定してください）`
+        )
       }
       result = derived
     } else if (!result) {
-      errs.push('result は "W" / "L" / "D" のいずれかです')
+      errs.push('result は "W" / "L" / "D" / "O" のいずれかです')
     }
 
     // 背番号が実在する選手か（number の必須・型チェックはスキーマ側で済んでいる）
@@ -226,7 +232,7 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
     errs.push(...statIssues.errors)
 
     return {
-      input: { ...d, score_us: score_us ?? 0, score_them: score_them ?? 0, result: result as 'W' | 'L' | 'D' },
+      input: { ...d, score_us: score_us ?? 0, score_them: score_them ?? 0, result: result as 'W' | 'L' | 'D' | 'O' },
       errors: errs,
       warnings: statIssues.warnings,
     }

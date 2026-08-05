@@ -33,6 +33,7 @@ function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className={`${base} bg-red-600`}>勝ち</span>
   if (result === 'L') return <span className={`${base} bg-blue-600`}>負け</span>
   if (result === 'D') return <span className={`${base} bg-gray-500`}>引分け</span>
+  if (result === 'O') return <span className={`${base} bg-slate-400`}>その他</span>
   return <span className={`${base} bg-gray-300 text-gray-600`}>-</span>
 }
 

@@ -119,12 +119,14 @@ export default async function PlayersPage({
     const w = gs.filter(g => g.result === 'W').length
     const l = gs.filter(g => g.result === 'L').length
     const d = gs.filter(g => g.result === 'D').length
+    // その他（中止・没収など）。試合数には含めるが勝敗・勝率には数えない
+    const o = gs.filter(g => g.result === 'O').length
     const hits = bs.reduce((sum, b) => sum + (b.hits ?? 0), 0)
     const ab = bs.reduce((sum, b) => sum + (b.ab ?? 0), 0)
     const er = ps.reduce((sum, p) => sum + (p.er ?? 0), 0)
     return {
       label,
-      games: gs.length, w, l, d,
+      games: gs.length, w, l, d, o,
       winPct: fmt(w, w + l),
       runsFor: gs.reduce((sum, g) => sum + (g.score_us ?? 0), 0),
       runsAgainst: gs.reduce((sum, g) => sum + (g.score_them ?? 0), 0),
@@ -178,7 +180,10 @@ export default async function PlayersPage({
 
       {/* フィルター（タブの上に配置） */}
       <div className="mb-5 space-y-2">
+        {/* key に適用済みの条件を含めることで、タブ切替やブラウザバックのたびに
+            FilterPanel を再マウントし、入力欄を URL の内容へ確実に戻す */}
         <FilterPanel
+          key={[tab, year, from, to, gtype, q, tournament, opponent].join('|')}
           tab={tab} year={year} from={from} to={to} gtype={gtype} q={q}
           tournament={tournament} opponent={opponent}
           years={years} tournaments={tournaments} opponents={opponents}
