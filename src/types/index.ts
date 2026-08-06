@@ -25,6 +25,8 @@ export type Game = {
   is_home: boolean
   game_type: 'official' | 'practice' | 'other' | null
   created_at: string
+  // 新規登録・編集のたびにDBのトリガーで更新される（フッターの更新日時に使用）
+  updated_at: string
 }
 
 export type BattingStat = {

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import { fmt, fmtEra, sumIp, outsToIp, computeBatting, computePitching } from '@/lib/stats'
+import { fetchLastUpdated } from '@/lib/lastUpdated'
 import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
@@ -35,12 +36,13 @@ export default async function PlayersPage({
 
   const supabase = await createClient()
 
-  const [{ data: players }, allBStats, allPStats, allGames, { data: settings }] = await Promise.all([
+  const [{ data: players }, allBStats, allPStats, allGames, { data: settings }, lastUpdated] = await Promise.all([
     supabase.from('players').select('*').order('number'),
     fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
     fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
     fetchAllRows((from, to) => supabase.from('games').select('id, date, game_type, tournament, opponent, score_us, score_them, result').order('id').range(from, to)),
     supabase.from('settings').select('qualified_pa, qualified_ip').eq('id', 1).single(),
+    fetchLastUpdated(),
   ])
 
   const playerList = players ?? []
@@ -173,10 +175,15 @@ export default async function PlayersPage({
 
   return (
     <div>
-      <h1 className="mb-5 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
-        <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
-        成績
-      </h1>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <h1 className="flex items-center gap-2.5 text-2xl font-bold text-gray-900">
+          <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
+          成績
+        </h1>
+        {lastUpdated && (
+          <p className="text-xs text-gray-400">成績データ更新：{lastUpdated}</p>
+        )}
+      </div>
 
       {/* フィルター（タブの上に配置） */}
       <div className="mb-5 space-y-2">

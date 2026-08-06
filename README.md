@@ -36,6 +36,7 @@ npm run dev
 - `add_opponents_tournaments.sql` — 対戦相手・大会名のマスタテーブル（試合入力の候補表示と管理ページに必要）
 - `alter_settings_qualified_numeric.sql` — 規定打席・規定投球回の倍率を小数対応に（未実行だと規定打席に 1.5 などの小数が保存できません）
 - `add_game_result_other.sql` — 試合結果に「その他」(`O`) を追加。**未実行だと結果に「その他」を選んだ試合の保存が check 制約違反で失敗します**
+- `add_games_updated_at.sql` — games に更新日時の列とトリガーを追加（フッターの「成績データ更新」表示に使用）。未実行の場合はフッターの日時が出ないだけで他は動きます
 - `fix_stat_inconsistencies.sql` — 打撃成績の入力ミス修正（1回限りのデータ修正）。末尾に、記録の流儀に反する行を洗い出す点検クエリを同梱
 
 ### 成績記録の流儀
