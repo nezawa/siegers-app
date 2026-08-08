@@ -92,6 +92,12 @@ export function computeBatting(rows: StatRow[]) {
     slg: ab > 0 ? fmt(tb, ab) : '-',
     ops: fmtOps(obp, slg),
     risp_avg: fmt(risp_hits, risp_ab),
+    // 比較用の数値（順位判定に使う）。表示用の文字列と式がずれないよう同じ値から作る
+    avgValue: ab > 0 ? hits / ab : null,
+    obpValue: obp,
+    slgValue: slg,
+    opsValue: obp !== null && slg !== null ? obp + slg : null,
+    rispAvgValue: risp_ab > 0 ? risp_hits / risp_ab : null,
   }
 }
 
@@ -123,5 +129,8 @@ export function computePitching(rows: StatRow[]) {
     hbp: sum(rows, 'hbp'),
     balk: sum(rows, 'balk'),
     wp: sum(rows, 'wp'),
+    // 比較用の数値（順位判定に使う）
+    eraValue: totalOuts > 0 ? (er * 27) / totalOuts : null,
+    winPctValue: wl > 0 ? wins / wl : null,
   }
 }

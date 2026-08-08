@@ -1,45 +1,193 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
-import { computeBatting, computePitching } from '@/lib/stats'
+import { computeBatting, computePitching, type BattingTotals, type PitchingTotals } from '@/lib/stats'
+import { battingRanks, pitchingRanks, type RankMap } from '@/lib/ranking'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+
+// 表示列の定義。key を lib/ranking.ts の指標キーと揃えることで順位バッジと紐付ける
+type Col<T> = { header: string; key: string; get: (t: T) => string | number; bold?: boolean }
+
+const BATTING_COLS: Col<BattingTotals>[] = [
+  { header: '試合数', key: 'games', get: t => t.games },
+  { header: '打率', key: 'avg', get: t => t.avg, bold: true },
+  { header: '打席', key: 'pa', get: t => t.pa },
+  { header: '打数', key: 'ab', get: t => t.ab },
+  { header: '安打', key: 'hits', get: t => t.hits },
+  { header: '本塁打', key: 'hr', get: t => t.hr },
+  { header: '打点', key: 'rbi', get: t => t.rbi },
+  { header: '得点', key: 'runs', get: t => t.runs },
+  { header: '盗塁', key: 'sb', get: t => t.sb },
+  { header: '出塁率', key: 'obp', get: t => t.obp },
+  { header: '長打率', key: 'slg', get: t => t.slg },
+  { header: '得点圏打率', key: 'risp_avg', get: t => t.risp_avg },
+  { header: 'OPS', key: 'ops', get: t => t.ops, bold: true },
+  { header: '二塁打', key: 'doubles', get: t => t.doubles },
+  { header: '三塁打', key: 'triples', get: t => t.triples },
+  { header: '塁打数', key: 'tb', get: t => t.tb },
+  { header: '三振', key: 'k', get: t => t.k },
+  { header: '四球', key: 'bb', get: t => t.bb },
+  { header: '死球', key: 'hbp', get: t => t.hbp },
+  { header: '犠打', key: 'sac_bunt', get: t => t.sac_bunt },
+  { header: '犠飛', key: 'sac_fly', get: t => t.sac_fly },
+  { header: '併殺打', key: 'gidp', get: t => t.gidp },
+  { header: '敵失', key: 'reach_on_error', get: t => t.reach_on_error },
+  { header: '失策', key: 'errors', get: t => t.errors },
+  { header: '盗塁阻止', key: 'cs', get: t => t.cs },
+]
+
+const PITCHING_COLS: Col<PitchingTotals>[] = [
+  { header: '登板', key: 'appearances', get: t => t.appearances },
+  { header: '勝', key: 'wins', get: t => t.wins },
+  { header: 'H', key: 'holds', get: t => t.holds },
+  { header: 'S', key: 'saves', get: t => t.saves },
+  { header: '敗', key: 'losses', get: t => t.losses },
+  { header: '勝率', key: 'winPct', get: t => t.winPct, bold: true },
+  { header: '防御率', key: 'era', get: t => t.era, bold: true },
+  { header: '投球回', key: 'ip', get: t => t.ip },
+  { header: '投球数', key: 'pitch_count', get: t => t.pitch_count },
+  { header: '失点', key: 'runs', get: t => t.runs },
+  { header: '自責点', key: 'er', get: t => t.er },
+  { header: '完投', key: 'cg', get: t => t.cg },
+  { header: '完封', key: 'sho', get: t => t.sho },
+  { header: '被安打', key: 'hits_allowed', get: t => t.hits_allowed },
+  { header: '被本塁打', key: 'hr_allowed', get: t => t.hr_allowed },
+  { header: '奪三振', key: 'k', get: t => t.k },
+  { header: '与四球', key: 'bb', get: t => t.bb },
+  { header: '与死球', key: 'hbp', get: t => t.hbp },
+  { header: 'ボーク', key: 'balk', get: t => t.balk },
+  { header: '暴投', key: 'wp', get: t => t.wp },
+]
+
+const thCls = 'px-3 py-2.5 font-semibold text-white text-center whitespace-nowrap text-xs'
+// relative + バッジの絶対配置で、バッジの有無にかかわらず数字が同じ位置に揃うようにする
+const tdCls = 'relative px-3 py-3 text-center text-sm tabular-nums'
+
+const RANK_MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
+
+// セル右端（padding の内側）に固定配置する。数字の中央揃えには影響しない
+function RankBadge({ rank }: { rank: number }) {
+  return (
+    <span
+      className="pointer-events-none absolute right-0.5 top-1/2 -translate-y-1/2 text-[10px] leading-none"
+      role="img"
+      aria-label={`${rank}位`}
+    >
+      {RANK_MEDALS[rank]}
+    </span>
+  )
+}
+
+type StatRow<T> = { label: string; totals: T; ranks: RankMap }
+
+function StatTable<T>({
+  cols,
+  yearRows,
+  total,
+}: {
+  cols: Col<T>[]
+  yearRows: StatRow<T>[]
+  total: StatRow<T>
+}) {
+  const renderCells = (row: StatRow<T>) =>
+    cols.map(col => {
+      const rank = row.ranks.get(col.key)
+      return (
+        <td key={col.key} className={`${tdCls}${col.bold ? ' font-medium' : ''}`}>
+          {col.get(row.totals)}
+          {rank && <RankBadge rank={rank} />}
+        </td>
+      )
+    })
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
+      <table className="text-sm border-collapse">
+        <thead className="bg-band">
+          <tr>
+            <th className="px-4 py-2.5 font-semibold text-white text-left whitespace-nowrap sticky left-0 bg-band text-xs">年度</th>
+            {cols.map(col => (
+              <th key={col.key} className={thCls}>{col.header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {yearRows.map(row => (
+            <tr key={row.label} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
+              <td className="px-4 py-3 font-bold sticky left-0 bg-inherit whitespace-nowrap tabular-nums">{row.label}</td>
+              {renderCells(row)}
+            </tr>
+          ))}
+          <tr className="bg-blue-50 font-semibold border-t-2 border-blue-200">
+            <td className="px-4 py-3 sticky left-0 bg-blue-50 whitespace-nowrap text-sm font-bold text-blue-950">通算</td>
+            {renderCells(total)}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
 export default async function PlayerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
 
-  const [{ data: player }, rawBatting, rawPitching] = await Promise.all([
+  // 順位の判定にはチーム全員の成績が必要なので、成績は全件取得してから自分の分を絞り込む
+  const [{ data: player }, allBatting, allPitching, allGames, { data: settings }] = await Promise.all([
     supabase.from('players').select('*').eq('id', id).single(),
-    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date)').eq('player_id', id).order('id').range(from, to)),
-    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date)').eq('player_id', id).order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('games').select('id, date').order('id').range(from, to)),
+    supabase.from('settings').select('qualified_pa, qualified_ip').eq('id', 1).single(),
   ])
 
   if (!player) notFound()
 
-  const bStats = rawBatting as Record<string, unknown>[]
-  const pStats = rawPitching as Record<string, unknown>[]
+  const allB = allBatting as Record<string, unknown>[]
+  const allP = allPitching as Record<string, unknown>[]
 
   const getYear = (row: Record<string, unknown>) =>
     ((row.games as { date?: string })?.date ?? '').slice(0, 4)
 
+  const bStats = allB.filter(s => s.player_id === id)
+  const pStats = allP.filter(s => s.player_id === id)
+
+  // 規定打席・規定投球回の閾値は「その年度の試合数 × 倍率」。通算は全試合数で計算する
+  const qualifiedPaRate = settings?.qualified_pa ?? 3.1
+  const qualifiedIpRate = settings?.qualified_ip ?? 1.0
+  const gameCount = (year: string | null) =>
+    year
+      ? (allGames as { date: string }[]).filter(g => g.date?.startsWith(year)).length
+      : allGames.length
+  const paThreshold = (year: string | null) => gameCount(year) * qualifiedPaRate
+  const outsThreshold = (year: string | null) => gameCount(year) * qualifiedIpRate * 3
+
   const bYears = [...new Set(bStats.map(getYear).filter(Boolean))].sort().reverse()
   const pYears = [...new Set(pStats.map(getYear).filter(Boolean))].sort().reverse()
 
-  const battingYearRows = bYears.map(year => ({
-    label: year,
-    ...computeBatting(bStats.filter(s => getYear(s) === year)),
-  }))
-  const battingTotal = bStats.length > 0 ? computeBatting(bStats) : null
+  const battingYearRows = bYears.map(year => {
+    const scope = allB.filter(s => getYear(s) === year)
+    return {
+      label: year,
+      totals: computeBatting(bStats.filter(s => getYear(s) === year)),
+      ranks: battingRanks(scope, id, paThreshold(year)),
+    }
+  })
+  const battingTotal = bStats.length > 0
+    ? { label: '通算', totals: computeBatting(bStats), ranks: battingRanks(allB, id, paThreshold(null)) }
+    : null
 
-  const pitchingYearRows = pYears.map(year => ({
-    label: year,
-    ...computePitching(pStats.filter(s => getYear(s) === year)),
-  }))
-  const pitchingTotal = pStats.length > 0 ? computePitching(pStats) : null
-
-  const thCls = 'px-3 py-2.5 font-semibold text-white text-center whitespace-nowrap text-xs'
-  const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
-  const totalRowCls = 'bg-blue-50 font-semibold border-t-2 border-blue-200'
+  const pitchingYearRows = pYears.map(year => {
+    const scope = allP.filter(s => getYear(s) === year)
+    return {
+      label: year,
+      totals: computePitching(pStats.filter(s => getYear(s) === year)),
+      ranks: pitchingRanks(scope, id, outsThreshold(year)),
+    }
+  })
+  const pitchingTotal = pStats.length > 0
+    ? { label: '通算', totals: computePitching(pStats), ranks: pitchingRanks(allP, id, outsThreshold(null)) }
+    : null
 
   return (
     <div className="space-y-8">
@@ -70,78 +218,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
             <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             打撃成績
           </h2>
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
-            <table className="text-sm border-collapse">
-              <thead className="bg-band">
-                <tr>
-                  <th className="px-4 py-2.5 font-semibold text-white text-left whitespace-nowrap sticky left-0 bg-band text-xs">年度</th>
-                  {['試合数','打率','打席','打数','安打','本塁打','打点','得点','盗塁','出塁率','長打率','得点圏打率','OPS','二塁打','三塁打','塁打数','三振','四球','死球','犠打','犠飛','併殺打','敵失','失策','盗塁阻止'].map(h => (
-                    <th key={h} className={thCls}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {battingYearRows.map(r => (
-                  <tr key={r.label} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
-                    <td className="px-4 py-3 font-bold sticky left-0 bg-inherit whitespace-nowrap tabular-nums">{r.label}</td>
-                    <td className={tdCls}>{r.games}</td>
-                    <td className={`${tdCls} font-medium`}>{r.avg}</td>
-                    <td className={tdCls}>{r.pa}</td>
-                    <td className={tdCls}>{r.ab}</td>
-                    <td className={tdCls}>{r.hits}</td>
-                    <td className={tdCls}>{r.hr}</td>
-                    <td className={tdCls}>{r.rbi}</td>
-                    <td className={tdCls}>{r.runs}</td>
-                    <td className={tdCls}>{r.sb}</td>
-                    <td className={tdCls}>{r.obp}</td>
-                    <td className={tdCls}>{r.slg}</td>
-                    <td className={tdCls}>{r.risp_avg}</td>
-                    <td className={`${tdCls} font-medium`}>{r.ops}</td>
-                    <td className={tdCls}>{r.doubles}</td>
-                    <td className={tdCls}>{r.triples}</td>
-                    <td className={tdCls}>{r.tb}</td>
-                    <td className={tdCls}>{r.k}</td>
-                    <td className={tdCls}>{r.bb}</td>
-                    <td className={tdCls}>{r.hbp}</td>
-                    <td className={tdCls}>{r.sac_bunt}</td>
-                    <td className={tdCls}>{r.sac_fly}</td>
-                    <td className={tdCls}>{r.gidp}</td>
-                    <td className={tdCls}>{r.reach_on_error}</td>
-                    <td className={tdCls}>{r.errors}</td>
-                    <td className={tdCls}>{r.cs}</td>
-                  </tr>
-                ))}
-                <tr className={totalRowCls}>
-                  <td className="px-4 py-3 sticky left-0 bg-blue-50 whitespace-nowrap text-sm font-bold text-blue-950">通算</td>
-                  <td className={tdCls}>{battingTotal.games}</td>
-                  <td className={`${tdCls} font-medium`}>{battingTotal.avg}</td>
-                  <td className={tdCls}>{battingTotal.pa}</td>
-                  <td className={tdCls}>{battingTotal.ab}</td>
-                  <td className={tdCls}>{battingTotal.hits}</td>
-                  <td className={tdCls}>{battingTotal.hr}</td>
-                  <td className={tdCls}>{battingTotal.rbi}</td>
-                  <td className={tdCls}>{battingTotal.runs}</td>
-                  <td className={tdCls}>{battingTotal.sb}</td>
-                  <td className={tdCls}>{battingTotal.obp}</td>
-                  <td className={tdCls}>{battingTotal.slg}</td>
-                  <td className={tdCls}>{battingTotal.risp_avg}</td>
-                  <td className={`${tdCls} font-medium`}>{battingTotal.ops}</td>
-                  <td className={tdCls}>{battingTotal.doubles}</td>
-                  <td className={tdCls}>{battingTotal.triples}</td>
-                  <td className={tdCls}>{battingTotal.tb}</td>
-                  <td className={tdCls}>{battingTotal.k}</td>
-                  <td className={tdCls}>{battingTotal.bb}</td>
-                  <td className={tdCls}>{battingTotal.hbp}</td>
-                  <td className={tdCls}>{battingTotal.sac_bunt}</td>
-                  <td className={tdCls}>{battingTotal.sac_fly}</td>
-                  <td className={tdCls}>{battingTotal.gidp}</td>
-                  <td className={tdCls}>{battingTotal.reach_on_error}</td>
-                  <td className={tdCls}>{battingTotal.errors}</td>
-                  <td className={tdCls}>{battingTotal.cs}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <StatTable cols={BATTING_COLS} yearRows={battingYearRows} total={battingTotal} />
         </div>
       )}
 
@@ -152,69 +229,14 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
             <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             投手成績
           </h2>
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-900/5 overflow-x-auto">
-            <table className="text-sm border-collapse">
-              <thead className="bg-band">
-                <tr>
-                  <th className="px-4 py-2.5 font-semibold text-white text-left whitespace-nowrap sticky left-0 bg-band text-xs">年度</th>
-                  {['登板','勝','H','S','敗','勝率','防御率','投球回','投球数','失点','自責点','完投','完封','被安打','被本塁打','奪三振','与四球','与死球','ボーク','暴投'].map(h => (
-                    <th key={h} className={thCls}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {pitchingYearRows.map(r => (
-                  <tr key={r.label} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
-                    <td className="px-4 py-3 font-bold sticky left-0 bg-inherit whitespace-nowrap tabular-nums">{r.label}</td>
-                    <td className={tdCls}>{r.appearances}</td>
-                    <td className={tdCls}>{r.wins}</td>
-                    <td className={tdCls}>{r.holds}</td>
-                    <td className={tdCls}>{r.saves}</td>
-                    <td className={tdCls}>{r.losses}</td>
-                    <td className={`${tdCls} font-medium`}>{r.winPct}</td>
-                    <td className={`${tdCls} font-medium`}>{r.era}</td>
-                    <td className={tdCls}>{r.ip}</td>
-                    <td className={tdCls}>{r.pitch_count}</td>
-                    <td className={tdCls}>{r.runs}</td>
-                    <td className={tdCls}>{r.er}</td>
-                    <td className={tdCls}>{r.cg}</td>
-                    <td className={tdCls}>{r.sho}</td>
-                    <td className={tdCls}>{r.hits_allowed}</td>
-                    <td className={tdCls}>{r.hr_allowed}</td>
-                    <td className={tdCls}>{r.k}</td>
-                    <td className={tdCls}>{r.bb}</td>
-                    <td className={tdCls}>{r.hbp}</td>
-                    <td className={tdCls}>{r.balk}</td>
-                    <td className={tdCls}>{r.wp}</td>
-                  </tr>
-                ))}
-                <tr className={totalRowCls}>
-                  <td className="px-4 py-3 sticky left-0 bg-blue-50 whitespace-nowrap text-sm font-bold text-blue-950">通算</td>
-                  <td className={tdCls}>{pitchingTotal.appearances}</td>
-                  <td className={tdCls}>{pitchingTotal.wins}</td>
-                  <td className={tdCls}>{pitchingTotal.holds}</td>
-                  <td className={tdCls}>{pitchingTotal.saves}</td>
-                  <td className={tdCls}>{pitchingTotal.losses}</td>
-                  <td className={`${tdCls} font-medium`}>{pitchingTotal.winPct}</td>
-                  <td className={`${tdCls} font-medium`}>{pitchingTotal.era}</td>
-                  <td className={tdCls}>{pitchingTotal.ip}</td>
-                  <td className={tdCls}>{pitchingTotal.pitch_count}</td>
-                  <td className={tdCls}>{pitchingTotal.runs}</td>
-                  <td className={tdCls}>{pitchingTotal.er}</td>
-                  <td className={tdCls}>{pitchingTotal.cg}</td>
-                  <td className={tdCls}>{pitchingTotal.sho}</td>
-                  <td className={tdCls}>{pitchingTotal.hits_allowed}</td>
-                  <td className={tdCls}>{pitchingTotal.hr_allowed}</td>
-                  <td className={tdCls}>{pitchingTotal.k}</td>
-                  <td className={tdCls}>{pitchingTotal.bb}</td>
-                  <td className={tdCls}>{pitchingTotal.hbp}</td>
-                  <td className={tdCls}>{pitchingTotal.balk}</td>
-                  <td className={tdCls}>{pitchingTotal.wp}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <StatTable cols={PITCHING_COLS} yearRows={pitchingYearRows} total={pitchingTotal} />
         </div>
+      )}
+
+      {(battingTotal || pitchingTotal) && (
+        <p className="text-xs text-gray-400">
+          🥇🥈🥉 はチーム内の1〜3位（率系の指標は規定打席・規定投球回に到達した選手の中で判定しています）
+        </p>
       )}
 
       {!battingTotal && !pitchingTotal && (
