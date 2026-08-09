@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import RankBadge from '@/components/RankBadge'
+import type { RankMap } from '@/lib/ranking'
 
 type Player = { id: string; name: string; number: number | null }
 
@@ -15,6 +17,7 @@ export type PitchingRow = {
   cg: number; sho: number
   hits_allowed: number; hr_allowed: number
   k: number; bb: number; hbp: number; balk: number; wp: number
+  ranks: RankMap
 }
 
 type SortState = { col: string; dir: 'desc' | 'asc' } | null
@@ -32,29 +35,30 @@ function nextSort(state: SortState, col: string): SortState {
   return null
 }
 
-type ColDef = { key: string; label: string; getValue: (r: PitchingRow) => number | string; bold?: boolean }
+// rankKey は lib/ranking.ts の指標キー。順位バッジの紐付けに使う
+type ColDef = { key: string; label: string; rankKey: string; getValue: (r: PitchingRow) => number | string; bold?: boolean }
 
 const COLS: ColDef[] = [
-  { key: '登板',    label: '登板',    getValue: r => r.appearances },
-  { key: '勝',      label: '勝',      getValue: r => r.wins },
-  { key: 'H',       label: 'H',       getValue: r => r.holds },
-  { key: 'S',       label: 'S',       getValue: r => r.saves },
-  { key: '敗',      label: '敗',      getValue: r => r.losses },
-  { key: '勝率',    label: '勝率',    getValue: r => r.winPct, bold: true },
-  { key: '防御率',  label: '防御率',  getValue: r => r.era,    bold: true },
-  { key: '投球回',  label: '投球回',  getValue: r => r.ip },
-  { key: '投球数',  label: '投球数',  getValue: r => r.pitch_count },
-  { key: '失点',    label: '失点',    getValue: r => r.runs },
-  { key: '自責点',  label: '自責点',  getValue: r => r.er },
-  { key: '完投',    label: '完投',    getValue: r => r.cg },
-  { key: '完封',    label: '完封',    getValue: r => r.sho },
-  { key: '被安打',  label: '被安打',  getValue: r => r.hits_allowed },
-  { key: '被本塁打',label: '被本塁打',getValue: r => r.hr_allowed },
-  { key: '奪三振',  label: '奪三振',  getValue: r => r.k },
-  { key: '与四球',  label: '与四球',  getValue: r => r.bb },
-  { key: '与死球',  label: '与死球',  getValue: r => r.hbp },
-  { key: 'ボーク',  label: 'ボーク',  getValue: r => r.balk },
-  { key: '暴投',    label: '暴投',    getValue: r => r.wp },
+  { key: '登板',    label: '登板', rankKey: 'appearances',    getValue: r => r.appearances },
+  { key: '勝',      label: '勝', rankKey: 'wins',      getValue: r => r.wins },
+  { key: 'H',       label: 'H', rankKey: 'holds',       getValue: r => r.holds },
+  { key: 'S',       label: 'S', rankKey: 'saves',       getValue: r => r.saves },
+  { key: '敗',      label: '敗', rankKey: 'losses',      getValue: r => r.losses },
+  { key: '勝率',    label: '勝率', rankKey: 'winPct',    getValue: r => r.winPct, bold: true },
+  { key: '防御率',  label: '防御率', rankKey: 'era',  getValue: r => r.era,    bold: true },
+  { key: '投球回',  label: '投球回', rankKey: 'ip',  getValue: r => r.ip },
+  { key: '投球数',  label: '投球数', rankKey: 'pitch_count',  getValue: r => r.pitch_count },
+  { key: '失点',    label: '失点', rankKey: 'runs',    getValue: r => r.runs },
+  { key: '自責点',  label: '自責点', rankKey: 'er',  getValue: r => r.er },
+  { key: '完投',    label: '完投', rankKey: 'cg',    getValue: r => r.cg },
+  { key: '完封',    label: '完封', rankKey: 'sho',    getValue: r => r.sho },
+  { key: '被安打',  label: '被安打', rankKey: 'hits_allowed',  getValue: r => r.hits_allowed },
+  { key: '被本塁打',label: '被本塁打', rankKey: 'hr_allowed',getValue: r => r.hr_allowed },
+  { key: '奪三振',  label: '奪三振', rankKey: 'k',  getValue: r => r.k },
+  { key: '与四球',  label: '与四球', rankKey: 'bb',  getValue: r => r.bb },
+  { key: '与死球',  label: '与死球', rankKey: 'hbp',  getValue: r => r.hbp },
+  { key: 'ボーク',  label: 'ボーク', rankKey: 'balk',  getValue: r => r.balk },
+  { key: '暴投',    label: '暴投', rankKey: 'wp',    getValue: r => r.wp },
 ]
 
 type Props = {
@@ -79,7 +83,8 @@ export default function PitchingTable({ rows }: Props) {
     : rows
 
   const thData = 'px-2.5 py-2 align-bottom font-semibold text-white select-none sticky top-0 z-20 bg-band cursor-pointer hover:bg-[#5e90bc] transition-colors'
-  const tdCls = 'px-2.5 py-3 text-center text-sm tabular-nums'
+  // relative は順位バッジ（セル右端に絶対配置）の基準
+  const tdCls = 'relative px-2.5 py-3 text-center text-sm tabular-nums'
   const arrow = (dir: 'desc' | 'asc' | null) => (dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : '')
 
   return (
@@ -112,34 +117,23 @@ export default function PitchingTable({ rows }: Props) {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {sorted.map(({ player, appearances, wins, holds, saves, losses, winPct, era, ip, pitch_count, runs, er, cg, sho, hits_allowed, hr_allowed, k, bb, hbp, balk, wp }) => (
-            <tr key={player!.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
+          {sorted.map(row => (
+            <tr key={row.player!.id} className="odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors">
               <td className="px-2 py-3 whitespace-nowrap sticky left-0 z-10 bg-inherit">
-                <Link href={`/players/${player!.id}`} className="flex items-baseline gap-1.5 hover:text-blue-700 transition-colors">
-                  <span className="text-xs font-bold italic tabular-nums text-gray-400">{player!.number ?? '-'}</span>
-                  <span className="font-bold text-gray-900">{player!.name}</span>
+                <Link href={`/players/${row.player!.id}`} className="flex items-baseline gap-1.5 hover:text-blue-700 transition-colors">
+                  <span className="text-xs font-bold italic tabular-nums text-gray-400">{row.player!.number ?? '-'}</span>
+                  <span className="font-bold text-gray-900">{row.player!.name}</span>
                 </Link>
               </td>
-              <td className={tdCls}>{appearances}</td>
-              <td className={tdCls}>{wins}</td>
-              <td className={tdCls}>{holds}</td>
-              <td className={tdCls}>{saves}</td>
-              <td className={tdCls}>{losses}</td>
-              <td className={`${tdCls} font-medium`}>{winPct}</td>
-              <td className={`${tdCls} font-medium`}>{era}</td>
-              <td className={tdCls}>{ip}</td>
-              <td className={tdCls}>{pitch_count}</td>
-              <td className={tdCls}>{runs}</td>
-              <td className={tdCls}>{er}</td>
-              <td className={tdCls}>{cg}</td>
-              <td className={tdCls}>{sho}</td>
-              <td className={tdCls}>{hits_allowed}</td>
-              <td className={tdCls}>{hr_allowed}</td>
-              <td className={tdCls}>{k}</td>
-              <td className={tdCls}>{bb}</td>
-              <td className={tdCls}>{hbp}</td>
-              <td className={tdCls}>{balk}</td>
-              <td className={tdCls}>{wp}</td>
+              {COLS.map(col => {
+                const rank = row.ranks[col.rankKey]
+                return (
+                  <td key={col.key} className={`${tdCls}${col.bold ? ' font-medium' : ''}`}>
+                    {col.getValue(row)}
+                    {rank && <RankBadge rank={rank} />}
+                  </td>
+                )
+              })}
             </tr>
           ))}
         </tbody>

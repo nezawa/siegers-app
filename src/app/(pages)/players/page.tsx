@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import { fmt, fmtEra, sumIp, outsToIp, computeBatting, computePitching } from '@/lib/stats'
 import { fetchLastUpdated } from '@/lib/lastUpdated'
+import { battingRanksAll, pitchingRanksAll } from '@/lib/ranking'
 import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
@@ -78,16 +79,18 @@ export default async function PlayersPage({
   const qualifiedPaRate = settings?.qualified_pa ?? 3.1
   const qualifiedPaThreshold = activeGames.length * qualifiedPaRate
 
-  // 打撃通算ヘルパー
-  const buildBattingRows = (stats: typeof allBStats) => playerList.map(player => ({
-    player,
-    ...computeBatting(stats.filter(b => b.player_id === player.id)),
-  }))
+  // 打撃通算ヘルパー。順位は「いま表示している絞り込み結果の中での順位」
+  const buildBattingRows = (stats: typeof allBStats, ranks: Record<string, Record<string, number>>) =>
+    playerList.map(player => ({
+      player,
+      ...computeBatting(stats.filter(b => b.player_id === player.id)),
+      ranks: ranks[player.id] ?? {},
+    }))
 
   const bStatsActive = attrFilterActive
     ? bStats.filter(s => matchesGameAttrs(s.games as GameAttrs))
     : bStats
-  let battingRows = buildBattingRows(bStatsActive)
+  let battingRows = buildBattingRows(bStatsActive, battingRanksAll(bStatsActive, qualifiedPaThreshold))
   if (attrFilterActive) battingRows = battingRows.filter(r => r.pa > 0)
   if (qualifiedOnly) battingRows = battingRows.filter(r => r.pa >= qualifiedPaThreshold)
 
@@ -95,12 +98,14 @@ export default async function PlayersPage({
   const qualifiedIpRate = settings?.qualified_ip ?? 1.0
   const qualifiedIpThresholdOuts = activeGames.length * qualifiedIpRate * 3
 
-  // 投手通算ヘルパー
+  // 投手通算ヘルパー。順位は「いま表示している絞り込み結果の中での順位」
   const buildPitchingRows = (stats: typeof allPStats) => {
     const ids = [...new Set(stats.map(p => p.player_id))]
+    const ranks = pitchingRanksAll(stats, qualifiedIpThresholdOuts)
     return ids.map(pid => ({
       player: playerList.find(pl => pl.id === pid),
       ...computePitching(stats.filter(p => p.player_id === pid)),
+      ranks: ranks[pid] ?? {},
     })).filter(r => r.player)
   }
 

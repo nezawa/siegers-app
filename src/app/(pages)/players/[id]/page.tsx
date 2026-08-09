@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import { computeBatting, computePitching, type BattingTotals, type PitchingTotals } from '@/lib/stats'
 import { battingRanks, pitchingRanks, type RankMap } from '@/lib/ranking'
+import RankBadge from '@/components/RankBadge'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -63,21 +64,6 @@ const thCls = 'px-3 py-2.5 font-semibold text-white text-center whitespace-nowra
 // relative + バッジの絶対配置で、バッジの有無にかかわらず数字が同じ位置に揃うようにする
 const tdCls = 'relative px-3 py-3 text-center text-sm tabular-nums'
 
-const RANK_MEDALS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
-
-// セル右端（padding の内側）に固定配置する。数字の中央揃えには影響しない
-function RankBadge({ rank }: { rank: number }) {
-  return (
-    <span
-      className="pointer-events-none absolute right-0.5 top-1/2 -translate-y-1/2 text-[10px] leading-none"
-      role="img"
-      aria-label={`${rank}位`}
-    >
-      {RANK_MEDALS[rank]}
-    </span>
-  )
-}
-
 type StatRow<T> = { label: string; totals: T; ranks: RankMap }
 
 function StatTable<T>({
@@ -91,7 +77,7 @@ function StatTable<T>({
 }) {
   const renderCells = (row: StatRow<T>) =>
     cols.map(col => {
-      const rank = row.ranks.get(col.key)
+      const rank = row.ranks[col.key]
       return (
         <td key={col.key} className={`${tdCls}${col.bold ? ' font-medium' : ''}`}>
           {col.get(row.totals)}

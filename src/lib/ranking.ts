@@ -74,17 +74,19 @@ const PITCHING_METRICS: Metric<PitchingTotals>[] = [
 
 const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 ** digits
 
-// 指標キー → 順位(1〜3)。3位までに入らなかった指標は含まれない
-export type RankMap = Map<string, number>
+// 指標キー → 順位(1〜3)。3位までに入らなかった指標は含まれない。
+// クライアントコンポーネントへ props で渡すのでプレーンなオブジェクトにしておく
+export type RankMap = Record<string, number>
 
 const TOP_N = 3
 
-function rankMap<T>(
+// 選手ID → 指標別の順位
+function rankAll<T>(
   entries: { playerId: string; totals: T; qualifies: boolean }[],
-  metrics: Metric<T>[],
-  playerId: string
-): RankMap {
-  const ranks: RankMap = new Map()
+  metrics: Metric<T>[]
+): Record<string, RankMap> {
+  const result: Record<string, RankMap> = {}
+  for (const e of entries) result[e.playerId] = {}
 
   for (const m of metrics) {
     const pool = m.qualified ? entries.filter(e => e.qualifies) : entries
@@ -96,35 +98,45 @@ function rankMap<T>(
     // 記録0は順位付けの対象外（防御率は 0.00 が最高成績なので除外しない）
     if (!m.lowerIsBetter) values = values.filter(x => x.v > 0)
 
-    const mine = values.find(x => x.id === playerId)
-    if (!mine) continue
-
-    // 競技順位: 自分より上の人数 + 1（同順位が複数いればその分だけ次の順位が飛ぶ）
-    const better = values.filter(x => (m.lowerIsBetter ? x.v < mine.v : x.v > mine.v)).length
-    const rank = better + 1
-    if (rank <= TOP_N) ranks.set(m.key, rank)
+    for (const mine of values) {
+      // 競技順位: 自分より上の人数 + 1（同順位が複数いればその分だけ次の順位が飛ぶ）
+      const better = values.filter(x => (m.lowerIsBetter ? x.v < mine.v : x.v > mine.v)).length
+      const rank = better + 1
+      if (rank <= TOP_N) result[mine.id][m.key] = rank
+    }
   }
 
-  return ranks
+  return result
 }
 
 const playerIdOf = (row: StatRow) => String(row.player_id ?? '')
 
-// 指定した集合（年度別ならその年の行、通算なら全行）における、その選手の指標別順位を返す
-export function battingRanks(rows: StatRow[], playerId: string, paThreshold: number): RankMap {
+// 指定した集合（年度別ならその年の行、通算なら全行、フィルター適用後ならその行）における
+// 選手ごとの指標別順位を返す
+export function battingRanksAll(rows: StatRow[], paThreshold: number): Record<string, RankMap> {
   const ids = [...new Set(rows.map(playerIdOf))]
   const entries = ids.map(pid => {
     const totals = computeBatting(rows.filter(r => playerIdOf(r) === pid))
     return { playerId: pid, totals, qualifies: totals.pa >= paThreshold }
   })
-  return rankMap(entries, BATTING_METRICS, playerId)
+  return rankAll(entries, BATTING_METRICS)
 }
 
-export function pitchingRanks(rows: StatRow[], playerId: string, outsThreshold: number): RankMap {
+export function pitchingRanksAll(rows: StatRow[], outsThreshold: number): Record<string, RankMap> {
   const ids = [...new Set(rows.map(playerIdOf))]
   const entries = ids.map(pid => {
     const totals = computePitching(rows.filter(r => playerIdOf(r) === pid))
     return { playerId: pid, totals, qualifies: totals.totalOuts >= outsThreshold }
   })
-  return rankMap(entries, PITCHING_METRICS, playerId)
+  return rankAll(entries, PITCHING_METRICS)
+}
+
+const EMPTY: RankMap = {}
+
+export function battingRanks(rows: StatRow[], playerId: string, paThreshold: number): RankMap {
+  return battingRanksAll(rows, paThreshold)[playerId] ?? EMPTY
+}
+
+export function pitchingRanks(rows: StatRow[], playerId: string, outsThreshold: number): RankMap {
+  return pitchingRanksAll(rows, outsThreshold)[playerId] ?? EMPTY
 }
