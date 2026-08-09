@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import RankBadge from '@/components/RankBadge'
+import { rankBgClass } from '@/lib/rankStyle'
+import RankLegend from '@/components/RankLegend'
 import type { RankMap } from '@/lib/ranking'
 
 type Player = { id: string; name: string; number: number | null }
@@ -83,8 +84,7 @@ export default function PitchingTable({ rows }: Props) {
     : rows
 
   const thData = 'px-2.5 py-2 align-bottom font-semibold text-white select-none sticky top-0 z-20 bg-band cursor-pointer hover:bg-[#5e90bc] transition-colors'
-  // relative は順位バッジ（セル右端に絶対配置）の基準
-  const tdCls = 'relative px-2.5 py-3 text-center text-sm tabular-nums'
+  const tdCls = 'px-2.5 py-3 text-center text-sm tabular-nums'
   const arrow = (dir: 'desc' | 'asc' | null) => (dir === 'desc' ? '▼' : dir === 'asc' ? '▲' : '')
 
   return (
@@ -125,15 +125,11 @@ export default function PitchingTable({ rows }: Props) {
                   <span className="font-bold text-gray-900">{row.player!.name}</span>
                 </Link>
               </td>
-              {COLS.map(col => {
-                const rank = row.ranks[col.rankKey]
-                return (
-                  <td key={col.key} className={`${tdCls}${col.bold ? ' font-medium' : ''}`}>
-                    {col.getValue(row)}
-                    {rank && <RankBadge rank={rank} />}
-                  </td>
-                )
-              })}
+              {COLS.map(col => (
+                <td key={col.key} className={`${tdCls}${col.bold ? ' font-medium' : ''}${rankBgClass(row.ranks[col.rankKey])}`}>
+                  {col.getValue(row)}
+                </td>
+              ))}
             </tr>
           ))}
         </tbody>
@@ -141,6 +137,7 @@ export default function PitchingTable({ rows }: Props) {
       <p className="sticky left-0 border-t border-gray-100 px-3 py-2 text-xs text-gray-400">
         ※ 左右にスクロールすると全ての項目を確認できます
       </p>
+      <RankLegend className="sticky left-0 border-t border-gray-100 px-3 pb-2" />
     </div>
   )
 }

@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import { computeBatting, computePitching, type BattingTotals, type PitchingTotals } from '@/lib/stats'
 import { battingRanks, pitchingRanks, type RankMap } from '@/lib/ranking'
-import RankBadge from '@/components/RankBadge'
+import { rankBgClass } from '@/lib/rankStyle'
+import RankLegend from '@/components/RankLegend'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -61,8 +62,7 @@ const PITCHING_COLS: Col<PitchingTotals>[] = [
 ]
 
 const thCls = 'px-3 py-2.5 font-semibold text-white text-center whitespace-nowrap text-xs'
-// relative + バッジの絶対配置で、バッジの有無にかかわらず数字が同じ位置に揃うようにする
-const tdCls = 'relative px-3 py-3 text-center text-sm tabular-nums'
+const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
 
 type StatRow<T> = { label: string; totals: T; ranks: RankMap }
 
@@ -77,11 +77,9 @@ function StatTable<T>({
 }) {
   const renderCells = (row: StatRow<T>) =>
     cols.map(col => {
-      const rank = row.ranks[col.key]
       return (
-        <td key={col.key} className={`${tdCls}${col.bold ? ' font-medium' : ''}`}>
+        <td key={col.key} className={`${tdCls}${col.bold ? ' font-medium' : ''}${rankBgClass(row.ranks[col.key])}`}>
           {col.get(row.totals)}
-          {rank && <RankBadge rank={rank} />}
         </td>
       )
     })
@@ -219,11 +217,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
         </div>
       )}
 
-      {(battingTotal || pitchingTotal) && (
-        <p className="text-xs text-gray-400">
-          🥇🥈🥉 はチーム内の1〜3位（率系の指標は規定打席・規定投球回に到達した選手の中で判定しています）
-        </p>
-      )}
+      {(battingTotal || pitchingTotal) && <RankLegend />}
 
       {!battingTotal && !pitchingTotal && (
         <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">

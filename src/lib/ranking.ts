@@ -1,14 +1,19 @@
 import { computeBatting, computePitching, type BattingTotals, type PitchingTotals } from '@/lib/stats'
 
-// 各指標の「チーム内1〜3位」を判定する。個人成績ページの順位バッジ表示に使う。
+// 各指標でチーム内のどのあたりの位置にいるかを判定する。成績表のセル背景色に使う。
+//
+// 上位1/3を暖色・中位1/3を無色・下位1/3を寒色とし、各帯の中を3段階の濃淡に分ける。
+// 戻り値の tier は  1〜3 が暖色（1が最上位＝最も濃い）、
+//                  -1〜-3 が寒色（-3が最下位＝最も濃い）、キー無しが中位（無色）。
 //
 // ルール（実装の前提）:
 //   - 率系（打率・出塁率・長打率・OPS・得点圏打率・勝率・防御率）は規定到達者だけで比較する
-//     （数打席しか出ていない選手が打率1位になるのを防ぐため）
+//     （数打席しか出ていない選手が打率トップになるのを防ぐため）
 //   - 防御率は小さいほど上位。それ以外は大きいほど上位（三振・失策などのネガティブ指標も最多が上位）
-//   - 値が0の記録は順位を付けない（0本塁打で2位、のような表示を避ける）。
-//     ただし防御率は 0.00 が最高成績なので対象外
-//   - 同順位は全員に同じ順位を出し、次の順位は人数分飛ばす（競技順位。1位が2人なら次は3位）
+//   - 同値は「平均順位」で位置を決める。これにより 0 が大量に並ぶ指標（本塁打など）で
+//     0の集団が中位に収まり、記録を持つ選手だけが上位に出る
+//   - 記録が0のセルには色を付けない（防御率の 0.00 は最高成績なので例外）。
+//     順位計算の母数には含めるので、他の選手の相対位置は変わらない
 //   - 比較は「画面に表示される桁数に丸めてから」行う（表示が同じ値なら同順位として扱う）
 
 type StatRow = Record<string, unknown>
@@ -74,13 +79,31 @@ const PITCHING_METRICS: Metric<PitchingTotals>[] = [
 
 const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 ** digits
 
-// 指標キー → 順位(1〜3)。3位までに入らなかった指標は含まれない。
+// 指標キー → tier（暖色 1〜3 / 寒色 -1〜-3）。中位（無色）の指標は含まれない。
 // クライアントコンポーネントへ props で渡すのでプレーンなオブジェクトにしておく
 export type RankMap = Record<string, number>
 
-const TOP_N = 3
+// 帯の境界（上位1/3・下位1/3）と、1つの帯を何段階の濃淡に分けるか
+const TOP_BAND = 1 / 3
+const BOTTOM_BAND = 2 / 3
+const SHADES = 3
+// 母数がこれ未満の指標は3分割しても意味がないので色を付けない
+const MIN_POOL = 3
 
-// 選手ID → 指標別の順位
+// 相対位置 p（0=最上位, 1=最下位）から tier を決める
+function tierFor(p: number): number {
+  if (p < TOP_BAND) {
+    const step = Math.min(SHADES - 1, Math.floor((p / TOP_BAND) * SHADES))
+    return step + 1 // 1 が最も濃い暖色
+  }
+  if (p >= BOTTOM_BAND) {
+    const step = Math.min(SHADES - 1, Math.floor(((p - BOTTOM_BAND) / (1 - BOTTOM_BAND)) * SHADES))
+    return -(step + 1) // -3 が最も濃い寒色
+  }
+  return 0 // 中位は無色
+}
+
+// 選手ID → 指標別の tier
 function rankAll<T>(
   entries: { playerId: string; totals: T; qualifies: boolean }[],
   metrics: Metric<T>[]
@@ -90,19 +113,25 @@ function rankAll<T>(
 
   for (const m of metrics) {
     const pool = m.qualified ? entries.filter(e => e.qualifies) : entries
-    let values = pool
+    const values = pool
       .map(e => ({ id: e.playerId, v: m.get(e.totals) }))
       .filter((x): x is { id: string; v: number } => x.v !== null && Number.isFinite(x.v))
       .map(x => ({ id: x.id, v: round(x.v, m.digits ?? 0) }))
 
-    // 記録0は順位付けの対象外（防御率は 0.00 が最高成績なので除外しない）
-    if (!m.lowerIsBetter) values = values.filter(x => x.v > 0)
+    const n = values.length
+    if (n < MIN_POOL) continue
 
     for (const mine of values) {
-      // 競技順位: 自分より上の人数 + 1（同順位が複数いればその分だけ次の順位が飛ぶ）
+      // 記録が0のセルには色を付けない（防御率だけは 0.00 が最高成績なので対象外）。
+      // 順位の母数からは外さないので、他の選手の相対位置は変わらない
+      if (mine.v === 0 && !m.lowerIsBetter) continue
+
       const better = values.filter(x => (m.lowerIsBetter ? x.v < mine.v : x.v > mine.v)).length
-      const rank = better + 1
-      if (rank <= TOP_N) result[mine.id][m.key] = rank
+      const tied = values.filter(x => x.v === mine.v).length
+      // 平均順位。同値が並ぶときはその集団の真ん中の順位として扱う
+      const meanRank = better + (tied + 1) / 2
+      const tier = tierFor((meanRank - 1) / (n - 1))
+      if (tier !== 0) result[mine.id][m.key] = tier
     }
   }
 
