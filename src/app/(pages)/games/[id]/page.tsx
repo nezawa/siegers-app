@@ -4,6 +4,17 @@ import Link from 'next/link'
 import type { Game } from '@/types'
 import DeleteGameButton from './DeleteGameButton'
 
+// 列名は 4 文字以上なら "\n" で 2 行に折り返す（列幅を広げないため）
+const BATTING_HEADS = [
+  '打順', '選手', '打席', '打数', '安打', '本塁打', '打点', '得点', '盗塁', '二塁打', '三塁打',
+  '得点圏\n打数', '得点圏\n安打', '三振', '四球', '死球', '犠打', '犠飛', '併殺打', '敵失', '失策', '盗塁\n阻止',
+]
+
+const PITCHING_HEADS = [
+  '選手', '勝', 'H', 'S', '敗', '投球回', '投球数', '失点', '自責点', '完投', '完封',
+  '被安打', '被本\n塁打', '奪三振', '与四球', '与死球', 'ボーク', '暴投',
+]
+
 function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className="rounded-full bg-red-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">勝利</span>
   if (result === 'L') return <span className="rounded-full bg-blue-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">敗戦</span>
@@ -44,8 +55,8 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
   const battingData = batting ?? []
   const pitchingData = pitching ?? []
 
-  const thCls = 'px-1 sm:px-2 py-3 font-semibold text-white text-center whitespace-nowrap text-xs'
-  const tdCls = 'px-1 sm:px-2 py-3 text-center'
+  const thCls = 'px-1 py-2.5 font-semibold text-white text-center whitespace-pre leading-tight text-xs align-middle'
+  const tdCls = 'px-1 sm:px-2 py-3 text-center tabular-nums'
   const rowCls = 'odd:bg-white even:bg-slate-50/70 hover:bg-blue-50/70 transition-colors'
 
   return (
@@ -178,11 +189,16 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         <div>
           <SectionHeading href="/players">打撃成績</SectionHeading>
           <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-            <table className="border-collapse text-sm">
+            <table className="w-full min-w-max table-fixed border-collapse text-sm">
+              <colgroup>
+                <col className="w-10" />
+                <col className="w-24" />
+                {BATTING_HEADS.slice(2).map(h => <col key={h} className="w-12" />)}
+              </colgroup>
               <thead className="bg-band">
                 <tr>
-                  {['打順', '選手', '打席', '打数', '安打', '本塁打', '打点', '得点', '盗塁', '二塁打', '三塁打', '得点圏打数', '得点圏安打', '三振', '四球', '死球', '犠打', '犠飛', '併殺打', '敵失', '失策', '盗塁阻止'].map(h => (
-                    <th key={h} className={thCls}>{h}</th>
+                  {BATTING_HEADS.map((h, i) => (
+                    <th key={h} className={`${thCls} ${i === 1 ? 'px-1.5 sm:px-2 text-left' : ''}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -223,10 +239,14 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
         <div>
           <SectionHeading href="/players?tab=pitching">投手成績</SectionHeading>
           <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-            <table className="border-collapse text-sm">
+            <table className="w-full min-w-max table-fixed border-collapse text-sm">
+              <colgroup>
+                <col className="w-24" />
+                {PITCHING_HEADS.slice(1).map(h => <col key={h} className="w-12" />)}
+              </colgroup>
               <thead className="bg-band">
                 <tr>
-                  {['選手', '勝', 'H', 'S', '敗', '投球回', '投球数', '失点', '自責点', '完投', '完封', '被安打', '被本塁打', '奪三振', '与四球', '与死球', 'ボーク', '暴投'].map(h => (
+                  {PITCHING_HEADS.map(h => (
                     <th key={h} className={`${thCls} first:px-1.5 sm:first:px-3 first:text-left`}>{h}</th>
                   ))}
                 </tr>
