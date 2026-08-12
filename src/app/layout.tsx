@@ -11,8 +11,8 @@ const notoSansJP = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = {
-  title: 'Siegers',
-  description: '草野球チーム Siegers の公式サイト',
+  title: '小雀シーガーズ',
+  description: '草野球チーム 小雀シーガーズの公式サイト',
 }
 
 export default function RootLayout({
