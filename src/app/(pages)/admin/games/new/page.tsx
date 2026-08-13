@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import GameForm from './GameForm'
 import JsonGameForm from './JsonGameForm'
+import JsonFileForm from './JsonFileForm'
 
 export default async function NewGamePage({
   searchParams,
@@ -19,8 +20,9 @@ export default async function NewGamePage({
   const opponents = (opponentRows ?? []).map(o => o.name) as string[]
   const tournaments = (tournamentRows ?? []).map(t => t.name) as string[]
 
+  // タブが3つあるとスマホでは横に収まらないので、幅いっぱいに分け合わせる
   const tabCls = (active: boolean) =>
-    `px-6 py-2 rounded-lg text-sm transition-all ${
+    `flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-center text-xs transition-all sm:flex-none sm:px-6 sm:text-sm ${
       active
         ? 'bg-white text-blue-950 font-bold shadow'
         : 'text-gray-500 font-medium hover:text-gray-800'
@@ -33,19 +35,25 @@ export default async function NewGamePage({
         試合結果入力
       </h1>
 
-      <div className="mb-6 inline-flex rounded-xl bg-gray-200/70 p-1">
-        <Link href="/admin/games/new" className={tabCls(mode !== 'json')}>
+      <div className="mb-6 flex w-full rounded-xl bg-gray-200/70 p-1 sm:inline-flex sm:w-auto">
+        <Link href="/admin/games/new" className={tabCls(mode !== 'json' && mode !== 'file')}>
           フォーム入力
         </Link>
         <Link href="/admin/games/new?mode=json" className={tabCls(mode === 'json')}>
           JSON入力
         </Link>
+        <Link href="/admin/games/new?mode=file" className={tabCls(mode === 'file')}>
+          JSONファイル入力
+        </Link>
       </div>
 
-      {mode === 'json'
-        ? <JsonGameForm players={playerList} />
-        : <GameForm players={playerList} opponents={opponents} tournaments={tournaments} />
-      }
+      {mode === 'json' ? (
+        <JsonGameForm players={playerList} />
+      ) : mode === 'file' ? (
+        <JsonFileForm players={playerList} />
+      ) : (
+        <GameForm players={playerList} opponents={opponents} tournaments={tournaments} />
+      )}
     </div>
   )
 }

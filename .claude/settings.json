@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"console.log\\(require\\('/Users/t.k/Desktop/siegers-app/node_modules/next/package.json'\\).version\\)\")",
+      "Bash(node \"/private/tmp/claude-501/-Users-t-k-Desktop-siegers-app/f3b8b8c5-808d-4f2b-acae-1c67c9074107/scratchpad/check.mjs\")"
+    ]
+  }
+}
