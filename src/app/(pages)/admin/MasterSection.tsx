@@ -45,7 +45,8 @@ export default function MasterSection({ title, table, items, withGameType = fals
   // games 側の対応カラム（名前変更時に過去の試合表記もまとめて更新する）
   const gameColumn = table === 'opponents' ? 'opponent' : 'tournament'
 
-  // 大会の試合属性を、その大会名の試合すべてに反映する。更新できた試合数を返す
+  // 大会の試合属性を、その大会名の試合へ反映する。更新できた試合数を返す。
+  // 試合種別がまだ未設定の試合だけが対象。個別の試合で手動指定された種別は書き換えない
   const applyGameType = async (
     supabase: ReturnType<typeof createClient>,
     name: string,
@@ -55,6 +56,7 @@ export default function MasterSection({ title, table, items, withGameType = fals
       .from('games')
       .update({ game_type: gameType })
       .eq('tournament', name)
+      .is('game_type', null)
       .select('id')
     if (err) throw new Error(`試合への反映に失敗しました: ${err.message}`)
     return data?.length ?? 0
@@ -94,7 +96,7 @@ export default function MasterSection({ title, table, items, withGameType = fals
     try {
       if (withGameType && newGameType) {
         const count = await applyGameType(supabase, name, newGameType)
-        if (count > 0) setNotice(`「${name}」の試合 ${count}件に属性を反映しました`)
+        if (count > 0) setNotice(`「${name}」の試合種別が未設定だった ${count}件に反映しました`)
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e))
@@ -175,7 +177,7 @@ export default function MasterSection({ title, table, items, withGameType = fals
       }
     }
 
-    if (applied.length > 0) setNotice(`試合の属性を反映しました: ${applied.join('、')}`)
+    if (applied.length > 0) setNotice(`試合種別が未設定だった試合に反映しました: ${applied.join('、')}`)
     setLoading(false)
     setEditing(false)
     router.refresh()
@@ -249,7 +251,7 @@ export default function MasterSection({ title, table, items, withGameType = fals
       {editing && (
         <p className="mb-2 text-xs text-gray-400">
           名前を変更して保存すると、過去の試合の表記もまとめて更新されます
-          {withGameType && '。試合属性を変更すると、その大会名の試合すべてに反映されます（「未設定」に戻した場合は試合側を変更しません）'}
+          {withGameType && '。試合属性を変更すると、その大会名の試合のうち「試合種別が未設定のもの」だけに反映されます（試合ごとに種別を指定済みの試合と、属性を「未設定」に戻した場合は変更しません）'}
         </p>
       )}
 
