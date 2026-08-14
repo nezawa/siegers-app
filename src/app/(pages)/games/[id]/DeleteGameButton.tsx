@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-export default function DeleteGameButton({ gameId }: { gameId: string }) {
+// backHref は削除後に戻る一覧のURL（見ていた年度・ページを保つ）
+export default function DeleteGameButton({ gameId, backHref = '/games' }: { gameId: string; backHref?: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -12,7 +13,7 @@ export default function DeleteGameButton({ gameId }: { gameId: string }) {
     setLoading(true)
     const res = await fetch(`/api/games/${gameId}`, { method: 'DELETE' })
     if (res.ok) {
-      router.push('/games')
+      router.push(backHref)
       router.refresh()
     } else {
       alert('削除に失敗しました')

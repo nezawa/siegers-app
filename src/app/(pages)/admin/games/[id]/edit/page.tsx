@@ -2,8 +2,21 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import GameEditForm from './GameEditForm'
 
-export default async function EditGamePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditGamePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ year?: string; page?: string }>
+}) {
   const { id } = await params
+  // 一覧の表示状態（年度・ページ）。保存後の試合詳細へ引き継いで、そこから元のページに戻れるようにする
+  const { year, page } = await searchParams
+  const listQuery = new URLSearchParams()
+  if (year) listQuery.set('year', year)
+  if (page) listQuery.set('page', page)
+  const query = listQuery.toString()
+
   const supabase = await createClient()
 
   const [{ data: game }, { data: batting }, { data: pitching }, { data: players }] = await Promise.all([
@@ -26,6 +39,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
         existingBatting={batting ?? []}
         existingPitching={pitching ?? []}
         players={players ?? []}
+        listQuery={query}
       />
     </div>
   )

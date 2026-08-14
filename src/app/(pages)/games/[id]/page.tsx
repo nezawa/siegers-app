@@ -39,8 +39,23 @@ function SectionHeading({ children, href }: { children: React.ReactNode; href?: 
   )
 }
 
-export default async function GameDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function GameDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ year?: string; page?: string }>
+}) {
   const { id } = await params
+  // 一覧から渡された表示状態（年度・ページ）。戻る・編集・削除で持ち回り、見ていたページへ帰れるようにする
+  const { year, page } = await searchParams
+  const listQuery = new URLSearchParams()
+  if (year) listQuery.set('year', year)
+  if (page) listQuery.set('page', page)
+  const query = listQuery.toString()
+  const backHref = query ? `/games?${query}` : '/games'
+  const editHref = query ? `/admin/games/${id}/edit?${query}` : `/admin/games/${id}/edit`
+
   const supabase = await createClient()
 
   const [{ data: game }, { data: batting }, { data: pitching }, { data: { user } }] = await Promise.all([
@@ -61,6 +76,12 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="space-y-8">
+      <div>
+        <Link href={backHref} className="inline-flex items-center gap-1 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
+          ← 試合結果一覧
+        </Link>
+      </div>
+
       {/* スコアボード */}
       <div className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
         <div className="relative p-6 sm:p-8">
@@ -84,14 +105,14 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
               <ResultBadge result={game.result} />
               {user && (
                 <>
-                  <Link href={`/admin/games/${id}/edit`}
+                  <Link href={editHref}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm ring-1 ring-white/40 transition-all hover:bg-white/25">
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     編集
                   </Link>
-                  <DeleteGameButton gameId={id} />
+                  <DeleteGameButton gameId={id} backHref={backHref} />
                 </>
               )}
             </div>

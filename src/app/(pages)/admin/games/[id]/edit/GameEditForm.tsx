@@ -10,9 +10,11 @@ type Props = {
   existingBatting: Record<string, unknown>[]
   existingPitching: Record<string, unknown>[]
   players: Player[]
+  // 一覧の表示状態（year / page）。保存後の試合詳細に引き継ぐ
+  listQuery?: string
 }
 
-export default function GameEditForm({ game, existingBatting, existingPitching, players }: Props) {
+export default function GameEditForm({ game, existingBatting, existingPitching, players, listQuery }: Props) {
   const router = useRouter()
 
   const handleSave = async ({ game: fields, batting, pitching }: GameSavePayload) => {
@@ -34,7 +36,7 @@ export default function GameEditForm({ game, existingBatting, existingPitching, 
     if (statsError) throw statsError
 
     await registerMasters(supabase, fields)
-    router.push(`/games/${game.id}`)
+    router.push(listQuery ? `/games/${game.id}?${listQuery}` : `/games/${game.id}`)
     router.refresh()
   }
 

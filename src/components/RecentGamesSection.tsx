@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { Game } from '@/types'
 
 const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
@@ -37,16 +37,27 @@ function ResultBadge({ result }: { result: Game['result'] }) {
   return <span className={`${base} bg-gray-300 text-gray-600`}>-</span>
 }
 
+// 一覧の表示状態（年度・ページ）はURLに持たせる。
+// 試合詳細から「一覧へ戻る」ときに、見ていたページへそのまま戻れるようにするため
+export function gamesListQuery(year: string, page: number): string {
+  const params = new URLSearchParams()
+  if (year && year !== 'all') params.set('year', year)
+  if (page > 1) params.set('page', String(page))
+  return params.toString()
+}
+
+const withQuery = (path: string, query: string) => (query ? `${path}?${query}` : path)
+
 export default function RecentGamesSection({ games }: { games: Game[] }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const years = useMemo(() => {
     const set = new Set(games.map(g => g.date.slice(0, 4)))
     return Array.from(set).sort((a, b) => Number(b) - Number(a))
   }, [games])
 
-  const [selectedYear, setSelectedYear] = useState<string>('all')
-  const [page, setPage] = useState(1)
+  const selectedYear = searchParams.get('year') ?? 'all'
   const PER_PAGE = 10
 
   const filteredGames = useMemo(
@@ -55,15 +66,25 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
   )
 
   const totalPages = Math.max(1, Math.ceil(filteredGames.length / PER_PAGE))
+  // 試合を削除した後などで、URLのページ番号が実際の総ページ数を超えることがある
+  const page = Math.min(Math.max(1, Number(searchParams.get('page')) || 1), totalPages)
 
   const pagedGames = useMemo(
     () => filteredGames.slice((page - 1) * PER_PAGE, page * PER_PAGE),
     [filteredGames, page]
   )
 
+  // 年度・ページの切り替えは URL だけ差し替える。
+  // router.replace と違いサーバーへの再取得が走らないので、一覧の操作は今までどおり即座に切り替わる
+  // （History API は Next のルーターと連携していて useSearchParams にも反映される）
+  const showList = (year: string, nextPage: number) =>
+    window.history.replaceState(null, '', withQuery('/games', gamesListQuery(year, nextPage)))
+
+  const openGame = (id: string) =>
+    router.push(withQuery(`/games/${id}`, gamesListQuery(selectedYear, page)))
+
   function handleYearChange(year: string) {
-    setSelectedYear(year)
-    setPage(1)
+    showList(year, 1)
   }
 
   const thCls = 'px-4 py-3 text-xs font-semibold text-white whitespace-nowrap'
@@ -115,7 +136,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
                 return (
                   <div
                     key={game.id}
-                    onClick={() => router.push(`/games/${game.id}`)}
+                    onClick={() => openGame(game.id)}
                     className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3.5 transition-colors active:bg-blue-50"
                   >
                     <div className="min-w-0">
@@ -176,7 +197,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
                   return (
                     <tr
                       key={game.id}
-                      onClick={() => router.push(`/games/${game.id}`)}
+                      onClick={() => openGame(game.id)}
                       className="cursor-pointer odd:bg-white even:bg-slate-50/70 hover:bg-blue-50 transition-colors"
                     >
                       <td className="px-4 py-4 whitespace-nowrap font-bold tabular-nums text-gray-800">
@@ -215,7 +236,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
           {totalPages > 1 && (
             <div className="mt-5 flex items-center justify-center gap-1.5">
               <button
-                onClick={() => setPage(p => p - 1)}
+                onClick={() => showList(selectedYear, page - 1)}
                 disabled={page === 1}
                 className="h-8 w-8 rounded-full text-sm text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
@@ -224,7 +245,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                 <button
                   key={p}
-                  onClick={() => setPage(p)}
+                  onClick={() => showList(selectedYear, p)}
                   className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
                     p === page
                       ? 'bg-band text-white shadow'
@@ -235,7 +256,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
                 </button>
               ))}
               <button
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => showList(selectedYear, page + 1)}
                 disabled={page === totalPages}
                 className="h-8 w-8 rounded-full text-sm text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
