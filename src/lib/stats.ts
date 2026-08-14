@@ -37,9 +37,19 @@ export function outsToIp(outs: number): string {
   return rem === 0 ? `${inn}` : `${inn}.${rem}`
 }
 
+// 防御率の換算イニング数。1試合7回制の草野球に合わせて「1イニングあたりの自責点 × 7」で計算する
+// （プロ野球など9回制なら 9。ここを変えれば通算・個人・チーム年度別・ランキングの全てに効く）
+export const ERA_INNINGS = 7
+
+// 防御率の生値。投球回0のときは null（0除算を画面に出さない）
+export function eraValue(er: number, totalOuts: number): number | null {
+  if (totalOuts === 0) return null
+  return (er * ERA_INNINGS * 3) / totalOuts
+}
+
 export function fmtEra(er: number, totalOuts: number): string {
-  if (totalOuts === 0) return '-'
-  return (er * 27 / totalOuts).toFixed(2)
+  const value = eraValue(er, totalOuts)
+  return value === null ? '-' : value.toFixed(2)
 }
 
 // Supabase から返る成績行。集計に使うキーだけ数値として拾う
@@ -129,8 +139,8 @@ export function computePitching(rows: StatRow[]) {
     hbp: sum(rows, 'hbp'),
     balk: sum(rows, 'balk'),
     wp: sum(rows, 'wp'),
-    // 比較用の数値（順位判定に使う）
-    eraValue: totalOuts > 0 ? (er * 27) / totalOuts : null,
+    // 比較用の数値（順位判定に使う）。表示用の文字列と式がずれないよう同じ関数から作る
+    eraValue: eraValue(er, totalOuts),
     winPctValue: wl > 0 ? wins / wl : null,
   }
 }
