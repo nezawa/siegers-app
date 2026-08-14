@@ -3,9 +3,9 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Player } from '@/types'
-import GameFormBase, { registerMasters, type GameSavePayload } from '../GameFormBase'
+import GameFormBase, { registerMasters, type GameSavePayload, type TournamentOption } from '../GameFormBase'
 
-export default function GameForm({ players, opponents, tournaments }: { players: Player[]; opponents: string[]; tournaments: string[] }) {
+export default function GameForm({ players, opponents, tournaments }: { players: Player[]; opponents: string[]; tournaments: TournamentOption[] }) {
   const router = useRouter()
 
   const handleSave = async ({ game, batting, pitching }: GameSavePayload) => {

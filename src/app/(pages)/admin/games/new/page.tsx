@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import type { TournamentOption } from '../GameFormBase'
 import GameForm from './GameForm'
 import JsonGameForm from './JsonGameForm'
 import JsonFileForm from './JsonFileForm'
@@ -14,11 +15,12 @@ export default async function NewGamePage({
   const [{ data: players }, { data: opponentRows }, { data: tournamentRows }] = await Promise.all([
     supabase.from('players').select('*').order('number'),
     supabase.from('opponents').select('name').order('name'),
-    supabase.from('tournaments').select('name').order('name'),
+    supabase.from('tournaments').select('name, game_type').order('name'),
   ])
   const playerList = players ?? []
   const opponents = (opponentRows ?? []).map(o => o.name) as string[]
-  const tournaments = (tournamentRows ?? []).map(t => t.name) as string[]
+  // 大会名は、フォームで選んだときに試合種別を自動入力するため属性込みで渡す
+  const tournaments = (tournamentRows ?? []) as TournamentOption[]
 
   // タブが3つあるとスマホでは横に収まらないので、幅いっぱいに分け合わせる
   const tabCls = (active: boolean) =>

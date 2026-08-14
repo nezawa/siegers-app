@@ -156,8 +156,9 @@ export type ValidationResult = {
 }
 
 export function validateJsonGame(data: unknown, players: Player[]): ValidationResult {
-  const numberToId = (num: unknown): string | null =>
-    players.find(p => p.number === Number(num))?.id ?? null
+  const findPlayer = (num: unknown): Player | undefined =>
+    players.find(p => p.number === Number(num))
+  const numberToId = (num: unknown): string | null => findPlayer(num)?.id ?? null
 
   // 形式・型のチェックはスキーマに任せる（不正な型はここで全て弾かれる）
   const parsed = jsonGameSchema.safeParse(data)
@@ -165,6 +166,7 @@ export function validateJsonGame(data: unknown, players: Player[]): ValidationRe
 
   const d = parsed.data
   const errs: string[] = []
+  const warns: string[] = []
 
   // イニング別スコアがある場合、スコア・結果はその合計と統一する
   const sumInnings = (arr: (number | null)[] | undefined): number | null =>
@@ -215,7 +217,16 @@ export function validateJsonGame(data: unknown, players: Player[]): ValidationRe
     if (!numberToId(r.number)) errs.push(`batting[${i}]: 背番号 ${r.number} の選手が見つかりません`)
   })
   d.pitching?.forEach((r, i) => {
-    if (!numberToId(r.number)) errs.push(`pitching[${i}]: 背番号 ${r.number} の選手が見つかりません`)
+    const player = findPlayer(r.number)
+    if (!player) {
+      errs.push(`pitching[${i}]: 背番号 ${r.number} の選手が見つかりません`)
+    } else if (!player.is_pitcher) {
+      // 野手の緊急登板は普通にあるのでエラーにはしない。背番号の打ち間違いに気づくための警告
+      warns.push(
+        `pitching[${i}]: 背番号 ${r.number}（${player.name}）は投手として登録されていません。` +
+        `背番号が正しければ、このまま保存できます`
+      )
+    }
   })
 
   // 成績の整合性（打率・塁打数などの計算が狂う入力ミスを保存前に止める）。省略された項目は 0 扱い
@@ -241,7 +252,7 @@ export function validateJsonGame(data: unknown, players: Player[]): ValidationRe
   return {
     input: { ...d, score_us: score_us ?? 0, score_them: score_them ?? 0, result: result as 'W' | 'L' | 'D' | 'O' },
     errors: errs,
-    warnings: statIssues.warnings,
+    warnings: [...warns, ...statIssues.warnings],
   }
 }
 

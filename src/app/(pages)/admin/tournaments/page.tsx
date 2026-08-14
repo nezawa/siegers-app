@@ -3,7 +3,7 @@ import MasterSection from '../MasterSection'
 
 export default async function TournamentsPage() {
   const supabase = await createClient()
-  const { data: tournaments } = await supabase.from('tournaments').select('id, name').order('name')
+  const { data: tournaments } = await supabase.from('tournaments').select('id, name, game_type').order('name')
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -11,7 +11,7 @@ export default async function TournamentsPage() {
         <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
         大会名の管理
       </h1>
-      <MasterSection title="大会名" table="tournaments" items={tournaments ?? []} />
+      <MasterSection title="大会名" table="tournaments" items={tournaments ?? []} withGameType />
     </div>
   )
 }

@@ -183,11 +183,14 @@ function toVal(v: unknown): number | '' {
   return Number(v)
 }
 
+export type TournamentOption = { name: string; game_type: 'official' | 'practice' | 'other' | null }
+
 type Props = {
   players: Player[]
   // 入力候補（datalist）。編集画面など不要な場合は省略可
   opponents?: string[]
-  tournaments?: string[]
+  // 大会名は、選んだときに試合種別を自動で埋めるため属性込みで受け取る
+  tournaments?: TournamentOption[]
   // 編集時のみ渡す初期値。省略時は空のフォーム（新規入力）
   initialGame?: Game
   initialBatting?: Record<string, unknown>[]
@@ -250,6 +253,25 @@ export default function GameFormBase({
     if (us == null || them == null) return true
     return saved !== (us > them ? 'W' : us < them ? 'L' : 'D')
   })
+
+  // 試合種別も、結果と同じく「手で選んだら自動入力しない」。
+  // 保存済みの値がある編集画面では、大会名を触っただけで上書きされないよう手動扱いで開く
+  const [gameTypeManual, setGameTypeManual] = useState(initialGame?.game_type != null)
+  const [gameTypeAutoFilled, setGameTypeAutoFilled] = useState(false)
+
+  // 大会名を入力・選択したら、その大会に設定された試合属性を種別へ反映する
+  const changeTournament = (name: string) => {
+    const master = tournaments.find(t => t.name === name)
+    const fill = !gameTypeManual && master?.game_type ? master.game_type : null
+    setGameInfo(info => ({ ...info, tournament: name, ...(fill ? { game_type: fill } : {}) }))
+    setGameTypeAutoFilled(fill !== null)
+  }
+
+  const changeGameType = (value: 'official' | 'practice' | 'other' | '') => {
+    setGameInfo(info => ({ ...info, game_type: value }))
+    setGameTypeManual(true)
+    setGameTypeAutoFilled(false)
+  }
 
   const toInningArr = (arr: number[] | null | undefined): (number | '')[] => {
     const base = Array<number | ''>(9).fill('')
@@ -470,23 +492,26 @@ export default function GameFormBase({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">大会名</label>
             <input type="text" placeholder="〇〇リーグ" value={gameInfo.tournament}
-              onChange={e => setGameInfo({ ...gameInfo, tournament: e.target.value })}
+              onChange={e => changeTournament(e.target.value)}
               list={tournaments.length > 0 ? 'tournament-suggestions' : undefined} className={inputCls} />
             {tournaments.length > 0 && (
               <datalist id="tournament-suggestions">
-                {tournaments.map(name => <option key={name} value={name} />)}
+                {tournaments.map(t => <option key={t.name} value={t.name} />)}
               </datalist>
             )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">試合種別</label>
             <select value={gameInfo.game_type}
-              onChange={e => setGameInfo({ ...gameInfo, game_type: e.target.value as 'official' | 'practice' | 'other' | '' })} className={inputCls}>
+              onChange={e => changeGameType(e.target.value as 'official' | 'practice' | 'other' | '')} className={inputCls}>
               <option value="">選択</option>
               <option value="official">公式戦</option>
               <option value="practice">練習試合</option>
               <option value="other">その他</option>
             </select>
+            {gameTypeAutoFilled && (
+              <p className="mt-1 text-xs text-gray-400">大会名から自動入力されています（変更できます）</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">球場</label>
