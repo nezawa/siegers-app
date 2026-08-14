@@ -29,6 +29,13 @@ export type Game = {
   updated_at: string
 }
 
+// 大会マスタ（tournaments）のうち、入力フォーム・JSON登録で使う項目。
+// game_type は「この大会の試合の既定の種別」で、null は未設定
+export type TournamentOption = {
+  name: string
+  game_type: 'official' | 'practice' | 'other' | null
+}
+
 export type BattingStat = {
   id: string
   game_id: string

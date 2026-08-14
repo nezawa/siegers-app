@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import { validateBatting, validatePitching, mergeIssues } from '@/lib/validateStats'
-import type { Player } from '@/types'
+import type { Player, TournamentOption } from '@/types'
 
 // JSON入力・JSONファイル入力で共通の、試合JSONの検証と保存処理
 
@@ -155,7 +155,11 @@ export type ValidationResult = {
   warnings: string[]
 }
 
-export function validateJsonGame(data: unknown, players: Player[]): ValidationResult {
+export function validateJsonGame(
+  data: unknown,
+  players: Player[],
+  tournaments: TournamentOption[] = [],
+): ValidationResult {
   const findPlayer = (num: unknown): Player | undefined =>
     players.find(p => p.number === Number(num))
   const numberToId = (num: unknown): string | null => findPlayer(num)?.id ?? null
@@ -249,8 +253,20 @@ export function validateJsonGame(data: unknown, players: Player[]): ValidationRe
   )
   errs.push(...statIssues.errors)
 
+  // 試合種別が省略されていれば、大会マスタに設定された属性を使う。
+  // JSON に明示指定があればそちらを優先する（フォーム入力で手動選択が優先されるのと同じ扱い）
+  const game_type = d.game_type
+    || (d.tournament ? tournaments.find(t => t.name === d.tournament)?.game_type ?? undefined : undefined)
+    || undefined
+
   return {
-    input: { ...d, score_us: score_us ?? 0, score_them: score_them ?? 0, result: result as 'W' | 'L' | 'D' | 'O' },
+    input: {
+      ...d,
+      game_type,
+      score_us: score_us ?? 0,
+      score_them: score_them ?? 0,
+      result: result as 'W' | 'L' | 'D' | 'O',
+    },
     errors: errs,
     warnings: [...warns, ...statIssues.warnings],
   }

@@ -12,7 +12,7 @@ import {
   type JsonInput,
   type SavedGame,
 } from './jsonGame'
-import type { Player } from '@/types'
+import type { Player, TournamentOption } from '@/types'
 
 // 1ファイルの状態。ファイル単位で「待機 → 保存中 → 完了 / 失敗」を表示する
 type FileStatus = 'ready' | 'error' | 'saving' | 'done' | 'failed'
@@ -50,7 +50,7 @@ const badgeText = (f: FileEntry) => {
   }
 }
 
-export default function JsonFileForm({ players }: { players: Player[] }) {
+export default function JsonFileForm({ players, tournaments }: { players: Player[]; tournaments: TournamentOption[] }) {
   const router = useRouter()
   const [files, setFiles] = useState<FileEntry[]>([])
   const [dragging, setDragging] = useState(false)
@@ -72,7 +72,7 @@ export default function JsonFileForm({ players }: { players: Player[] }) {
     const targets: { label: string; input: JsonInput }[] = []
     games.forEach((game, i) => {
       const label = gameLabel(i, games.length)
-      const result = validateJsonGame(game, players)
+      const result = validateJsonGame(game, players, tournaments)
       errors.push(...result.errors.map(m => withLabel(label, m)))
       warnings.push(...result.warnings.map(m => withLabel(label, m)))
       if (result.input) targets.push({ label, input: result.input })
@@ -184,6 +184,7 @@ export default function JsonFileForm({ players }: { players: Player[] }) {
           <span className="font-medium text-gray-600">複数ファイルを同時に選択できます。</span>
           1ファイルに <code className="rounded bg-gray-100 px-1">[ &#123;試合1&#125;, &#123;試合2&#125; ]</code> と配列で書けば、そのファイル内の複数試合もまとめて登録されます。
           書き方は「JSON入力」タブの入力例と同じです。
+          <code className="rounded bg-gray-100 px-1">game_type</code>（試合種別）を省略した場合は、大会管理で設定した大会の試合属性が使われます。
         </p>
 
         <div

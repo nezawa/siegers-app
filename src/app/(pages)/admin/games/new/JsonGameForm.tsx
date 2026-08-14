@@ -12,12 +12,12 @@ import {
   type JsonInput,
   type SavedGame,
 } from './jsonGame'
-import type { Player } from '@/types'
+import type { Player, TournamentOption } from '@/types'
 
 // 複数試合（配列）を貼り付けたときのメッセージ用ラベル
 const withLabel = (label: string, message: string) => (label ? `${label}: ${message}` : message)
 
-export default function JsonGameForm({ players }: { players: Player[] }) {
+export default function JsonGameForm({ players, tournaments }: { players: Player[]; tournaments: TournamentOption[] }) {
   const router = useRouter()
   const [json, setJson] = useState('')
   const [loading, setLoading] = useState(false)
@@ -48,7 +48,7 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
     const targets: { label: string; input: JsonInput }[] = []
     games.forEach((game, i) => {
       const label = multi ? `[${i}]` : ''
-      const { input, errors: gameErrors, warnings: gameWarnings } = validateJsonGame(game, players)
+      const { input, errors: gameErrors, warnings: gameWarnings } = validateJsonGame(game, players, tournaments)
       allErrors.push(...gameErrors.map(m => withLabel(label, m)))
       allWarnings.push(...gameWarnings.map(m => withLabel(label, m)))
       if (input) targets.push({ label, input })
@@ -112,7 +112,8 @@ export default function JsonGameForm({ players }: { players: Player[] }) {
           後攻の最終回裏が不要なら「×」、サヨナラ勝ちは「得点+x」で表示されます。
           <code className="bg-gray-100 px-1 rounded">start_time</code>（開始時間 &quot;HH:MM&quot;）・
           <code className="bg-gray-100 px-1 rounded">tournament</code>（大会名）・
-          <code className="bg-gray-100 px-1 rounded">game_type</code>（&quot;official&quot; / &quot;practice&quot; / &quot;other&quot;）は任意です。
+          <code className="bg-gray-100 px-1 rounded">game_type</code>（&quot;official&quot; / &quot;practice&quot; / &quot;other&quot;）は任意で、
+          省略した場合は大会管理で設定した大会の試合属性が使われます。
           <code className="bg-gray-100 px-1 rounded">{'//'}</code> 以降はコメントとして無視されるので、入力例をそのまま貼り付けても動きます。
           <code className="bg-gray-100 px-1 rounded">[ &#123;試合1&#125;, &#123;試合2&#125; ]</code> のように配列で書けば複数試合をまとめて登録できます。
           <br />

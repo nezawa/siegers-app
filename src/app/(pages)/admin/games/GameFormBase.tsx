@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { errorMessage } from '@/lib/errorMessage'
 import { createClient } from '@/lib/supabase/client'
 import { validateBatting, validatePitching, mergeIssues } from '@/lib/validateStats'
-import type { Player, Game } from '@/types'
+import type { Player, Game, TournamentOption } from '@/types'
 
 // 試合入力（新規）と試合編集で共有するフォーム本体。
 // 差分（初期値の有無・保存先の違い）は props と onSave コールバックで吸収する。
@@ -182,8 +182,6 @@ function toVal(v: unknown): number | '' {
   if (v === null || v === undefined || v === '') return ''
   return Number(v)
 }
-
-export type TournamentOption = { name: string; game_type: 'official' | 'practice' | 'other' | null }
 
 type Props = {
   players: Player[]

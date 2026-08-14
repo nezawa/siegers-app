@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import type { TournamentOption } from '../GameFormBase'
+import type { TournamentOption } from '@/types'
 import GameForm from './GameForm'
 import JsonGameForm from './JsonGameForm'
 import JsonFileForm from './JsonFileForm'
@@ -63,9 +63,9 @@ export default async function NewGamePage({
       </div>
 
       {mode === 'json' ? (
-        <JsonGameForm players={playerList} />
+        <JsonGameForm players={playerList} tournaments={tournaments} />
       ) : mode === 'file' ? (
-        <JsonFileForm players={playerList} />
+        <JsonFileForm players={playerList} tournaments={tournaments} />
       ) : (
         <GameForm players={playerList} opponents={opponents} tournaments={tournaments} />
       )}
