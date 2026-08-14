@@ -100,13 +100,16 @@ export default async function PlayersPage({
 
   // 投手通算ヘルパー。順位は「いま表示している絞り込み結果の中での順位」
   const buildPitchingRows = (stats: typeof allPStats) => {
-    const ids = [...new Set(stats.map(p => p.player_id))]
     const ranks = pitchingRanksAll(stats, qualifiedIpThresholdOuts)
-    return ids.map(pid => ({
-      player: playerList.find(pl => pl.id === pid),
-      ...computePitching(stats.filter(p => p.player_id === pid)),
-      ranks: ranks[pid] ?? {},
-    })).filter(r => r.player)
+    // 登板のある選手だけを、打撃成績と同じ背番号順（playerList の並び）で出す
+    const pitched = new Set(stats.map(p => p.player_id))
+    return playerList
+      .filter(player => pitched.has(player.id))
+      .map(player => ({
+        player,
+        ...computePitching(stats.filter(p => p.player_id === player.id)),
+        ranks: ranks[player.id] ?? {},
+      }))
   }
 
   const pStatsActive = attrFilterActive
