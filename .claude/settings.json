@@ -4,7 +4,8 @@
       "Bash(node -e \"console.log\\(require\\('/Users/t.k/Desktop/siegers-app/node_modules/next/package.json'\\).version\\)\")",
       "Bash(node \"/private/tmp/claude-501/-Users-t-k-Desktop-siegers-app/f3b8b8c5-808d-4f2b-acae-1c67c9074107/scratchpad/check.mjs\")",
       "Bash(perl -0pi -e \"s/onClick=\\\\{\\\\\\(\\\\\\) => router\\\\.push\\\\\\(\\\\`\\\\/games\\\\/\\\\\\\\\\\\$\\\\{game\\\\.id\\\\}\\\\`\\\\\\)\\\\}/onClick={\\(\\) => openGame\\(game.id\\)}/g\" \"src/components/RecentGamesSection.tsx\")",
-      "Bash(grep -n \"admin/games/\\\\${id}/edit\\\\|DeleteGameButton\" \"src/app/\\(pages\\)/games/[id]/page.tsx\")"
+      "Bash(grep -n \"admin/games/\\\\${id}/edit\\\\|DeleteGameButton\" \"src/app/\\(pages\\)/games/[id]/page.tsx\")",
+      "Bash(bash -c 'set -a; . ./.env.local; set +a; GID=$\\(curl -s \"$NEXT_PUBLIC_SUPABASE_URL/rest/v1/games?select=id&limit=1\" -H \"apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY\" | python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[0][\\\\\"id\\\\\"] if d else \\\\\"\\\\\"\\)\"\\); PID=$\\(curl -s \"http://localhost:3000/players\" | grep -oE \"/players/[0-9a-f-]{36}\" | head -1 | sed \"s|/players/||\"\\); printf \"game -> \"; curl -s \"http://localhost:3000/games/$GID\" | grep -o \"<title>[^<]*</title>\" | head -1; printf \"player -> \"; curl -s \"http://localhost:3000/players/$PID\" | grep -o \"<title>[^<]*</title>\" | head -1')"
     ]
   }
 }

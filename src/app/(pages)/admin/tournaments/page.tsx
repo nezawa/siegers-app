@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import MasterSection from '../MasterSection'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: '大会名の管理' }
 
 export default async function TournamentsPage() {
   const supabase = await createClient()

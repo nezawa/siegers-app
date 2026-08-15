@@ -4,6 +4,9 @@ import type { TournamentOption } from '@/types'
 import GameForm from './GameForm'
 import JsonGameForm from './JsonGameForm'
 import JsonFileForm from './JsonFileForm'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: '試合結果入力' }
 
 export default async function NewGamePage({
   searchParams,

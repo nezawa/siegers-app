@@ -8,6 +8,9 @@ import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
 import TeamTable from './TeamTable'
 import FilterPanel from './FilterPanel'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: '選手成績' }
 
 export default async function PlayersPage({
   searchParams,

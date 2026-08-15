@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import GameEditForm from './GameEditForm'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: '試合結果の編集' }
 
 export default async function EditGamePage({
   params,

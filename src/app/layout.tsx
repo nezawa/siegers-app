@@ -11,7 +11,11 @@ const notoSansJP = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = {
-  title: '小雀シーガーズ',
+  // 各ページで title を定義すると「小雀シーガーズ | 〇〇」になる（default はトップページ用）
+  title: {
+    default: '小雀シーガーズ',
+    template: '小雀シーガーズ | %s',
+  },
   description: '草野球チーム 小雀シーガーズの公式サイト',
   // iOS でホーム画面に追加したときの表示名・ステータスバー
   appleWebApp: {

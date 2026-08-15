@@ -1,3 +1,8 @@
+import type { Metadata } from 'next'
+
+// 「小雀シーガーズ | 小雀シーガーズとは」と重複するので、タブ表示は「チーム紹介」にする
+export const metadata: Metadata = { title: 'チーム紹介' }
+
 export default function AboutPage() {
   return (
     <div>

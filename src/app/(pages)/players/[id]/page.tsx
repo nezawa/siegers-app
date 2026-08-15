@@ -6,6 +6,7 @@ import { rankBgClass } from '@/lib/rankStyle'
 import RankLegend from '@/components/RankLegend'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 
 // 表示列の定義。key を lib/ranking.ts の指標キーと揃えることで順位バッジと紐付ける
 type Col<T> = { header: string; key: string; get: (t: T) => string | number; bold?: boolean }
@@ -110,6 +111,16 @@ function StatTable<T>({
       </table>
     </div>
   )
+}
+
+// タブに「小雀シーガーズ | #18 山田太郎」のように選手名を出す
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: player } = await supabase.from('players').select('name, number').eq('id', id).single()
+
+  if (!player) return { title: '選手成績' }
+  return { title: player.number != null ? `#${player.number} ${player.name}` : player.name }
 }
 
 export default async function PlayerDetailPage({ params }: { params: Promise<{ id: string }> }) {

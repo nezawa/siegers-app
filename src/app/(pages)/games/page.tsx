@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import RecentGamesSection from '@/components/RecentGamesSection'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = { title: '試合結果' }
 
 export default async function GamesPage() {
   const supabase = await createClient()

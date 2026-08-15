@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import type { Game } from '@/types'
 import DeleteGameButton from './DeleteGameButton'
 
@@ -37,6 +38,24 @@ function SectionHeading({ children, href }: { children: React.ReactNode; href?: 
       )}
     </h2>
   )
+}
+
+// タブに「小雀シーガーズ | 2025/05/03 vs レッドスターズ」のように試合の概要を出す。
+// 表示用に必要な列だけを取る軽いクエリにしている
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: game } = await supabase
+    .from('games')
+    .select('date, opponent, score_us, score_them, result')
+    .eq('id', id)
+    .single()
+
+  if (!game) return { title: '試合結果' }
+
+  const date = game.date.replace(/-/g, '/')
+  const score = game.result ? ` ${game.score_us}-${game.score_them}` : ''
+  return { title: `${date} vs ${game.opponent}${score}` }
 }
 
 export default async function GameDetailPage({
