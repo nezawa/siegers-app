@@ -24,7 +24,8 @@ export default async function PlayersPage({
   const gtypeFilter = gtype === 'official' || gtype === 'practice' ? gtype : null
   const tournamentFilter = tournament || null
   const opponentFilter = opponent || null
-  const qualifiedOnly = q === '1'
+  // 規定打席・規定投球回での絞り込みは既定でON。外したときだけ URL に q=0 が付く
+  const qualifiedOnly = q !== '0'
 
   // 期間指定（from/to）が優先、なければ年度フィルター
   const matchesPeriod = (date?: string): boolean => {

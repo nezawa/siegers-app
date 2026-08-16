@@ -48,7 +48,8 @@ export default function FilterPanel({
   const [tournamentSel, setTournamentSel] = useState(tournament ?? '')
   const [fromDate, setFromDate] = useState(from ?? '')
   const [toDate, setToDate] = useState(to ?? '')
-  const [qualifiedOnly, setQualifiedOnly] = useState(q === '1')
+  // 既定でONなので、URL に q が無い状態＝チェック済み（q=0 のときだけ外す）
+  const [qualifiedOnly, setQualifiedOnly] = useState(q !== '0')
 
   const hasRange = Boolean(fromDate || toDate)
 
@@ -81,7 +82,7 @@ export default function FilterPanel({
     if (gtypeSel) p.set('gtype', gtypeSel)
     if (opponentSel) p.set('opponent', opponentSel)
     if (tournamentSel) p.set('tournament', tournamentSel)
-    if (qualifiedOnly) p.set('q', '1')
+    if (!qualifiedOnly) p.set('q', '0')
     const s = p.toString()
     router.push(s ? `/players?${s}` : '/players')
   }
