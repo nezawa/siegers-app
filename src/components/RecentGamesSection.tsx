@@ -182,9 +182,9 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
             <table className="w-full border-collapse text-sm">
               <thead className="bg-band">
                 <tr>
-                  <th className={`${thCls} w-px text-left`}>試合日</th>
-                  <th className={`${thCls} w-px text-left`}>開始時間</th>
-                  <th className={`${thCls} w-px text-left`}>種別</th>
+                  <th className={`${thCls} w-px text-center`}>試合日</th>
+                  <th className={`${thCls} w-px text-center`}>開始時間</th>
+                  <th className={`${thCls} w-px text-center`}>種別</th>
                   <th className={`${thCls} text-left`}>対戦チーム</th>
                   <th className={`${thCls} w-px text-right`}>スコア</th>
                   <th className={`${thCls} w-px text-center`}>勝敗</th>
@@ -200,16 +200,16 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
                       onClick={() => openGame(game.id)}
                       className="cursor-pointer odd:bg-white even:bg-slate-50/70 hover:bg-blue-50 transition-colors"
                     >
-                      <td className="px-4 py-4 whitespace-nowrap font-bold tabular-nums text-gray-800">
+                      <td className="px-4 py-4 text-center whitespace-nowrap font-bold tabular-nums text-gray-800">
                         {d.label}
                         <span className={`text-xs ${d.isSun ? 'text-red-500' : d.isSat ? 'text-blue-500' : 'text-gray-400'}`}>
                           （{d.dow}）
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-left whitespace-nowrap tabular-nums text-gray-600">
+                      <td className="px-4 py-4 text-center whitespace-nowrap tabular-nums text-gray-600">
                         {formatTime(game.start_time) ?? <span className="text-gray-300">-</span>}
                       </td>
-                      <td className="px-4 py-4 text-left whitespace-nowrap">
+                      <td className="px-4 py-4 text-center whitespace-nowrap">
                         {badge ? (
                           <span className={`inline-flex rounded px-2 py-0.5 text-xs font-bold text-white ${badge.cls}`}>
                             {badge.label}
