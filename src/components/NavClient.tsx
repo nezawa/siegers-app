@@ -86,6 +86,7 @@ export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         <Link href="/about" className={desktopLinkCls}>小雀シーガーズとは</Link>
         <Link href="/games" className={desktopLinkCls}>試合結果</Link>
         <Link href="/players" className={desktopLinkCls}>成績</Link>
+        <Link href="/blog" className={desktopLinkCls}>ブログ</Link>
       </div>
 
       {/* デスクトップ管理系（右端・縦中央） */}
@@ -191,6 +192,9 @@ export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
               </Link>
               <Link href="/players" onClick={close} className="block w-full py-4 tracking-wide text-white/90 transition-colors hover:text-white">
                 成績
+              </Link>
+              <Link href="/blog" onClick={close} className="block w-full py-4 tracking-wide text-white/90 transition-colors hover:text-white">
+                ブログ
               </Link>
               {isLoggedIn ? (
                 <>
