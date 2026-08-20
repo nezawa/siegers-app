@@ -58,7 +58,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
   }, [games])
 
   const selectedYear = searchParams.get('year') ?? 'all'
-  const PER_PAGE = 10
+  const PER_PAGE = 20
 
   const filteredGames = useMemo(
     () => selectedYear === 'all' ? games : games.filter(g => g.date.startsWith(selectedYear)),
