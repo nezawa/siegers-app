@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SettingsForm from './SettingsForm'
+import BlogPasswordForm from './BlogPasswordForm'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: '設定' }
@@ -18,10 +19,13 @@ export default async function SettingsPage() {
         <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
         設定
       </h1>
-      <SettingsForm
-        qualifiedIpRate={data?.qualified_ip ?? 1.0}
-        qualifiedPaRate={data?.qualified_pa ?? 3.1}
-      />
+      <div className="space-y-8">
+        <SettingsForm
+          qualifiedIpRate={data?.qualified_ip ?? 1.0}
+          qualifiedPaRate={data?.qualified_pa ?? 3.1}
+        />
+        <BlogPasswordForm />
+      </div>
     </div>
   )
 }
