@@ -73,15 +73,18 @@ export default function BlogPasswordForm() {
             />
           </div>
         </div>
+
+        {/* 操作ボタンは、対象の設定と同じカード内に置く */}
+        <div className="mt-6 space-y-3 border-t border-gray-100 pt-5">
+          {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
+          {saved && <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-600">ブログのパスワードを変更しました</p>}
+
+          <button type="submit" disabled={loading || password === '' || confirm === ''}
+            className="w-full rounded-xl bg-band py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
+            {loading ? '変更中...' : 'パスワードを変更'}
+          </button>
+        </div>
       </div>
-
-      {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
-      {saved && <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-600">ブログのパスワードを変更しました</p>}
-
-      <button type="submit" disabled={loading || password === '' || confirm === ''}
-        className="w-full rounded-xl bg-band py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
-        {loading ? '変更中...' : 'パスワードを変更'}
-      </button>
     </form>
   )
 }

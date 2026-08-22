@@ -71,15 +71,18 @@ export default function SettingsForm({ qualifiedIpRate, qualifiedPaRate }: Props
             </div>
           </div>
         </div>
+
+        {/* 操作ボタンは、対象の設定と同じカード内に置く */}
+        <div className="mt-6 space-y-3 border-t border-gray-100 pt-5">
+          {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
+          {saved && <p className="text-sm text-green-600 bg-green-50 px-4 py-3 rounded-lg">保存しました</p>}
+
+          <button type="submit" disabled={loading}
+            className="w-full rounded-xl bg-band py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
+            {loading ? '保存中...' : '設定を保存'}
+          </button>
+        </div>
       </div>
-
-      {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
-      {saved && <p className="text-sm text-green-600 bg-green-50 px-4 py-3 rounded-lg">保存しました</p>}
-
-      <button type="submit" disabled={loading}
-        className="w-full rounded-xl bg-band py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
-        {loading ? '保存中...' : '設定を保存'}
-      </button>
     </form>
   )
 }
