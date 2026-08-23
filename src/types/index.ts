@@ -78,3 +78,11 @@ export type PitchingStat = {
   wp: number
   players?: Player
 }
+
+// ブログ記事（閲覧は blog_posts_list / blog_post_get 関数経由。詳細は supabase/add_blog_posts.sql）
+export type BlogPost = {
+  id: string
+  title: string
+  body: string
+  published_at: string
+}

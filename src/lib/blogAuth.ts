@@ -8,6 +8,11 @@ import { createClient } from '@/lib/supabase/server'
 export const BLOG_COOKIE = 'blog_session'
 export const BLOG_SESSION_DAYS = 30
 
+// 閲覧用の関数に渡すセッショントークン。管理者ログイン中は null でも DB 側で許可される
+export async function getBlogToken(): Promise<string> {
+  return (await cookies()).get(BLOG_COOKIE)?.value ?? ''
+}
+
 export async function isBlogUnlocked(): Promise<boolean> {
   const supabase = await createClient()
 
