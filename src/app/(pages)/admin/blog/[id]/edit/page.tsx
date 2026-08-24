@@ -12,7 +12,7 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ i
   const supabase = await createClient()
   const { data } = await supabase
     .from('blog_posts')
-    .select('id, title, body, published_at')
+    .select('id, title, body, published_at, author')
     .eq('id', id)
     .single()
 

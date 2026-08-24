@@ -36,7 +36,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
       </div>
 
       <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 sm:p-8">
-        <p className="text-xs font-medium tabular-nums text-gray-400">{post.published_at.replace(/-/g, '/')}</p>
+        <p className="text-xs font-medium text-gray-400">
+          <span className="tabular-nums">{post.published_at.replace(/-/g, '/')}</span>
+          {post.author && <span className="ml-2">投稿者: {post.author}</span>}
+        </p>
         <h1 className="mt-1 text-2xl font-bold text-gray-900">{post.title}</h1>
         {/* 本文はプレーンテキスト。改行をそのまま表示する */}
         <div className="mt-5 whitespace-pre-wrap border-t border-gray-100 pt-5 text-sm leading-7 text-gray-700">

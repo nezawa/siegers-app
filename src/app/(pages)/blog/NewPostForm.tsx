@@ -2,19 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { errorMessage } from '@/lib/errorMessage'
-import type { BlogPost } from '@/types'
 
-// 新規投稿と編集で共有するフォーム。post があれば編集モード
-export default function BlogPostForm({ post }: { post?: BlogPost }) {
+// ブログにログインした人が使う投稿フォーム。
+// テーブルへ直接 insert する権限は無いので、セッションを検証する RPC 経由で投稿する。
+// トークンは httpOnly Cookie にあり JS から読めないため、サーバー側の API を挟む
+export default function NewPostForm() {
   const router = useRouter()
-  const [title, setTitle] = useState(post?.title ?? '')
-  const [body, setBody] = useState(post?.body ?? '')
-  const [author, setAuthor] = useState(post?.author ?? '')
-  const [publishedAt, setPublishedAt] = useState(
-    post?.published_at ?? new Date().toLocaleDateString('sv-SE') // "YYYY-MM-DD"（端末のローカル日付）
-  )
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [author, setAuthor] = useState('')
+  const [publishedAt, setPublishedAt] = useState(new Date().toLocaleDateString('sv-SE'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,29 +25,21 @@ export default function BlogPostForm({ post }: { post?: BlogPost }) {
     setError('')
 
     try {
-      const supabase = createClient()
-      const fields = {
-        title: title.trim(),
-        body,
-        published_at: publishedAt,
-        author: author.trim() === '' ? null : author.trim(),
+      const res = await fetch('/api/blog/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body, author, published_at: publishedAt }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error ?? '投稿に失敗しました')
+        setLoading(false)
+        return
       }
-
-      if (post) {
-        const { error: err } = await supabase
-          .from('blog_posts')
-          .update({ ...fields, updated_at: new Date().toISOString() })
-          .eq('id', post.id)
-        if (err) throw err
-      } else {
-        const { error: err } = await supabase.from('blog_posts').insert(fields)
-        if (err) throw err
-      }
-
-      router.push('/admin/blog')
+      router.push(`/blog/${data.id}`)
       router.refresh()
-    } catch (err: unknown) {
-      setError(`保存に失敗しました: ${errorMessage(err)}`)
+    } catch {
+      setError('通信に失敗しました。時間をおいて試してください')
       setLoading(false)
     }
   }
@@ -80,8 +69,7 @@ export default function BlogPostForm({ post }: { post?: BlogPost }) {
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">本文 *</label>
             <textarea value={body} onChange={e => setBody(e.target.value)} rows={16}
-              placeholder="改行はそのまま表示されます"
-              className={`${inputCls} resize-y leading-7`} />
+              placeholder="改行はそのまま表示されます" className={`${inputCls} resize-y leading-7`} />
           </div>
         </div>
 
@@ -89,7 +77,7 @@ export default function BlogPostForm({ post }: { post?: BlogPost }) {
           {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
           <button type="submit" disabled={loading}
             className="w-full rounded-xl bg-band py-3 font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg disabled:opacity-50">
-            {loading ? '保存中...' : post ? '変更を保存' : '投稿する'}
+            {loading ? '投稿中...' : '投稿する'}
           </button>
         </div>
       </div>

@@ -85,4 +85,6 @@ export type BlogPost = {
   title: string
   body: string
   published_at: string
+  // 任意入力の投稿者名。未入力なら null
+  author: string | null
 }

@@ -11,7 +11,7 @@ export default async function AdminBlogPage() {
   // 管理者は RLS のポリシーでテーブルを直接読める
   const { data } = await supabase
     .from('blog_posts')
-    .select('id, title, body, published_at')
+    .select('id, title, body, published_at, author')
     .order('published_at', { ascending: false })
     .order('created_at', { ascending: false })
   const posts = (data ?? []) as BlogPost[]

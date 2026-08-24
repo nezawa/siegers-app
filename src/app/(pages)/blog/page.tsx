@@ -33,7 +33,13 @@ export default async function BlogPage() {
           <span className="inline-block h-6 w-1.5 rounded-full bg-band" />
           ブログ
         </h1>
-        <BlogLogoutButton />
+        <div className="flex items-center gap-2">
+          <Link href="/blog/new"
+            className="rounded-xl bg-band px-4 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:opacity-85">
+            新規投稿
+          </Link>
+          <BlogLogoutButton />
+        </div>
       </div>
 
       {posts.length === 0 ? (
@@ -48,7 +54,10 @@ export default async function BlogPage() {
                 href={`/blog/${post.id}`}
                 className="block rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md hover:ring-band/30"
               >
-                <p className="text-xs font-medium tabular-nums text-gray-400">{formatPostDate(post.published_at)}</p>
+                <p className="text-xs font-medium text-gray-400">
+                  <span className="tabular-nums">{formatPostDate(post.published_at)}</span>
+                  {post.author && <span className="ml-2">{post.author}</span>}
+                </p>
                 <h2 className="mt-1 font-bold text-gray-900">{post.title}</h2>
                 <p className="mt-1.5 text-sm text-gray-500">{excerpt(post.body)}</p>
               </Link>
