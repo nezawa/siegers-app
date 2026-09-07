@@ -157,8 +157,8 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const paThreshold = (year: string | null) => gameCount(year) * qualifiedPaRate
   const outsThreshold = (year: string | null) => gameCount(year) * qualifiedIpRate * 3
 
-  const bYears = [...new Set(bStats.map(getYear).filter(Boolean))].sort().reverse()
-  const pYears = [...new Set(pStats.map(getYear).filter(Boolean))].sort().reverse()
+  const bYears = [...new Set(bStats.map(getYear).filter(Boolean))].sort()
+  const pYears = [...new Set(pStats.map(getYear).filter(Boolean))].sort()
 
   const battingYearRows = bYears.map(year => {
     const scope = allB.filter(s => getYear(s) === year)
