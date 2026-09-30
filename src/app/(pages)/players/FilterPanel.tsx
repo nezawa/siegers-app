@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ALL, toSelectValue, type GameType } from './filterDefaults'
 
 type Params = {
   year?: string
@@ -34,16 +35,23 @@ export default function FilterPanel({
   tournaments,
   opponents,
   qualifiedLabel,
+  defaultYear,
+  defaultGtype,
 }: Params & {
   tab?: string
+  // URL に year / gtype が無いときに適用されている既定値（管理画面の設定由来）。
+  // null は「絞り込まない」＝プルダウンでは通算 / 全試合
+  defaultYear: string | null
+  defaultGtype: GameType | null
   years: string[]
   tournaments: string[]
   opponents: string[]
   qualifiedLabel?: string // 未指定なら規定チェックボックスを出さない（チーム成績タブ）
 }) {
   const router = useRouter()
-  const [yearSel, setYearSel] = useState(year ?? '')
-  const [gtypeSel, setGtypeSel] = useState(gtype ?? '')
+  // URL に無いときは既定値が適用されているので、プルダウンの初期選択もそれに合わせる
+  const [yearSel, setYearSel] = useState(toSelectValue(year, defaultYear))
+  const [gtypeSel, setGtypeSel] = useState(toSelectValue(gtype, defaultGtype))
   const [opponentSel, setOpponentSel] = useState(opponent ?? '')
   const [tournamentSel, setTournamentSel] = useState(tournament ?? '')
   const [fromDate, setFromDate] = useState(from ?? '')
@@ -63,7 +71,7 @@ export default function FilterPanel({
   }
 
   const changeRange = (which: 'from' | 'to', value: string) => {
-    if (value) setYearSel('')
+    if (value) setYearSel(ALL)
     if (which === 'from') setFromDate(value)
     else setToDate(value)
   }
@@ -97,7 +105,7 @@ export default function FilterPanel({
       {/* 年度・試合種別・対戦相手・大会名 */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <select value={yearSel} onChange={e => changeYear(e.target.value)} className={selectCls} aria-label="年度で絞り込み">
-          <option value="">通算</option>
+          <option value={ALL}>通算</option>
           {years.map(y => (
             <option key={y} value={y}>{y}年</option>
           ))}
@@ -108,7 +116,7 @@ export default function FilterPanel({
           className={selectCls}
           aria-label="試合種別で絞り込み"
         >
-          <option value="">試合種別</option>
+          <option value={ALL}>全試合</option>
           <option value="official">公式戦</option>
           <option value="practice">練習試合</option>
         </select>

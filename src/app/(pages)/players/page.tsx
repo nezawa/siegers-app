@@ -8,6 +8,7 @@ import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
 import TeamTable from './TeamTable'
 import FilterPanel from './FilterPanel'
+import { resolveYear, resolveGtype, isGameType, FALLBACK_YEAR, FALLBACK_GTYPE } from './filterDefaults'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: '選手成績' }
@@ -21,11 +22,35 @@ export default async function PlayersPage({
   const showPitching = tab === 'pitching'
   const showTeam = tab === 'team'
   const hasRange = Boolean(from || to)
-  const gtypeFilter = gtype === 'official' || gtype === 'practice' ? gtype : null
   const tournamentFilter = tournament || null
   const opponentFilter = opponent || null
   // 規定打席・規定投球回での絞り込みは既定でON。外したときだけ URL に q=0 が付く
   const qualifiedOnly = q !== '0'
+
+  const supabase = await createClient()
+
+  const [{ data: players }, allBStats, allPStats, allGames, { data: settings }, lastUpdated] = await Promise.all([
+    supabase.from('players').select('*').order('number'),
+    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('games').select('id, date, game_type, tournament, opponent, score_us, score_them, result').order('id').range(from, to)),
+    supabase.from('settings').select('*').eq('id', 1).single(),
+    fetchLastUpdated(),
+  ])
+
+  const playerList = players ?? []
+
+  // 絞り込みの既定値（管理画面の設定 → settings テーブル）。
+  // add_settings_stats_defaults.sql が未実行なら列が無いので、従来どおり通算・全試合になる
+  const defaultYear: string | null =
+    typeof settings?.default_stats_year === 'string' ? settings.default_stats_year : FALLBACK_YEAR
+  const defaultGtype = isGameType(settings?.default_stats_game_type)
+    ? settings.default_stats_game_type
+    : FALLBACK_GTYPE
+
+  // URL に year / gtype が無いときは既定値を適用する。'all' を載せたときだけ解除
+  const yearFilter = resolveYear(year, defaultYear)
+  const gtypeFilter = resolveGtype(gtype, defaultGtype)
 
   // 期間指定（from/to）が優先、なければ年度フィルター
   const matchesPeriod = (date?: string): boolean => {
@@ -35,25 +60,14 @@ export default async function PlayersPage({
       if (to && date > to) return false
       return true
     }
-    if (year) return Boolean(date?.startsWith(year))
+    if (yearFilter) return Boolean(date?.startsWith(yearFilter))
     return true
   }
 
-  const supabase = await createClient()
-
-  const [{ data: players }, allBStats, allPStats, allGames, { data: settings }, lastUpdated] = await Promise.all([
-    supabase.from('players').select('*').order('number'),
-    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
-    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date, game_type, tournament, opponent)').order('id').range(from, to)),
-    fetchAllRows((from, to) => supabase.from('games').select('id, date, game_type, tournament, opponent, score_us, score_them, result').order('id').range(from, to)),
-    supabase.from('settings').select('qualified_pa, qualified_ip').eq('id', 1).single(),
-    fetchLastUpdated(),
-  ])
-
-  const playerList = players ?? []
-
-  // 利用可能な年度一覧
+  // 利用可能な年度一覧。既定年度はまだ成績が無くても選択肢に残す
+  // （選択肢に無いとプルダウンの表示が空になるため）
   const years = [...new Set([
+    defaultYear,
     ...allBStats.map(s => (s.games as { date?: string } | null)?.date?.slice(0, 4)),
     ...allPStats.map(s => (s.games as { date?: string } | null)?.date?.slice(0, 4)),
   ].filter(Boolean))].sort().reverse() as string[]
@@ -205,6 +219,7 @@ export default async function PlayersPage({
           key={[tab, year, from, to, gtype, q, tournament, opponent].join('|')}
           tab={tab} year={year} from={from} to={to} gtype={gtype} q={q}
           tournament={tournament} opponent={opponent}
+          defaultYear={defaultYear} defaultGtype={defaultGtype}
           years={years} tournaments={tournaments} opponents={opponents}
           qualifiedLabel={showTeam ? undefined : showPitching ? '規定投球回のみ' : '規定打席のみ'}
         />

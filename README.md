@@ -41,6 +41,7 @@ npm run dev
 - `add_blog_password.sql` — ブログページの閲覧パスワード（管理者とは別）。**未実行だとブログのログインと設定画面でのパスワード変更が失敗します**。初期パスワードは `siegers`。実行後に管理画面の「設定」から必ず変更してください
 - `add_blog_posts.sql` — ブログ記事テーブル。**未実行だとブログの記事一覧と投稿がエラーになります**（`add_blog_password.sql` を先に実行すること）
 - `add_blog_post_create.sql` — ブログにログインした一般ユーザーも投稿できるようにする関数と投稿者名の列。**未実行だとブログからの投稿ができません**
+- `add_settings_stats_defaults.sql` — 成績ページの既定表示（年度・試合種別）を settings に追加。未実行の場合、成績ページは従来どおり「通算・全試合」で開き、**管理画面の設定で既定表示を保存しようとすると「column not found」エラーで失敗します**
 - `fix_stat_inconsistencies.sql` — 打撃成績の入力ミス修正（1回限りのデータ修正）。末尾に、記録の流儀に反する行を洗い出す点検クエリを同梱
 
 ### 成績記録の流儀
@@ -99,7 +100,7 @@ npm run dev
 - `/admin/opponents` — 対戦相手マスタの追加・編集
 - `/admin/tournaments` — 大会名マスタの追加・編集
 - `/admin/blog` — ブログ記事の一覧・削除（`/admin/blog/new` で投稿、`/admin/blog/[id]/edit` で編集）
-- `/admin/settings` — 規定打席・規定投球回率などの設定、ブログの閲覧パスワード変更
+- `/admin/settings` — 規定打席・規定投球回率などの設定、成績ページの既定表示（年度・試合種別）、ブログの閲覧パスワード変更
 
 ## Deploy
 
