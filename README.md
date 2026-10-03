@@ -38,9 +38,10 @@ npm run dev
 - `alter_settings_qualified_numeric.sql` — 規定打席・規定投球回の倍率を小数対応に（未実行だと規定打席に 1.5 などの小数が保存できません）
 - `add_game_result_other.sql` — 試合結果に「その他」(`O`) を追加。**未実行だと結果に「その他」を選んだ試合の保存が check 制約違反で失敗します**
 - `add_games_updated_at.sql` — games に更新日時の列とトリガーを追加（フッターの「成績データ更新」表示に使用）。未実行の場合はフッターの日時が出ないだけで他は動きます
-- `add_blog_password.sql` — ブログページの閲覧パスワード（管理者とは別）。**未実行だとブログのログインと設定画面でのパスワード変更が失敗します**。初期パスワードは `siegers`。実行後に管理画面の「設定」から必ず変更してください
-- `add_blog_posts.sql` — ブログ記事テーブル。**未実行だとブログの記事一覧と投稿がエラーになります**（`add_blog_password.sql` を先に実行すること）
-- `add_blog_post_create.sql` — ブログにログインした一般ユーザーも投稿できるようにする関数と投稿者名の列。**未実行だとブログからの投稿ができません**
+- `add_blog_password.sql` — 旧ブログの閲覧パスワード。**現在は不要**（`make_news_public.sql` で削除される。新規環境では `add_blog_posts.sql` の前提として実行のみ必要）
+- `add_blog_posts.sql` — News 記事テーブル（`blog_posts`）。**未実行だと News の一覧と投稿がエラーになります**（中の関数が `blog_sessions` を参照するため、新規環境では `add_blog_password.sql` を先に実行すること）
+- `add_blog_post_create.sql` — 記事の投稿者名の列を追加（あわせて作られる一般ユーザー向け投稿関数は `make_news_public.sql` で削除される）
+- `make_news_public.sql` — News（旧ブログ）を誰でも閲覧可・投稿は管理者のみにし、閲覧パスワードの仕組みを削除。**未実行だとログインしていない人には記事が表示されません**（`add_blog_posts.sql` と `add_blog_post_create.sql` の後に実行すること）
 - `add_settings_stats_defaults.sql` — 成績ページの既定表示（年度・試合種別）を settings に追加。未実行の場合、成績ページは従来どおり「通算・全試合」で開き、**管理画面の設定で既定表示を保存しようとすると「column not found」エラーで失敗します**
 - `fix_stat_inconsistencies.sql` — 打撃成績の入力ミス修正（1回限りのデータ修正）。末尾に、記録の流儀に反する行を洗い出す点検クエリを同梱
 
@@ -81,9 +82,8 @@ npm run dev
 公開ページ:
 - `/` — トップ（メイン写真・チーム紹介・今年/通算成績・試合結果/今後のスケジュール）
 - `/about` — 小雀シーガーズとは（準備中）
-- `/blog` — ブログ記事一覧。閲覧には管理者とは別のパスワードが必要（`/admin/settings` で変更）
-- `/blog/[id]` — ブログ記事詳細
-- `/blog/new` — ブログ投稿（ブログのパスワードでログインしていれば誰でも投稿可。編集・削除は管理者のみ）
+- `/news` — News 記事一覧（ログイン不要で閲覧可）。管理者ログイン中は「新規投稿」「削除」ボタンを表示し、削除は記事を選択して一括削除。旧 `/blog` は `/news` へリダイレクト
+- `/news/[id]` — News 記事詳細。管理者ログイン中は「編集」ボタンを表示
 - `/games` — 試合一覧（年度フィルター付き）。チーム勝敗数は `/players` のチーム成績タブに集約
 - `/games/[id]` — 試合詳細（打撃・投手成績）。ログイン中は編集ボタンを表示
 - `/players` — 成績ページ（ヘッダー上は「成績」表記）。チーム成績（年度別＋通算）・打撃成績・投手成績のタブ切り替え。
@@ -99,8 +99,8 @@ npm run dev
 - `/admin/players/new` — 選手登録
 - `/admin/opponents` — 対戦相手マスタの追加・編集
 - `/admin/tournaments` — 大会名マスタの追加・編集
-- `/admin/blog` — ブログ記事の一覧・削除（`/admin/blog/new` で投稿、`/admin/blog/[id]/edit` で編集）
-- `/admin/settings` — 規定打席・規定投球回率などの設定、成績ページの既定表示（年度・試合種別）、ブログの閲覧パスワード変更
+- `/admin/news/new` / `/admin/news/[id]/edit` — News 記事の投稿・編集（`/news` 一覧と記事詳細のボタンから開く。`/admin/news` は `/news` へリダイレクト）
+- `/admin/settings` — 規定打席・規定投球回率などの設定、成績ページの既定表示（年度・試合種別）
 
 ## Deploy
 

@@ -79,7 +79,7 @@ export type PitchingStat = {
   players?: Player
 }
 
-// ブログ記事（閲覧は blog_posts_list / blog_post_get 関数経由。詳細は supabase/add_blog_posts.sql）
+// News記事（テーブル名は blog_posts のまま。誰でも閲覧可・書き込みは管理者のみ。詳細は supabase/make_news_public.sql）
 export type BlogPost = {
   id: string
   title: string

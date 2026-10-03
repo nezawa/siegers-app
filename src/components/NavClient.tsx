@@ -32,11 +32,6 @@ const ADMIN_MENU: { href: string; label: string; icon: string }[] = [
     icon: 'M8 21h8m-4-4v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4a1 1 0 00-1 1v1a4 4 0 004 4M17 6h3a1 1 0 011 1v1a4 4 0 01-4 4',
   },
   {
-    href: '/admin/blog',
-    label: 'ブログ管理',
-    icon: 'M4 5a2 2 0 012-2h8l6 6v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm10-2v5h5M8 13h8m-8 4h5',
-  },
-  {
     href: '/admin/settings',
     label: '設定',
     icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4',
@@ -91,7 +86,7 @@ export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         <Link href="/about" className={desktopLinkCls}>小雀シーガーズとは</Link>
         <Link href="/games" className={desktopLinkCls}>試合結果</Link>
         <Link href="/players" className={desktopLinkCls}>成績</Link>
-        <Link href="/blog" className={desktopLinkCls}>ブログ</Link>
+        <Link href="/news" className={desktopLinkCls}>News</Link>
       </div>
 
       {/* デスクトップ管理系（右端・縦中央） */}
@@ -198,8 +193,8 @@ export default function NavClient({ isLoggedIn }: { isLoggedIn: boolean }) {
               <Link href="/players" onClick={close} className="block w-full py-4 tracking-wide text-white/90 transition-colors hover:text-white">
                 成績
               </Link>
-              <Link href="/blog" onClick={close} className="block w-full py-4 tracking-wide text-white/90 transition-colors hover:text-white">
-                ブログ
+              <Link href="/news" onClick={close} className="block w-full py-4 tracking-wide text-white/90 transition-colors hover:text-white">
+                News
               </Link>
               {isLoggedIn ? (
                 <>

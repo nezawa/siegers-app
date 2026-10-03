@@ -3,7 +3,6 @@ import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import { redirect } from 'next/navigation'
 import SettingsForm from './SettingsForm'
 import StatsDefaultsForm from './StatsDefaultsForm'
-import BlogPasswordForm from './BlogPasswordForm'
 import { isGameType, FALLBACK_YEAR, FALLBACK_GTYPE } from '@/app/(pages)/players/filterDefaults'
 import type { Metadata } from 'next'
 
@@ -50,7 +49,6 @@ export default async function SettingsPage() {
           defaultGtype={defaultGtype}
           years={years}
         />
-        <BlogPasswordForm />
       </div>
     </div>
   )

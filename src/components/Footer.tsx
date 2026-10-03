@@ -8,9 +8,9 @@ export default async function Footer() {
   return (
     <footer className="mt-12 bg-band">
       <div className="h-0.5 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-      <div className="flex flex-wrap items-center justify-center gap-8 px-4 py-8">
-        <Image src="/logo1.png" alt="小雀シーガーズロゴ" width={1125} height={1059} className="h-20 w-auto" />
-        <Image src="/logo2.png" alt="小雀シーガーズロゴ" width={624} height={624} className="h-20 w-auto" />
+      <div className="flex flex-wrap items-center justify-center gap-6 px-4 py-8 sm:gap-8">
+        <Image src="/logo1.png" alt="小雀シーガーズロゴ" width={1125} height={1059} className="h-16 w-auto sm:h-20" />
+        <Image src="/logo2.png" alt="小雀シーガーズロゴ" width={624} height={624} className="h-16 w-auto sm:h-20" />
         <a
           href="https://www.instagram.com/kosuzume_siegers/"
           target="_blank"
@@ -18,7 +18,7 @@ export default async function Footer() {
           aria-label="Instagram"
           className="transition-opacity hover:opacity-85"
         >
-          <svg className="h-15 w-15" viewBox="0 0 24 24">
+          <svg className="h-12 w-12 sm:h-15 sm:w-15" viewBox="0 0 24 24">
             <defs>
               <radialGradient id="ig-gradient" cx="30%" cy="107%" r="150%">
                 <stop offset="0%" stopColor="#fdf497" />

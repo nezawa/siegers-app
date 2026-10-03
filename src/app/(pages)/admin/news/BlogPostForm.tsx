@@ -36,6 +36,7 @@ export default function BlogPostForm({ post }: { post?: BlogPost }) {
         author: author.trim() === '' ? null : author.trim(),
       }
 
+      let id = post?.id
       if (post) {
         const { error: err } = await supabase
           .from('blog_posts')
@@ -43,11 +44,13 @@ export default function BlogPostForm({ post }: { post?: BlogPost }) {
           .eq('id', post.id)
         if (err) throw err
       } else {
-        const { error: err } = await supabase.from('blog_posts').insert(fields)
+        const { data, error: err } = await supabase.from('blog_posts').insert(fields).select('id').single()
         if (err) throw err
+        id = data.id
       }
 
-      router.push('/admin/blog')
+      // 保存後は公開側の記事詳細へ
+      router.push(`/news/${id}`)
       router.refresh()
     } catch (err: unknown) {
       setError(`保存に失敗しました: ${errorMessage(err)}`)

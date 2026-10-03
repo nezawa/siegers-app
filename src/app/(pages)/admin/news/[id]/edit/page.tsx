@@ -7,7 +7,7 @@ import BlogPostForm from '../../BlogPostForm'
 
 export const metadata: Metadata = { title: '記事の編集' }
 
-export default async function EditBlogPostPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditNewsPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
   const { data } = await supabase
@@ -21,8 +21,8 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ i
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-4">
-        <Link href="/admin/blog" className="text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-          ← ブログ管理
+        <Link href={`/news/${id}`} className="text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
+          ← 記事に戻る
         </Link>
       </div>
       <h1 className="mb-6 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
