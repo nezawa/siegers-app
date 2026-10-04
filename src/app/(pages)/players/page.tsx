@@ -42,8 +42,10 @@ export default async function PlayersPage({
 
   // 絞り込みの既定値（管理画面の設定 → settings テーブル）。
   // add_settings_stats_defaults.sql が未実行なら列が無いので、従来どおり通算・全試合になる
-  const defaultYear: string | null =
+  const settingsYear: string | null =
     typeof settings?.default_stats_year === 'string' ? settings.default_stats_year : FALLBACK_YEAR
+  // チーム成績は年度別の行を並べて比べる表なので、既定では年度で絞らず全年を出す
+  const defaultYear = showTeam ? null : settingsYear
   const defaultGtype = isGameType(settings?.default_stats_game_type)
     ? settings.default_stats_game_type
     : FALLBACK_GTYPE
@@ -67,7 +69,7 @@ export default async function PlayersPage({
   // 利用可能な年度一覧。既定年度はまだ成績が無くても選択肢に残す
   // （選択肢に無いとプルダウンの表示が空になるため）
   const years = [...new Set([
-    defaultYear,
+    settingsYear,
     ...allBStats.map(s => (s.games as { date?: string } | null)?.date?.slice(0, 4)),
     ...allPStats.map(s => (s.games as { date?: string } | null)?.date?.slice(0, 4)),
   ].filter(Boolean))].sort().reverse() as string[]
@@ -234,7 +236,7 @@ export default async function PlayersPage({
 
       {/* タブ（成績表と一体のデザイン） */}
       <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-t-2xl border-b-4 border-band">
-        <Link href={buildUrl({ tab: 'team', year, from, to, gtype, q, tournament, opponent })} className={tabCls(showTeam)}>
+        <Link href={buildUrl({ tab: 'team', from, to, gtype, q, tournament, opponent })} className={tabCls(showTeam)}>
           チーム成績
         </Link>
         <Link href={buildUrl({ year, from, to, gtype, q, tournament, opponent })} className={tabCls(!showPitching && !showTeam)}>
