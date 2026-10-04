@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
-import { computeBatting, computePitching, outsToIp, type BattingTotals, type PitchingTotals } from '@/lib/stats'
+import { computeBatting, computePitching, type BattingTotals, type PitchingTotals } from '@/lib/stats'
 import { battingRanks, pitchingRanks, type RankMap } from '@/lib/ranking'
 import { rankBgClass } from '@/lib/rankStyle'
+import { buildMilestones } from '@/lib/milestones'
 import RankLegend from '@/components/RankLegend'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -62,70 +63,8 @@ const PITCHING_COLS: Col<PitchingTotals>[] = [
   { header: '暴投', key: 'wp', get: t => t.wp },
 ]
 
-// 「もうすぐ達成」の対象。積み上げ系のプラス記録のみ（率系・マイナス記録・投球数・打数は対象外）
-const MILESTONE_STEP = 50
+// 「もうすぐ達成」に出す件数（次の節目までの残りが少ない順）
 const MILESTONE_COUNT = 3
-
-type MilestoneDef<T> = { label: string; get: (t: T) => number }
-
-const BATTING_MILESTONES: MilestoneDef<BattingTotals>[] = [
-  { label: '試合数', get: t => t.games },
-  { label: '打席', get: t => t.pa },
-  { label: '安打', get: t => t.hits },
-  { label: '本塁打', get: t => t.hr },
-  { label: '打点', get: t => t.rbi },
-  { label: '得点', get: t => t.runs },
-  { label: '盗塁', get: t => t.sb },
-  { label: '二塁打', get: t => t.doubles },
-  { label: '三塁打', get: t => t.triples },
-  { label: '塁打数', get: t => t.tb },
-  { label: '四球', get: t => t.bb },
-]
-
-const PITCHING_MILESTONES: MilestoneDef<PitchingTotals>[] = [
-  { label: '登板', get: t => t.appearances },
-  { label: '勝利', get: t => t.wins },
-  { label: 'ホールド', get: t => t.holds },
-  { label: 'セーブ', get: t => t.saves },
-  { label: '奪三振', get: t => t.k },
-]
-
-type Milestone = {
-  label: string
-  current: string
-  target: number
-  remaining: string
-  remainingValue: number // 並び替え用（投球回はイニング換算）
-  progress: number // 現在の50刻み区間での進み具合 0〜1
-}
-
-function toMilestone(label: string, value: number, step: number, unit = 1): Milestone {
-  const target = (Math.floor(value / step) + 1) * step
-  const rem = target - value
-  const isOuts = unit !== 1
-  return {
-    label,
-    current: isOuts ? outsToIp(value) : String(value),
-    target: target / unit,
-    remaining: isOuts ? outsToIp(rem) : String(rem),
-    remainingValue: rem / unit,
-    progress: (value % step) / step,
-  }
-}
-
-function buildMilestones(batting: BattingTotals | null, pitching: PitchingTotals | null): Milestone[] {
-  const list: Milestone[] = []
-  if (batting) {
-    for (const m of BATTING_MILESTONES) list.push(toMilestone(m.label, m.get(batting), MILESTONE_STEP))
-  }
-  if (pitching) {
-    for (const m of PITCHING_MILESTONES) list.push(toMilestone(m.label, m.get(pitching), MILESTONE_STEP))
-    // 投球回はアウト数で計算し、50イニング刻み（=150アウト）で判定する
-    list.push(toMilestone('投球回', pitching.totalOuts, MILESTONE_STEP * 3, 3))
-  }
-  // sort は安定なので、残りが同じなら定義順（打撃→投手）になる
-  return list.sort((a, b) => a.remainingValue - b.remainingValue).slice(0, MILESTONE_COUNT)
-}
 
 const thCls ='px-3 py-2.5 font-semibold text-white text-center whitespace-nowrap text-xs'
 const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
@@ -249,7 +188,10 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
     ? { label: '通算', totals: computePitching(pStats), ranks: pitchingRanks(allP, id, outsThreshold(null)) }
     : null
 
+  // sort は安定なので、残りが同じなら定義順（打撃→投手）になる
   const milestones = buildMilestones(battingTotal?.totals ?? null, pitchingTotal?.totals ?? null)
+    .sort((a, b) => a.remainingValue - b.remainingValue)
+    .slice(0, MILESTONE_COUNT)
 
   return (
     <div className="space-y-8">
@@ -283,7 +225,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
               <p className="text-xs font-bold tracking-wide text-amber-300">もうすぐ達成</p>
               <ul className="mt-3 space-y-2.5">
                 {milestones.map(m => (
-                  <li key={m.label}>
+                  <li key={m.key}>
                     <div className="flex items-baseline justify-between gap-3 text-sm">
                       <span className="font-bold">
                         {m.label}

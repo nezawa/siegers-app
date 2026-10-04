@@ -3,24 +3,30 @@ import { fetchAllRows } from '@/lib/supabase/fetchAll'
 import { fmt, fmtEra, sumIp, outsToIp, computeBatting, computePitching } from '@/lib/stats'
 import { fetchLastUpdated } from '@/lib/lastUpdated'
 import { battingRanksAll, pitchingRanksAll } from '@/lib/ranking'
+import { buildMilestones, findAchievements, MILESTONE_ORDER } from '@/lib/milestones'
 import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
 import TeamTable from './TeamTable'
+import RecordsRoom, { type RecordSection, type AchievedRow } from './RecordsRoom'
 import FilterPanel from './FilterPanel'
 import { resolveYear, resolveGtype, isGameType, FALLBACK_YEAR, FALLBACK_GTYPE } from './filterDefaults'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: '選手成績' }
 
+// 通算記録室に載せる「達成まで残り◯以内」の閾値（投球回はイニング数）
+const RECORD_WITHIN = 10
+
 export default async function PlayersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; year?: string; from?: string; to?: string; gtype?: string; q?: string; tournament?: string; opponent?: string }>
+  searchParams: Promise<{ tab?: string; year?: string; from?: string; to?: string; gtype?: string; q?: string; tournament?: string; opponent?: string; ryear?: string }>
 }) {
-  const { tab, year, from, to, gtype, q, tournament, opponent } = await searchParams
+  const { tab, year, from, to, gtype, q, tournament, opponent, ryear } = await searchParams
   const showPitching = tab === 'pitching'
   const showTeam = tab === 'team'
+  const showRecords = tab === 'records'
   const hasRange = Boolean(from || to)
   const tournamentFilter = tournament || null
   const opponentFilter = opponent || null
@@ -179,6 +185,71 @@ export default async function PlayersPage({
     playedGames.filter(g => matchesPeriod(g.date) && matchesGameAttrs(g))
   )
 
+  // 通算記録室。通算の記録なので絞り込み条件は使わず、全試合の成績から計算する
+  const buildRecordSections = (): RecordSection[] => {
+    const perPlayer = playerList.map(player => {
+      const bs = allBStats.filter(s => s.player_id === player.id)
+      const ps = allPStats.filter(s => s.player_id === player.id)
+      return {
+        player,
+        milestones: buildMilestones(
+          bs.length > 0 ? computeBatting(bs) : null,
+          ps.length > 0 ? computePitching(ps) : null,
+        ),
+      }
+    })
+
+    // 同じ記録でも目標が違えば（50安打と100安打など）別の一覧にする
+    const map = new Map<string, RecordSection & { order: number; targetValue: number }>()
+    for (const { player, milestones } of perPlayer) {
+      for (const m of milestones) {
+        if (m.remainingValue > RECORD_WITHIN) continue
+        const id = `${m.key}-${m.targetValue}`
+        let sec = map.get(id)
+        if (!sec) {
+          sec = {
+            key: id,
+            title: m.title,
+            achievedCount: perPlayer.filter(q =>
+              q.milestones.some(x => x.key === m.key && x.value >= m.targetValue)
+            ).length,
+            candidates: [],
+            order: MILESTONE_ORDER.indexOf(m.key),
+            targetValue: m.targetValue,
+          }
+          map.set(id, sec)
+        }
+        sec.candidates.push({
+          playerId: player.id, name: player.name,
+          current: m.current, remaining: m.remaining, remainingValue: m.remainingValue,
+        })
+      }
+    }
+
+    // 記録の定義順 → 目標の大きい順。各一覧の中は残りが少ない順
+    return [...map.values()]
+      .sort((a, b) => a.order - b.order || b.targetValue - a.targetValue)
+      .map(({ key, title, achievedCount, candidates }) => ({
+        key,
+        title,
+        achievedCount,
+        candidates: candidates.sort((a, b) => a.remainingValue - b.remainingValue),
+      }))
+  }
+  const recordSections = showRecords ? buildRecordSections() : []
+
+  // 達成済みの記録（年度別）。ryear が無いときは最新の年度、'all' なら全年度
+  const playerById = new Map(playerList.map(p => [p.id, p]))
+  const achievements: AchievedRow[] = showRecords
+    ? findAchievements(allBStats, allPStats).flatMap(a => {
+        const player = playerById.get(a.playerId)
+        return player ? [{ ...a, name: player.name }] : []
+      })
+    : []
+  const achievedYears = [...new Set(achievements.map(a => a.date.slice(0, 4)).filter(Boolean))].sort().reverse()
+  const achievedYear = ryear === 'all' ? null : ryear && achievedYears.includes(ryear) ? ryear : achievedYears[0] ?? null
+  const achievedRows = achievedYear ? achievements.filter(a => a.date.startsWith(achievedYear)) : achievements
+
   // URLビルダー（tab・year・期間・絞り込みを組み合わせる）
   const buildUrl = (params: { tab?: string; year?: string; from?: string; to?: string; gtype?: string | null; q?: string; tournament?: string | null; opponent?: string | null }) => {
     const p = new URLSearchParams()
@@ -213,8 +284,8 @@ export default async function PlayersPage({
         )}
       </div>
 
-      {/* フィルター（タブの上に配置） */}
-      <div className="mb-5 space-y-2">
+      {/* フィルター（タブの上に配置）。通算記録室は絞り込みを使わないので出さない */}
+      {!showRecords && <div className="mb-5 space-y-2">
         {/* key に適用済みの条件を含めることで、タブ切替やブラウザバックのたびに
             FilterPanel を再マウントし、入力欄を URL の内容へ確実に戻す */}
         <FilterPanel
@@ -232,14 +303,17 @@ export default async function PlayersPage({
               : `${Math.ceil(qualifiedPaThreshold)}打席以上`}
           </p>
         )}
-      </div>
+      </div>}
 
       {/* タブ（成績表と一体のデザイン） */}
-      <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-t-2xl border-b-4 border-band">
+      <div className="grid grid-cols-4 gap-1 overflow-hidden rounded-t-2xl border-b-4 border-band">
         <Link href={buildUrl({ tab: 'team', from, to, gtype, q, tournament, opponent })} className={tabCls(showTeam)}>
           チーム成績
         </Link>
-        <Link href={buildUrl({ year, from, to, gtype, q, tournament, opponent })} className={tabCls(!showPitching && !showTeam)}>
+        <Link href={buildUrl({ tab: 'records' })} className={tabCls(showRecords)}>
+          通算記録室
+        </Link>
+        <Link href={buildUrl({ year, from, to, gtype, q, tournament, opponent })} className={tabCls(!showPitching && !showTeam && !showRecords)}>
           打撃成績
         </Link>
         <Link href={buildUrl({ tab: 'pitching', year, from, to, gtype, q, tournament, opponent })} className={tabCls(showPitching)}>
@@ -249,6 +323,11 @@ export default async function PlayersPage({
 
       {showTeam ? (
         <TeamTable data={teamData} />
+      ) : showRecords ? (
+        <RecordsRoom
+          sections={recordSections} within={RECORD_WITHIN}
+          achieved={achievedRows} achievedYears={achievedYears} selectedYear={achievedYear}
+        />
       ) : !showPitching ? (
         playerList.length === 0
           ? <div className="rounded-b-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">選手データがありません</div>
