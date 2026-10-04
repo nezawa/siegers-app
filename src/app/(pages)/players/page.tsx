@@ -16,7 +16,9 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: '選手成績' }
 
 // 通算記録室に載せる「達成まで残り◯以内」の閾値（投球回はイニング数）
-const RECORD_WITHIN = 10
+const RECORD_WITHIN = 15
+// 通算記録室の1カードに出す人数（閾値外の人も、同じ記録を目指す近い順に埋める）
+const RECORD_CARD_SIZE = 3
 
 export default async function PlayersPage({
   searchParams,
@@ -199,11 +201,11 @@ export default async function PlayersPage({
       }
     })
 
-    // 同じ記録でも目標が違えば（50安打と100安打など）別の一覧にする
+    // 同じ記録でも目標が違えば（50安打と100安打など）別のカードにする。
+    // ここでは閾値で絞らず全員を集め、最後に「閾値以内の人がいるカード」だけを残す
     const map = new Map<string, RecordSection & { order: number; targetValue: number }>()
     for (const { player, milestones } of perPlayer) {
       for (const m of milestones) {
-        if (m.remainingValue > RECORD_WITHIN) continue
         const id = `${m.key}-${m.targetValue}`
         let sec = map.get(id)
         if (!sec) {
@@ -221,19 +223,20 @@ export default async function PlayersPage({
         }
         sec.candidates.push({
           playerId: player.id, name: player.name,
-          current: m.current, remaining: m.remaining, remainingValue: m.remainingValue,
+          current: m.current, remaining: m.remaining, remainingValue: m.remainingValue, progress: m.progress,
         })
       }
     }
 
-    // 記録の定義順 → 目標の大きい順。各一覧の中は残りが少ない順
+    // 記録の定義順 → 目標の大きい順。各カードの中は残りが少ない順
     return [...map.values()]
+      .filter(sec => sec.candidates.some(c => c.remainingValue <= RECORD_WITHIN))
       .sort((a, b) => a.order - b.order || b.targetValue - a.targetValue)
       .map(({ key, title, achievedCount, candidates }) => ({
         key,
         title,
         achievedCount,
-        candidates: candidates.sort((a, b) => a.remainingValue - b.remainingValue),
+        candidates: candidates.sort((a, b) => a.remainingValue - b.remainingValue).slice(0, RECORD_CARD_SIZE),
       }))
   }
   const recordSections = showRecords ? buildRecordSections() : []

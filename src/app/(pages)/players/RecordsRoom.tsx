@@ -7,6 +7,7 @@ export type RecordCandidate = {
   current: string
   remaining: string
   remainingValue: number // 並び替え用（投球回はイニング換算）
+  progress: number // 現在の50刻み区間での進み具合 0〜1
 }
 
 export type RecordSection = {
@@ -24,6 +25,7 @@ export type AchievedRow = {
   gameId: string
   date: string
   opponent: string | null
+  nth: number
   gamesPlayed: number
 }
 
@@ -63,39 +65,38 @@ export default function RecordsRoom({
       <div className="space-y-4">
         <div>
           <SectionHeading>もうすぐ達成</SectionHeading>
-          <p className="mt-1.5 text-xs text-gray-400">通算成績で、次の50刻みの記録まで残り{within}以内の選手</p>
+          <p className="mt-1.5 text-xs text-gray-400">通算成績で、次の50刻みの記録まで残り{within}以内の選手がいる記録（近い順に最大3人）</p>
         </div>
         {sections.length === 0 ? (
           <p className="rounded-xl bg-slate-50 py-10 text-center text-sm text-gray-400">該当する記録はありません</p>
         ) : (
-          sections.map(sec => (
-            <section key={sec.key} className="overflow-hidden rounded-xl ring-1 ring-gray-900/5">
-              <h3 className="flex items-baseline gap-2 bg-band px-4 py-3 text-lg font-extrabold text-white">
-                {sec.title}
-                <span className="text-sm font-bold text-white/80">（過去{sec.achievedCount}人）</span>
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead className="bg-blue-950/70">
-                    <tr>
-                      <th className={thCls}>氏名</th>
-                      <th className={thCls}>現在</th>
-                      <th className={thCls}>達成まで</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {sec.candidates.map(c => (
-                      <tr key={c.playerId} className={rowCls}>
-                        <td className={`${tdCls} font-bold`}><PlayerLink id={c.playerId} name={c.name} /></td>
-                        <td className={tdCls}>{c.current}</td>
-                        <td className={`${tdCls} font-extrabold text-red-600`}>あと{c.remaining}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ))
+          // 1記録あたり数人しかいないので、表ではなく「記録名 → 選手ごとの進み具合」のカードで見せる
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {sections.map(sec => (
+              <section key={sec.key} className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-900/5">
+                <h3 className="flex items-baseline justify-between gap-2">
+                  <span className="text-xl font-extrabold text-blue-950">{sec.title}</span>
+                  <span className="shrink-0 text-xs text-gray-400">過去{sec.achievedCount}人</span>
+                </h3>
+                <ul className="mt-4 space-y-4">
+                  {sec.candidates.map(c => (
+                    <li key={c.playerId}>
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="text-sm font-bold"><PlayerLink id={c.playerId} name={c.name} /></span>
+                        <span className="shrink-0 text-sm text-gray-500">
+                          あと<span className="mx-0.5 text-lg font-extrabold tabular-nums text-red-600">{c.remaining}</span>
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-band" style={{ width: `${c.progress * 100}%` }} />
+                      </div>
+                      <p className="mt-1 text-xs tabular-nums text-gray-400">現在 {c.current}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
         )}
       </div>
 
@@ -117,6 +118,7 @@ export default function RecordsRoom({
                   <th className={thCls}>記録</th>
                   <th className={thCls}>達成日</th>
                   <th className={thCls}>対戦相手</th>
+                  <th className={thCls}>達成順</th>
                   <th className={thCls}>出場試合数</th>
                   <th className={thCls}>氏名</th>
                 </tr>
@@ -131,6 +133,8 @@ export default function RecordsRoom({
                       </Link>
                     </td>
                     <td className={tdCls}>{a.opponent ?? '-'}</td>
+                    {/* 初めての達成（1人目）は赤で目立たせる */}
+                    <td className={`${tdCls}${a.nth === 1 ? ' font-bold text-red-600' : ''}`}>{a.nth}人目</td>
                     <td className={tdCls}>{a.gamesPlayed}</td>
                     <td className={`${tdCls} font-bold`}><PlayerLink id={a.playerId} name={a.name} /></td>
                   </tr>

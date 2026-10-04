@@ -82,6 +82,7 @@ export type AchievedRecord = {
   date: string
   opponent: string | null
   gamesPlayed: number // 達成した試合までの通算出場試合数（打撃記録は野手、投手記録は投手としての出場数）
+  nth: number // その記録の何人目の達成か（同じ試合で達成した人は同じ順位）
 }
 
 type StatRow = Record<string, unknown>
@@ -121,6 +122,7 @@ function findAchievementsOf<T>(rows: StatRow[], compute: (rows: StatRow[]) => T,
             date: rowDate(row),
             opponent: (row.games as { opponent?: string | null } | null)?.opponent ?? null,
             gamesPlayed: i + 1,
+            nth: 0, // findAchievements で全選手を並べてから決める
           })
         }
       })
@@ -132,10 +134,18 @@ function findAchievementsOf<T>(rows: StatRow[], compute: (rows: StatRow[]) => T,
 
 // 全選手の達成済み記録。新しい順（同じ試合内は記録の定義順）
 export function findAchievements(battingRows: StatRow[], pitchingRows: StatRow[]): AchievedRecord[] {
-  return [
+  const all = [
     ...findAchievementsOf(battingRows, computeBatting, BATTING_DEFS),
     ...findAchievementsOf(pitchingRows, computePitching, PITCHING_DEFS),
-  ].sort((a, b) => b.date.localeCompare(a.date) || a.order - b.order)
+  ]
+  // 試合の並びは findAchievementsOf と同じ（日付 → 試合ID）
+  const isBefore = (a: AchievedRecord, b: AchievedRecord) =>
+    a.date < b.date || (a.date === b.date && a.gameId.localeCompare(b.gameId) < 0)
+  // 何人目か = 同じ記録（同じ目標）をそれより前の試合で達成した人数 + 1
+  return all.map(a => ({
+    ...a,
+    nth: all.filter(b => b.title === a.title && b.key === a.key && isBefore(b, a)).length + 1,
+  })).sort((a, b) => b.date.localeCompare(a.date) || a.order - b.order)
 }
 
 // 選手1人分の「次の節目」を全記録について返す（打撃・投手の成績が無い側は含めない）
