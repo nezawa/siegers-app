@@ -29,8 +29,24 @@ export type AchievedRow = {
   gamesPlayed: number
 }
 
+export type SeasonRecordRow = {
+  key: string
+  label: string
+  value: string | null // 記録なしは null
+  holders: { playerId: string; name: string; year: string }[] // 同率1位は複数
+}
+
+export type StreakRow = {
+  key: string
+  label: string
+  length: number | null // 記録なしは null
+  holders: { playerId: string; name: string; from: string; to: string; ongoing: boolean }[]
+}
+
 const thCls = 'whitespace-nowrap px-3 py-2.5 text-center text-xs font-semibold text-white'
 const tdCls = 'whitespace-nowrap px-3 py-2.5 text-center text-sm tabular-nums'
+// 通算記録室の表はすべて table-fixed で列幅を均等にする。
+// スマホで潰れないよう各表に min-w を付け、足りない分は横スクロールにする
 const rowCls = 'odd:bg-white even:bg-slate-50 hover:bg-blue-50 transition-colors'
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -52,12 +68,18 @@ export default function RecordsRoom({
   achieved,
   achievedYears,
   selectedYear,
+  seasonBatting,
+  seasonPitching,
+  streaks,
 }: {
   sections: RecordSection[]
   within: number
   achieved: AchievedRow[] // 選択中の年度に絞り込み済み
   achievedYears: string[]
   selectedYear: string | null // null は全年度
+  seasonBatting: SeasonRecordRow[]
+  seasonPitching: SeasonRecordRow[]
+  streaks: StreakRow[]
 }) {
   return (
     <div className="space-y-10 rounded-b-2xl bg-white p-4 shadow-sm ring-1 ring-gray-900/5 sm:p-6">
@@ -112,7 +134,7 @@ export default function RecordsRoom({
           <p className="rounded-xl bg-slate-50 py-10 text-center text-sm text-gray-400">達成済みの記録はありません</p>
         ) : (
           <div className="overflow-x-auto rounded-xl ring-1 ring-gray-900/5">
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full min-w-[600px] table-fixed border-collapse text-sm">
               <thead className="bg-band">
                 <tr>
                   <th className={thCls}>記録</th>
@@ -144,6 +166,125 @@ export default function RecordsRoom({
           </div>
         )}
       </div>
+
+      {/* 歴代シーズン記録 */}
+      <div className="space-y-4">
+        <div>
+          <SectionHeading>歴代シーズン記録</SectionHeading>
+          <p className="mt-1.5 text-xs text-gray-400">
+            公式戦のみ。率系は規定打席・規定投球回に到達した選手、勝率は5勝以上の選手が対象
+          </p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <SeasonRecordTable title="打撃" rows={seasonBatting} />
+          <SeasonRecordTable title="投手" rows={seasonPitching} />
+        </div>
+      </div>
+
+      {/* 連続試合記録 */}
+      <div className="space-y-4">
+        <div>
+          <SectionHeading>連続試合記録</SectionHeading>
+          <p className="mt-1.5 text-xs text-gray-400">
+            公式戦のみ。出場・登板はチームの試合で連続、それ以外は本人が出場した試合の中で連続（欠場した試合は途切れない）
+          </p>
+        </div>
+        <StreakTable rows={streaks} />
+      </div>
+    </div>
+  )
+}
+
+function SeasonRecordTable({ title, rows }: { title: string; rows: SeasonRecordRow[] }) {
+  return (
+    <div className="self-start overflow-x-auto rounded-xl ring-1 ring-gray-900/5">
+      <table className="w-full min-w-[420px] table-fixed border-collapse text-sm">
+        <thead className="bg-band">
+          <tr>
+            <th className={thCls}>{title}</th>
+            <th className={thCls}>記録</th>
+            <th className={thCls}>氏名</th>
+            <th className={thCls}>年度</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map(r => (
+            <tr key={r.key} className={rowCls}>
+              <td className={`${tdCls} font-bold text-gray-700`}>{r.label}</td>
+              {r.value === null ? (
+                <td colSpan={3} className={`${tdCls} text-gray-300`}>-</td>
+              ) : (
+                <>
+                  <td className={`${tdCls} font-extrabold text-blue-950`}>{r.value}</td>
+                  {/* 同率1位は1人1行で縦に並べ、氏名と年度の行を揃える */}
+                  <td className={`${tdCls} font-bold`}>
+                    {r.holders.map(h => (
+                      <div key={`${h.playerId}-${h.year}`}><PlayerLink id={h.playerId} name={h.name} /></div>
+                    ))}
+                  </td>
+                  <td className={tdCls}>
+                    {r.holders.map(h => <div key={`${h.playerId}-${h.year}`}>{h.year}</div>)}
+                  </td>
+                </>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+const fmtDate = (d: string) => d.replaceAll('-', '/')
+
+function StreakTable({ rows }: { rows: StreakRow[] }) {
+  return (
+    <div className="overflow-x-auto rounded-xl ring-1 ring-gray-900/5">
+      <table className="w-full min-w-[640px] table-fixed border-collapse text-sm">
+        <thead className="bg-band">
+          <tr>
+            <th className={thCls}>項目</th>
+            <th className={thCls}>記録</th>
+            <th className={thCls}>氏名</th>
+            <th className={thCls}>期間</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map(r => (
+            <tr key={r.key} className={rowCls}>
+              <td className={`${tdCls} font-bold text-gray-700`}>連続{r.label}</td>
+              {r.length === null ? (
+                <td colSpan={3} className={`${tdCls} text-gray-300`}>-</td>
+              ) : (
+                <>
+                  <td className={`${tdCls} font-extrabold text-blue-950`}>{r.length}試合</td>
+                  {/* 同じ長さの1位は1人1行で縦に並べ、氏名と期間の行を揃える */}
+                  <td className={`${tdCls} font-bold`}>
+                    {r.holders.map(h => (
+                      <div key={`${h.playerId}-${h.from}`}><PlayerLink id={h.playerId} name={h.name} /></div>
+                    ))}
+                  </td>
+                  {/* 期間は中央に置きつつ日付の先頭を揃える。「継続中」が無い行も同じ幅の透明なバッジで
+                      場所を取っておき、どの行も同じ幅のまま中央揃えになるようにする */}
+                  <td className={tdCls}>
+                    {r.holders.map(h => (
+                      <div key={`${h.playerId}-${h.from}`}>
+                        {fmtDate(h.from)}〜{fmtDate(h.to)}
+                        <span
+                          className={`ml-1.5 rounded-full bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600${h.ongoing ? '' : ' invisible'}`}
+                          aria-hidden={!h.ongoing}
+                        >
+                          継続中
+                        </span>
+                      </div>
+                    ))}
+                  </td>
+                </>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }

@@ -4,11 +4,13 @@ import { fmt, fmtEra, sumIp, outsToIp, computeBatting, computePitching } from '@
 import { fetchLastUpdated } from '@/lib/lastUpdated'
 import { battingRanksAll, pitchingRanksAll } from '@/lib/ranking'
 import { buildMilestones, findAchievements, MILESTONE_ORDER } from '@/lib/milestones'
+import { buildSeasonRecords } from '@/lib/seasonRecords'
+import { buildStreakRecords } from '@/lib/streaks'
 import Link from 'next/link'
 import BattingTable from './BattingTable'
 import PitchingTable from './PitchingTable'
 import TeamTable from './TeamTable'
-import RecordsRoom, { type RecordSection, type AchievedRow } from './RecordsRoom'
+import RecordsRoom, { type RecordSection, type AchievedRow, type SeasonRecordRow, type StreakRow } from './RecordsRoom'
 import FilterPanel from './FilterPanel'
 import { resolveYear, resolveGtype, isGameType, FALLBACK_YEAR, FALLBACK_GTYPE } from './filterDefaults'
 import type { Metadata } from 'next'
@@ -253,6 +255,32 @@ export default async function PlayersPage({
   const achievedYear = ryear === 'all' ? null : ryear && achievedYears.includes(ryear) ? ryear : achievedYears[0] ?? null
   const achievedRows = achievedYear ? achievements.filter(a => a.date.startsWith(achievedYear)) : achievements
 
+  // 歴代シーズン記録（公式戦のみ）。規定はその年の公式戦の試合数 × 倍率
+  const officialGamesInYear = (y: string) =>
+    (allGames as GameRow[]).filter(g => g.game_type === 'official' && g.date?.startsWith(y)).length
+  const seasonRecords = showRecords
+    ? buildSeasonRecords(allBStats, allPStats, officialGamesInYear, qualifiedPaRate, qualifiedIpRate)
+    : { batting: [], pitching: [] }
+  const withNames = (records: typeof seasonRecords.batting): SeasonRecordRow[] =>
+    records.map(r => ({
+      ...r,
+      holders: r.holders.flatMap(h => {
+        const player = playerById.get(h.playerId)
+        return player ? [{ ...h, name: player.name }] : []
+      }),
+    }))
+
+  // 連続試合記録（公式戦のみ）
+  const streakRows: StreakRow[] = showRecords
+    ? buildStreakRecords(allBStats, allPStats, playedGames.filter(g => g.game_type === 'official')).map(r => ({
+        ...r,
+        holders: r.holders.flatMap(h => {
+          const player = playerById.get(h.playerId)
+          return player ? [{ ...h, name: player.name }] : []
+        }),
+      }))
+    : []
+
   // URLビルダー（tab・year・期間・絞り込みを組み合わせる）
   const buildUrl = (params: { tab?: string; year?: string; from?: string; to?: string; gtype?: string | null; q?: string; tournament?: string | null; opponent?: string | null }) => {
     const p = new URLSearchParams()
@@ -330,6 +358,8 @@ export default async function PlayersPage({
         <RecordsRoom
           sections={recordSections} within={RECORD_WITHIN}
           achieved={achievedRows} achievedYears={achievedYears} selectedYear={achievedYear}
+          seasonBatting={withNames(seasonRecords.batting)} seasonPitching={withNames(seasonRecords.pitching)}
+          streaks={streakRows}
         />
       ) : !showPitching ? (
         playerList.length === 0
