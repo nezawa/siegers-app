@@ -21,8 +21,11 @@ export default async function EditNewsPostPage({ params }: { params: Promise<{ i
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-4">
-        <Link href={`/news/${id}`} className="text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-          ← 記事に戻る
+        <Link href={`/news/${id}`} className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+          </svg>
+          記事に戻る
         </Link>
       </div>
       <h1 className="mb-6 flex items-center gap-2.5 text-2xl font-bold text-gray-900">
