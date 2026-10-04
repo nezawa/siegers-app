@@ -243,8 +243,8 @@ function StreakTable({ rows }: { rows: StreakRow[] }) {
       <table className="w-full min-w-[640px] table-fixed border-collapse text-sm">
         <thead className="bg-band">
           <tr>
-            <th className={thCls}>項目</th>
-            <th className={thCls}>記録</th>
+            <th className={thCls}>出場試合連続</th>
+            <th className={thCls}>連続試合数</th>
             <th className={thCls}>氏名</th>
             <th className={thCls}>期間</th>
           </tr>
@@ -252,7 +252,7 @@ function StreakTable({ rows }: { rows: StreakRow[] }) {
         <tbody className="divide-y divide-gray-100">
           {rows.map(r => (
             <tr key={r.key} className={rowCls}>
-              <td className={`${tdCls} font-bold text-gray-700`}>連続{r.label}</td>
+              <td className={`${tdCls} font-bold text-gray-700`}>{r.label}</td>
               {r.length === null ? (
                 <td colSpan={3} className={`${tdCls} text-gray-300`}>-</td>
               ) : (
