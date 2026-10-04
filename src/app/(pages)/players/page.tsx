@@ -230,10 +230,12 @@ export default async function PlayersPage({
       }
     }
 
-    // 記録の定義順 → 目標の大きい順。各カードの中は残りが少ない順
+    // カードは「いちばん達成に近い人の残り」が少ない順（同じなら記録の定義順 → 目標の大きい順）。
+    // 各カードの中も残りが少ない順。投球回の残りはイニング換算で他の記録と比べる
+    const nearest = (sec: RecordSection) => Math.min(...sec.candidates.map(c => c.remainingValue))
     return [...map.values()]
       .filter(sec => sec.candidates.some(c => c.remainingValue <= RECORD_WITHIN))
-      .sort((a, b) => a.order - b.order || b.targetValue - a.targetValue)
+      .sort((a, b) => nearest(a) - nearest(b) || a.order - b.order || b.targetValue - a.targetValue)
       .map(({ key, title, achievedCount, candidates }) => ({
         key,
         title,
