@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import AchievedYearSelect from './AchievedYearSelect'
 
 export type RecordCandidate = {
@@ -72,13 +71,6 @@ function Note({ children }: { children: React.ReactNode }) {
   )
 }
 
-function PlayerLink({ id, name }: { id: string; name: string }) {
-  return (
-    <Link href={`/players/${id}`} className="text-gray-900 hover:text-blue-700 hover:underline">
-      {name}
-    </Link>
-  )
-}
 
 function OngoingBadge({ hidden = false }: { hidden?: boolean }) {
   return (
@@ -173,7 +165,7 @@ export default function RecordsRoom({
                   {sec.candidates.map(c => (
                     <li key={c.playerId}>
                       <div className="flex items-baseline justify-between gap-3">
-                        <span className="text-sm font-bold"><PlayerLink id={c.playerId} name={c.name} /></span>
+                        <span className="text-sm font-bold">{c.name}</span>
                         <span className="shrink-0 text-sm text-gray-500">
                           あと<span className="mx-0.5 text-lg font-extrabold tabular-nums text-red-600">{c.remaining}</span>
                         </span>
@@ -219,16 +211,12 @@ export default function RecordsRoom({
                   {achieved.map(a => (
                     <tr key={a.id} className={rowCls}>
                       <td className={`${tdCls} font-extrabold text-blue-950`}>{a.title}</td>
-                      <td className={tdCls}>
-                        <Link href={`/games/${a.gameId}`} className="text-blue-700 hover:underline">
-                          {fmtDate(a.date)}
-                        </Link>
-                      </td>
+                      <td className={tdCls}>{fmtDate(a.date)}</td>
                       <td className={tdCls}>{a.opponent ?? '-'}</td>
                       {/* 初めての達成（1人目）は赤で目立たせる */}
                       <td className={`${tdCls}${a.nth === 1 ? ' font-bold text-red-600' : ''}`}>{a.nth}人目</td>
                       <td className={tdCls}>{a.gamesPlayed}</td>
-                      <td className={`${tdCls} font-bold`}><PlayerLink id={a.playerId} name={a.name} /></td>
+                      <td className={`${tdCls} font-bold`}>{a.name}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -242,12 +230,12 @@ export default function RecordsRoom({
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="flex items-baseline gap-2">
                       <span className="font-extrabold text-blue-950">{a.title}</span>
-                      <span className="text-sm font-bold"><PlayerLink id={a.playerId} name={a.name} /></span>
+                      <span className="text-sm font-bold">{a.name}</span>
                     </span>
                     <span className={`shrink-0 text-sm${a.nth === 1 ? ' font-bold text-red-600' : ' text-gray-500'}`}>{a.nth}人目</span>
                   </div>
                   <div className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm">
-                    <Link href={`/games/${a.gameId}`} className="tabular-nums text-blue-700">{fmtDate(a.date)}</Link>
+                    <span className="tabular-nums text-gray-700">{fmtDate(a.date)}</span>
                     <span className="text-gray-500">vs {a.opponent ?? '-'}</span>
                     <span className="text-gray-400">· {a.gamesPlayed}試合目</span>
                   </div>
@@ -291,7 +279,7 @@ const shortYear = (y: string) => `'${y.slice(2)}`
 function SeasonHoldersMobile({ holders }: { holders: SeasonRecordRow['holders'] }) {
   const item = (h: SeasonRecordRow['holders'][number]) => (
     <div key={`${h.playerId}-${h.year}`}>
-      <span className="font-bold"><PlayerLink id={h.playerId} name={h.name} /></span>
+      <span className="font-bold">{h.name}</span>
       <span className="ml-1 text-xs text-gray-400 tabular-nums">{shortYear(h.year)}</span>
     </div>
   )
@@ -360,7 +348,7 @@ function SeasonRecordTable({ title, rows }: { title: string; rows: SeasonRecordR
                     {/* 同率1位は1人1行で縦に並べ、氏名と年度の行を揃える */}
                     <td className={`${tdCls} font-bold`}>
                       {r.holders.map(h => (
-                        <div key={`${h.playerId}-${h.year}`}><PlayerLink id={h.playerId} name={h.name} /></div>
+                        <div key={`${h.playerId}-${h.year}`}>{h.name}</div>
                       ))}
                     </td>
                     <td className={tdCls}>
@@ -392,7 +380,7 @@ function StreakTable({ rows }: { rows: StreakRow[] }) {
             </div>
             {r.holders.map(h => (
               <div key={`${h.playerId}-${h.from}`} className="mt-1 flex flex-wrap items-center gap-x-2 text-sm">
-                <span className="font-bold"><PlayerLink id={h.playerId} name={h.name} /></span>
+                <span className="font-bold">{h.name}</span>
                 <span className="tabular-nums text-gray-500">{fmtDate(h.from)}〜{fmtDate(h.to)}</span>
                 {h.ongoing && <OngoingBadge />}
               </div>
@@ -423,7 +411,7 @@ function StreakTable({ rows }: { rows: StreakRow[] }) {
                     {/* 同じ長さの1位は1人1行で縦に並べ、氏名と期間の行を揃える */}
                     <td className={`${tdCls} font-bold`}>
                       {r.holders.map(h => (
-                        <div key={`${h.playerId}-${h.from}`}><PlayerLink id={h.playerId} name={h.name} /></div>
+                        <div key={`${h.playerId}-${h.from}`}>{h.name}</div>
                       ))}
                     </td>
                     {/* 期間は中央に置きつつ日付の先頭を揃える。「継続中」が無い行も同じ幅の透明なバッジで
