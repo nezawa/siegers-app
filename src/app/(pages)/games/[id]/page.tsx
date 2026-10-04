@@ -40,6 +40,17 @@ function SectionHeading({ children, href }: { children: React.ReactNode; href?: 
   )
 }
 
+// 選手名セル。選手が紐づいていれば成績詳細ページへのリンクにする
+function PlayerName({ player }: { player: unknown }) {
+  const p = player as { id?: string; name?: string } | null
+  if (!p?.id) return <>{p?.name ?? '-'}</>
+  return (
+    <Link href={`/players/${p.id}`} className="transition-colors hover:text-blue-700 hover:underline">
+      {p.name ?? '-'}
+    </Link>
+  )
+}
+
 // タブに「小雀シーガーズ | 2025/05/03 vs レッドスターズ」のように試合の概要を出す。
 // 表示用に必要な列だけを取る軽いクエリにしている
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -246,7 +257,7 @@ export default async function GameDetailPage({
                 {battingData.map(stat => (
                   <tr key={stat.id} className={rowCls}>
                     <td className={`${tdCls} text-gray-500`}>{stat.batting_order ?? '-'}</td>
-                    <td className="whitespace-nowrap px-1.5 sm:px-2 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
+                    <td className="whitespace-nowrap px-1.5 sm:px-2 py-3 font-bold text-gray-900"><PlayerName player={stat.players} /></td>
                     <td className={tdCls}>{stat.pa}</td>
                     <td className={tdCls}>{stat.ab}</td>
                     <td className={tdCls}>{stat.hits}</td>
@@ -294,7 +305,7 @@ export default async function GameDetailPage({
               <tbody className="divide-y divide-gray-100">
                 {pitchingData.map(stat => (
                   <tr key={stat.id} className={rowCls}>
-                    <td className="whitespace-nowrap px-1.5 sm:px-3 py-3 font-bold text-gray-900">{(stat.players as { name?: string } | null)?.name ?? '-'}</td>
+                    <td className="whitespace-nowrap px-1.5 sm:px-3 py-3 font-bold text-gray-900"><PlayerName player={stat.players} /></td>
                     <td className={tdCls}>{stat.is_win ? <span className="font-bold text-green-600">○</span> : '-'}</td>
                     <td className={tdCls}>{(stat as { is_hold?: boolean }).is_hold ? <span className="font-bold text-blue-600">○</span> : '-'}</td>
                     <td className={tdCls}>{(stat as { is_save?: boolean }).is_save ? <span className="font-bold text-purple-600">○</span> : '-'}</td>
