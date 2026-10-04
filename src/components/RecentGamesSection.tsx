@@ -48,7 +48,8 @@ export function gamesListQuery(year: string, page: number): string {
 
 const withQuery = (path: string, query: string) => (query ? `${path}?${query}` : path)
 
-export default function RecentGamesSection({ games }: { games: Game[] }) {
+// lastUpdated: 成績データの最終更新日時。取れない環境では null が渡り、表示を省く
+export default function RecentGamesSection({ games, lastUpdated }: { games: Game[]; lastUpdated: string | null }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -91,7 +92,7 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <div className="flex items-center gap-3">
           <h2 className="flex items-center gap-2.5 text-lg font-bold text-gray-900">
             <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
@@ -117,6 +118,9 @@ export default function RecentGamesSection({ games }: { games: Game[] }) {
             </svg>
           </div>
         </div>
+        {lastUpdated && (
+          <p className="text-xs text-gray-400">成績データ更新：{lastUpdated}</p>
+        )}
       </div>
       {pagedGames.length === 0 ? (
         <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">試合データがありません</div>

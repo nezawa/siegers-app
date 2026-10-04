@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 // games.updated_at はDBのトリガーで自動更新される（supabase/add_games_updated_at.sql）。
 // 未適用の環境ではクエリがエラーになるので null を返し、呼び出し側で表示を省く。
 //
-// フッター（全ページ）と成績ページの見出しの2箇所から呼ばれるため、
-// cache() で1リクエストにつき1回のクエリにまとめる。
+// 試合結果ページと成績ページの見出しから呼ばれる。
+// cache() で1リクエスト内の重複呼び出しを1回のクエリにまとめる。
 export const fetchLastUpdated = cache(async (): Promise<string | null> => {
   const supabase = await createClient()
   const { data, error } = await supabase
