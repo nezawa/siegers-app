@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { fetchAllRows } from '@/lib/supabase/fetchAll'
-import { computeBatting, computePitching, type BattingTotals, type PitchingTotals } from '@/lib/stats'
+import { computeBatting, computePitching, outsToIp, type BattingTotals, type PitchingTotals } from '@/lib/stats'
 import { battingRanks, pitchingRanks, type RankMap } from '@/lib/ranking'
 import { rankBgClass } from '@/lib/rankStyle'
 import RankLegend from '@/components/RankLegend'
@@ -62,7 +62,72 @@ const PITCHING_COLS: Col<PitchingTotals>[] = [
   { header: '暴投', key: 'wp', get: t => t.wp },
 ]
 
-const thCls = 'px-3 py-2.5 font-semibold text-white text-center whitespace-nowrap text-xs'
+// 「もうすぐ達成」の対象。積み上げ系のプラス記録のみ（率系・マイナス記録・投球数・打数は対象外）
+const MILESTONE_STEP = 50
+const MILESTONE_COUNT = 3
+
+type MilestoneDef<T> = { label: string; get: (t: T) => number }
+
+const BATTING_MILESTONES: MilestoneDef<BattingTotals>[] = [
+  { label: '試合数', get: t => t.games },
+  { label: '打席', get: t => t.pa },
+  { label: '安打', get: t => t.hits },
+  { label: '本塁打', get: t => t.hr },
+  { label: '打点', get: t => t.rbi },
+  { label: '得点', get: t => t.runs },
+  { label: '盗塁', get: t => t.sb },
+  { label: '二塁打', get: t => t.doubles },
+  { label: '三塁打', get: t => t.triples },
+  { label: '塁打数', get: t => t.tb },
+  { label: '四球', get: t => t.bb },
+]
+
+const PITCHING_MILESTONES: MilestoneDef<PitchingTotals>[] = [
+  { label: '登板', get: t => t.appearances },
+  { label: '勝利', get: t => t.wins },
+  { label: 'ホールド', get: t => t.holds },
+  { label: 'セーブ', get: t => t.saves },
+  { label: '奪三振', get: t => t.k },
+]
+
+type Milestone = {
+  label: string
+  current: string
+  target: number
+  remaining: string
+  remainingValue: number // 並び替え用（投球回はイニング換算）
+  progress: number // 現在の50刻み区間での進み具合 0〜1
+}
+
+function toMilestone(label: string, value: number, step: number, unit = 1): Milestone {
+  const target = (Math.floor(value / step) + 1) * step
+  const rem = target - value
+  const isOuts = unit !== 1
+  return {
+    label,
+    current: isOuts ? outsToIp(value) : String(value),
+    target: target / unit,
+    remaining: isOuts ? outsToIp(rem) : String(rem),
+    remainingValue: rem / unit,
+    progress: (value % step) / step,
+  }
+}
+
+function buildMilestones(batting: BattingTotals | null, pitching: PitchingTotals | null): Milestone[] {
+  const list: Milestone[] = []
+  if (batting) {
+    for (const m of BATTING_MILESTONES) list.push(toMilestone(m.label, m.get(batting), MILESTONE_STEP))
+  }
+  if (pitching) {
+    for (const m of PITCHING_MILESTONES) list.push(toMilestone(m.label, m.get(pitching), MILESTONE_STEP))
+    // 投球回はアウト数で計算し、50イニング刻み（=150アウト）で判定する
+    list.push(toMilestone('投球回', pitching.totalOuts, MILESTONE_STEP * 3, 3))
+  }
+  // sort は安定なので、残りが同じなら定義順（打撃→投手）になる
+  return list.sort((a, b) => a.remainingValue - b.remainingValue).slice(0, MILESTONE_COUNT)
+}
+
+const thCls ='px-3 py-2.5 font-semibold text-white text-center whitespace-nowrap text-xs'
 const tdCls = 'px-3 py-3 text-center text-sm tabular-nums'
 
 type StatRow<T> = { label: string; totals: T; ranks: RankMap }
@@ -184,26 +249,59 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
     ? { label: '通算', totals: computePitching(pStats), ranks: pitchingRanks(allP, id, outsThreshold(null)) }
     : null
 
+  const milestones = buildMilestones(battingTotal?.totals ?? null, pitchingTotal?.totals ?? null)
+
   return (
     <div className="space-y-8">
       <div>
-        <Link href="/players" className="inline-flex items-center gap-1 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-          ← 選手成績一覧
+        <Link href="/players" className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+          </svg>
+          選手成績一覧
         </Link>
       </div>
 
-      {/* 選手ヘッダー */}
-      <div className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
-        <div className="relative flex items-center gap-5 p-6 sm:p-8">
-          <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20 text-3xl sm:text-4xl font-extrabold italic tabular-nums text-amber-300">
-            {player.number ?? '-'}
-          </div>
-          <div>
-            <p className="text-[10px] tracking-[0.3em] text-white/80">PLAYER</p>
-            <h1 className="mt-0.5 text-2xl sm:text-3xl font-extrabold">{player.name}</h1>
-            {player.notes && <p className="mt-1 text-sm text-white/85">{player.notes}</p>}
+      <div className={`grid gap-4${milestones.length > 0 ? ' md:grid-cols-2' : ''}`}>
+        {/* 選手ヘッダー */}
+        <div className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
+          <div className="relative flex h-full items-center gap-5 p-6 sm:p-8">
+            <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20 text-3xl sm:text-4xl font-extrabold italic tabular-nums text-amber-300">
+              {player.number ?? '-'}
+            </div>
+            <div>
+              <h1 className="mt-0.5 text-2xl sm:text-3xl font-extrabold">{player.name}</h1>
+              {player.notes && <p className="mt-1 text-sm text-white/85">{player.notes}</p>}
+            </div>
           </div>
         </div>
+
+        {/* もうすぐ達成（通算の積み上げ記録で、次の50刻みまでが近いもの） */}
+        {milestones.length > 0 && (
+          <div className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
+            <div className="relative p-6 sm:px-8">
+              <p className="text-xs font-bold tracking-wide text-amber-300">もうすぐ達成</p>
+              <ul className="mt-3 space-y-2.5">
+                {milestones.map(m => (
+                  <li key={m.label}>
+                    <div className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="font-bold">
+                        {m.label}
+                        <span className="ml-2 font-normal tabular-nums text-white/80">{m.current} / {m.target}</span>
+                      </span>
+                      <span className="shrink-0 text-white/80">
+                        あと<span className="mx-0.5 text-lg font-extrabold tabular-nums text-amber-300">{m.remaining}</span>
+                      </span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/20">
+                      <div className="h-full rounded-full bg-amber-300" style={{ width: `${m.progress * 100}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 打撃成績 */}
