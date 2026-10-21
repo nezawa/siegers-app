@@ -6,19 +6,23 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { BlogPost } from '@/types'
 
-// 一覧に出す抜粋。改行は詰めて1行にする
-function excerpt(body: string, length = 120) {
-  const flat = body.replace(/\s+/g, ' ').trim()
-  return flat.length > length ? `${flat.slice(0, length)}…` : flat
-}
-
 function formatPostDate(date: string) {
   return date.replace(/-/g, '/')
 }
 
+function pageHref(page: number) {
+  return page > 1 ? `/news?page=${page}` : '/news'
+}
+
 // News の見出し＋記事一覧。管理者には新規投稿・削除ボタンを出し、
 // 削除ボタンで選択モードに入ると各記事の横にチェックボックスが出て一括削除できる
-export default function NewsList({ posts, isAdmin }: { posts: BlogPost[]; isAdmin: boolean }) {
+
+export default function NewsList({ posts, isAdmin, page, totalPages }: {
+  posts: BlogPost[]
+  isAdmin: boolean
+  page: number
+  totalPages: number
+}) {
   const router = useRouter()
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -56,6 +60,7 @@ export default function NewsList({ posts, isAdmin }: { posts: BlogPost[]; isAdmi
     router.refresh()
   }
 
+  const pageBtnCls = 'flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors'
   const subBtnCls = 'rounded-xl bg-white px-4 py-1.5 text-sm font-bold text-gray-600 shadow-sm ring-1 ring-gray-200 transition-all hover:bg-gray-50 disabled:opacity-50'
 
   return (
@@ -105,15 +110,14 @@ export default function NewsList({ posts, isAdmin }: { posts: BlogPost[]; isAdmi
           {posts.map(post => {
             const content = (
               <>
-                <p className="text-xs font-medium text-gray-400">
+                <h2 className="font-bold text-gray-900">{post.title}</h2>
+                <p className="mt-1 text-xs font-medium text-gray-400">
                   <span className="tabular-nums">{formatPostDate(post.published_at)}</span>
                   {post.author && <span className="ml-2">{post.author}</span>}
                 </p>
-                <h2 className="mt-1 font-bold text-gray-900">{post.title}</h2>
-                <p className="mt-1.5 text-sm text-gray-500">{excerpt(post.body)}</p>
               </>
             )
-            const cardCls = 'block rounded-2xl bg-white p-5 shadow-sm ring-1 transition-all'
+            const cardCls = 'block rounded-2xl bg-white px-5 py-4 shadow-sm ring-1 transition-all'
 
             return (
               <li key={post.id}>
@@ -121,7 +125,7 @@ export default function NewsList({ posts, isAdmin }: { posts: BlogPost[]; isAdmi
                   // 選択モード中はカード全体をラベルにして、どこを押しても選択を切り替えられるようにする
                   <label className={`${cardCls} flex cursor-pointer items-start gap-4 ${selected.has(post.id) ? 'ring-2 ring-red-400' : 'ring-gray-900/5 hover:ring-red-200'}`}>
                     <input type="checkbox" checked={selected.has(post.id)} onChange={() => toggle(post.id)}
-                      className="mt-1 h-5 w-5 shrink-0 accent-red-500" />
+                      className="mt-0.5 h-5 w-5 shrink-0 accent-red-500" />
                     <div className="min-w-0 flex-1">{content}</div>
                   </label>
                 ) : (
@@ -133,6 +137,27 @@ export default function NewsList({ posts, isAdmin }: { posts: BlogPost[]; isAdmi
             )
           })}
         </ul>
+      )}
+
+      {totalPages > 1 && !selecting && (
+        <nav className="mt-5 flex items-center justify-center gap-1.5">
+          {page > 1 ? (
+            <Link href={pageHref(page - 1)} className={`${pageBtnCls} text-gray-600 hover:bg-white hover:shadow-sm`}>‹</Link>
+          ) : (
+            <span className={`${pageBtnCls} text-gray-600 opacity-30`}>‹</span>
+          )}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+            <Link key={p} href={pageHref(p)} aria-current={p === page ? 'page' : undefined}
+              className={`${pageBtnCls} font-medium ${p === page ? 'bg-band text-white shadow' : 'text-gray-600 hover:bg-white hover:shadow-sm'}`}>
+              {p}
+            </Link>
+          ))}
+          {page < totalPages ? (
+            <Link href={pageHref(page + 1)} className={`${pageBtnCls} text-gray-600 hover:bg-white hover:shadow-sm`}>›</Link>
+          ) : (
+            <span className={`${pageBtnCls} text-gray-600 opacity-30`}>›</span>
+          )}
+        </nav>
       )}
     </div>
   )
