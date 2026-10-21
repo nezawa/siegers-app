@@ -4,9 +4,11 @@ Git Hubに草を生やすためにはgit config user.emailとGithubアカウン�
 
 ## 技術スタック
 
-- Next.js (App Router) + TypeScript
+- Next.js 16 (App Router) + React 19 + TypeScript 5
 - Tailwind CSS 4
 - Supabase (PostgreSQL + Auth)
+- zod 4 (入力バリデーション)
+- ESLint 9
 
 ## Getting Started
 
