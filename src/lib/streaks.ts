@@ -77,6 +77,11 @@ const DEFS: Def[] = [
   { key: 'appear', label: '出場', sequence: team(p => [...p.batting, ...p.pitching]) },
   { key: 'hits', label: '安打', sequence: own('batting', r => num(r, 'hits') > 0) },
   { key: 'onbase', label: '出塁', sequence: own('batting', r => num(r, 'hits') + num(r, 'bb') + num(r, 'hbp') > 0) },
+  {
+    key: 'onbaseRoe',
+    label: '出塁（敵失含む）',
+    sequence: own('batting', r => num(r, 'hits') + num(r, 'bb') + num(r, 'hbp') + num(r, 'reach_on_error') > 0),
+  },
   { key: 'sb', label: '盗塁', sequence: own('batting', r => num(r, 'sb') > 0) },
   { key: 'rbi', label: '打点', sequence: own('batting', r => num(r, 'rbi') > 0) },
   { key: 'runs', label: '得点', sequence: own('batting', r => num(r, 'runs') > 0) },
