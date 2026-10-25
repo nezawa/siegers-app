@@ -12,6 +12,7 @@ import PitchingTable from './PitchingTable'
 import TeamTable from './TeamTable'
 import RecordsRoom, { type RecordSection, type AchievedRow, type SeasonRecordRow, type StreakRow } from './RecordsRoom'
 import FilterPanel from './FilterPanel'
+import TabLabel from './TabLabel'
 import { resolveYear, resolveGtype, isGameType, FALLBACK_YEAR, FALLBACK_GTYPE } from './filterDefaults'
 import type { Metadata } from 'next'
 
@@ -341,16 +342,16 @@ export default async function PlayersPage({
       {/* タブ（成績表と一体のデザイン） */}
       <div className="grid grid-cols-4 gap-1 overflow-hidden rounded-t-2xl border-b-4 border-band">
         <Link href={buildUrl({ tab: 'team', from, to, gtype, q, tournament, opponent })} className={tabCls(showTeam)}>
-          チーム成績
+          <TabLabel>チーム成績</TabLabel>
         </Link>
         <Link href={buildUrl({ tab: 'records' })} className={tabCls(showRecords)}>
-          通算記録室
+          <TabLabel>通算記録室</TabLabel>
         </Link>
         <Link href={buildUrl({ year, from, to, gtype, q, tournament, opponent })} className={tabCls(!showPitching && !showTeam && !showRecords)}>
-          打撃成績
+          <TabLabel>打撃成績</TabLabel>
         </Link>
         <Link href={buildUrl({ tab: 'pitching', year, from, to, gtype, q, tournament, opponent })} className={tabCls(showPitching)}>
-          投手成績
+          <TabLabel>投手成績</TabLabel>
         </Link>
       </div>
 
