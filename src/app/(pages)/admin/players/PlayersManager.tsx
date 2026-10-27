@@ -104,7 +104,7 @@ export default function PlayersManager({ players }: { players: Player[] }) {
           {editing ? (
             <>
               <button onClick={save} disabled={loading}
-                className="rounded-xl bg-band px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 disabled:opacity-50">
+                className="press rounded-xl bg-band px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 disabled:opacity-50">
                 {loading ? '保存中...' : '保存'}
               </button>
               <button onClick={cancel} disabled={loading}

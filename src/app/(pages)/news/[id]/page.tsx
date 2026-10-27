@@ -110,7 +110,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ id: s
 
       <div className="mt-6 text-center">
         <Link href="/news"
-          className="inline-block rounded-xl bg-band px-8 py-3 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg">
+          className="press inline-block rounded-xl bg-band px-8 py-3 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg">
           News一覧へ戻る
         </Link>
       </div>

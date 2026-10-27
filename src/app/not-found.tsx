@@ -10,7 +10,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="mt-8 inline-block rounded-xl bg-band px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg"
+          className="press mt-8 inline-block rounded-xl bg-band px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-950/20 transition-all hover:opacity-85 hover:shadow-lg"
         >
           トップへ戻る
         </Link>

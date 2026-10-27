@@ -60,7 +60,7 @@ export default function NewsList({ posts, isAdmin, page, totalPages }: {
     router.refresh()
   }
 
-  const pageBtnCls = 'flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors'
+  const pageBtnCls = 'press flex h-8 w-8 items-center justify-center rounded-full text-sm'
   const subBtnCls = 'rounded-xl bg-white px-4 py-1.5 text-sm font-bold text-gray-600 shadow-sm ring-1 ring-gray-200 transition-all hover:bg-gray-50 disabled:opacity-50'
 
   return (
@@ -85,7 +85,7 @@ export default function NewsList({ posts, isAdmin, page, totalPages }: {
             ) : (
               <>
                 <Link href="/admin/news/new"
-                  className="rounded-xl bg-band px-4 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:opacity-85">
+                  className="press rounded-xl bg-band px-4 py-1.5 text-sm font-bold text-white shadow-sm transition-all hover:opacity-85">
                   新規投稿
                 </Link>
                 {posts.length > 0 && (

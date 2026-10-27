@@ -24,3 +24,25 @@ input[type=number]::-webkit-outer-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* クリックした手応え: 押している間だけ少し縮める。
+   <button> は全て自動で対象。ボタン風の <Link> には press クラスを付ける */
+@utility press {
+  transition-property: scale, color, background-color, border-color, box-shadow, opacity;
+  transition-duration: 150ms;
+  &:active:not(:disabled) {
+    scale: 0.95;
+  }
+}
+
+@layer base {
+  button,
+  input[type=submit],
+  input[type=button],
+  input[type=reset] {
+    &:active:not(:disabled) {
+      scale: 0.95;
+      transition: scale 80ms;
+    }
+  }
+}
