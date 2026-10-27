@@ -289,16 +289,13 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
             <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             継続中の連続記録
           </h2>
-          <ul className="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+          {/* 期間の開始位置を揃えるため、行をまたいだ3列グリッド（subgrid）にする */}
+          <ul className="grid grid-cols-[auto_1fr_auto] divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
             {currentStreaks.map(s => (
-              <li key={s.key} className="flex items-baseline justify-between gap-3 px-4 py-3">
-                <span className="font-bold text-gray-700">
-                  連続{s.label}
-                  <span className="ml-2 text-sm font-normal tabular-nums text-gray-500">
-                    {s.from.replaceAll('-', '/')}〜
-                  </span>
-                </span>
-                <span className="shrink-0 text-lg font-extrabold tabular-nums text-blue-950">{s.length}試合</span>
+              <li key={s.key} className="col-span-3 grid grid-cols-subgrid items-baseline gap-x-3 px-4 py-3">
+                <span className="font-bold text-gray-700">連続{s.label}</span>
+                <span className="text-sm tabular-nums text-gray-500">{s.from.replaceAll('-', '/')}〜</span>
+                <span className="text-lg font-extrabold tabular-nums text-blue-950">{s.length}試合</span>
               </li>
             ))}
           </ul>
