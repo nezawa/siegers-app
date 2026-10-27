@@ -109,8 +109,22 @@ export default async function PlayersPage({
   const qualifiedPaRate = settings?.qualified_pa ?? 3.1
   const qualifiedPaThreshold = activeGames.length * qualifiedPaRate
 
-  // 出席率の分母。結果未確定の試合（未消化のスケジュール登録）は数えない
-  const playedActiveGames = (activeGames as (GameRow & { result: string | null })[]).filter(g => g.result != null).length
+  // 出席率の分母は「絞り込み結果のうち、その選手の初出場日（全期間）以降の試合数」。
+  // 結果未確定の試合（未消化のスケジュール登録）は数えない
+  const playedActiveGames = (activeGames as (GameRow & { result: string | null })[]).filter(g => g.result != null)
+  const firstDateByPlayer = new Map<string, string>()
+  for (const s of allBStats) {
+    const date = (s.games as { date?: string } | null)?.date
+    if (!date) continue
+    const cur = firstDateByPlayer.get(s.player_id)
+    if (!cur || date < cur) firstDateByPlayer.set(s.player_id, date)
+  }
+  const attendanceOf = (playerId: string, games: number): string => {
+    const first = firstDateByPlayer.get(playerId)
+    if (!first) return '-'
+    const denom = playedActiveGames.filter(g => g.date >= first).length
+    return denom > 0 ? `${Math.round((games / denom) * 100)}%` : '-'
+  }
 
   // 打撃通算ヘルパー。順位は「いま表示している絞り込み結果の中での順位」
   const buildBattingRows = (stats: typeof allBStats, ranks: Record<string, Record<string, number>>) =>
@@ -119,7 +133,7 @@ export default async function PlayersPage({
       return {
         player,
         ...totals,
-        attendance: playedActiveGames > 0 ? `${Math.round((totals.games / playedActiveGames) * 100)}%` : '-',
+        attendance: attendanceOf(player.id, totals.games),
         ranks: ranks[player.id] ?? {},
       }
     })

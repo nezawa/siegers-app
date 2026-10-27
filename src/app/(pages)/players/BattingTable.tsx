@@ -64,8 +64,9 @@ const COLS: ColDef[] = [
   { key: '敵失',      label: '敵失', rankKey: 'reach_on_error',      getValue: r => r.reach_on_error },
   { key: '失策',      label: '失策', rankKey: 'errors',      getValue: r => r.errors },
   { key: '盗塁阻止',  label: '盗塁阻止', rankKey: 'cs',  getValue: r => r.cs },
-  // 出場試合数 ÷ 全試合数。並びは試合数と同じなので順位も試合数のものを使う
-  { key: '出席率',    label: '出席率', rankKey: 'games',  getValue: r => r.attendance },
+  // 出場試合数 ÷ 初出場以降の試合数。値は page.tsx で計算済み。
+  // ranking.ts の指標には無いので 1位の色は付かない
+  { key: '出席率',    label: '出席率', rankKey: 'attendance',  getValue: r => r.attendance },
 ]
 
 type Props = {
