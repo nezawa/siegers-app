@@ -62,6 +62,10 @@ const PITCHING_COLS: Col<PitchingTotals>[] = [
   { header: '与死球', key: 'hbp', get: t => t.hbp },
   { header: 'ボーク', key: 'balk', get: t => t.balk },
   { header: '暴投', key: 'wp', get: t => t.wp },
+  { header: '奪三振率', key: 'kRate', get: t => t.kRate },
+  { header: '与四球率', key: 'bbRate', get: t => t.bbRate },
+  { header: 'K-BB', key: 'kbb', get: t => t.kbb },
+  { header: 'WHIP', key: 'whip', get: t => t.whip },
 ]
 
 // 「もうすぐ達成」に出す件数（次の節目までの残りが少ない順）

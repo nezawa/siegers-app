@@ -18,6 +18,7 @@ export type PitchingRow = {
   cg: number; sho: number
   hits_allowed: number; hr_allowed: number
   k: number; bb: number; hbp: number; balk: number; wp: number
+  kRate: string; bbRate: string; kbb: string; whip: string
   ranks: RankMap
 }
 
@@ -60,6 +61,10 @@ const COLS: ColDef[] = [
   { key: '与死球',  label: '与死球', rankKey: 'hbp',  getValue: r => r.hbp },
   { key: 'ボーク',  label: 'ボーク', rankKey: 'balk',  getValue: r => r.balk },
   { key: '暴投',    label: '暴投', rankKey: 'wp',    getValue: r => r.wp },
+  { key: '奪三振率',label: '奪三振率', rankKey: 'kRate',getValue: r => r.kRate },
+  { key: '与四球率',label: '与四球率', rankKey: 'bbRate',getValue: r => r.bbRate },
+  { key: 'K-BB',    label: 'K-BB', rankKey: 'kbb',    getValue: r => r.kbb },
+  { key: 'WHIP',    label: 'WHIP', rankKey: 'whip',    getValue: r => r.whip },
 ]
 
 type Props = {

@@ -52,6 +52,20 @@ export function fmtEra(er: number, totalOuts: number): string {
   return value === null ? '-' : value.toFixed(2)
 }
 
+// 7イニングあたりの回数（奪三振率・与四球率）。防御率と同じ換算イニング数を使う。投球回0のときは null
+export function perInningsValue(count: number, totalOuts: number): number | null {
+  if (totalOuts === 0) return null
+  return (count * ERA_INNINGS * 3) / totalOuts
+}
+
+// WHIP =（被安打 + 与四球）÷ 投球回。投球回0のときは null
+export function whipValue(hitsAllowed: number, bb: number, totalOuts: number): number | null {
+  if (totalOuts === 0) return null
+  return ((hitsAllowed + bb) * 3) / totalOuts
+}
+
+const fmt2 = (value: number | null): string => (value === null ? '-' : value.toFixed(2))
+
 // Supabase から返る成績行。集計に使うキーだけ数値として拾う
 type StatRow = Record<string, unknown>
 
@@ -121,7 +135,15 @@ export function computePitching(rows: StatRow[]) {
   const losses = count(rows, 'is_loss')
   const { display: ip, outs: totalOuts } = sumIp(rows.map(row => (row.ip as number) ?? 0))
   const er = sum(rows, 'er')
+  const hits_allowed = sum(rows, 'hits_allowed')
+  const k = sum(rows, 'k')
+  const bb = sum(rows, 'bb')
   const wl = wins + losses
+  const kRate = perInningsValue(k, totalOuts)
+  const bbRate = perInningsValue(bb, totalOuts)
+  // K-BB = 奪三振 ÷ 与四球。与四球0のときは null
+  const kbb = bb > 0 ? k / bb : null
+  const whip = whipValue(hits_allowed, bb, totalOuts)
   return {
     appearances, wins, holds, saves, losses, totalOuts,
     winPct: wl > 0 ? (wins / wl).toFixed(3).replace(/^0/, '') : '-',
@@ -132,15 +154,23 @@ export function computePitching(rows: StatRow[]) {
     er,
     cg: count(rows, 'is_cg'),
     sho: count(rows, 'is_sho'),
-    hits_allowed: sum(rows, 'hits_allowed'),
+    hits_allowed,
     hr_allowed: sum(rows, 'hr_allowed'),
-    k: sum(rows, 'k'),
-    bb: sum(rows, 'bb'),
+    k,
+    bb,
     hbp: sum(rows, 'hbp'),
     balk: sum(rows, 'balk'),
     wp: sum(rows, 'wp'),
+    kRate: fmt2(kRate),
+    bbRate: fmt2(bbRate),
+    kbb: fmt2(kbb),
+    whip: fmt2(whip),
     // 比較用の数値（順位判定に使う）。表示用の文字列と式がずれないよう同じ関数から作る
     eraValue: eraValue(er, totalOuts),
     winPctValue: wl > 0 ? wins / wl : null,
+    kRateValue: kRate,
+    bbRateValue: bbRate,
+    kbbValue: kbb,
+    whipValue: whip,
   }
 }

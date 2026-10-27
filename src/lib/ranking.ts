@@ -3,11 +3,11 @@ import { computeBatting, computePitching, type BattingTotals, type PitchingTotal
 // 各指標の「チーム内1位」を判定する。成績表のセル背景色に使う。
 //
 // ルール（実装の前提）:
-//   - 率系（打率・出塁率・長打率・OPS・得点圏打率・勝率・防御率）は規定到達者だけで比較する
+//   - 率系（打率・出塁率・長打率・OPS・得点圏打率・勝率・防御率・奪三振率・与四球率・K-BB・WHIP）は規定到達者だけで比較する
 //     （数打席しか出ていない選手が打率1位になるのを防ぐため）
-//   - 防御率は小さいほど上位。それ以外は大きいほど上位（三振・失策などのネガティブ指標も最多が1位）
+//   - 防御率・与四球率・WHIP は小さいほど上位。それ以外は大きいほど上位（三振・失策などのネガティブ指標も最多が1位）
 //   - 記録が0のときは1位にしない（全員0本の本塁打で色が付く、といった表示を避ける）。
-//     ただし防御率は 0.00 が最高成績なので対象外
+//     ただし小さいほど上位の指標は 0.00 が最高成績なので対象外
 //   - 同率1位は全員に色を付ける
 //   - 比較は「画面に表示される桁数に丸めてから」行う（表示が同じ値なら同順位として扱う）
 
@@ -70,6 +70,10 @@ const PITCHING_METRICS: Metric<PitchingTotals>[] = [
   { key: 'hbp', get: t => t.hbp },
   { key: 'balk', get: t => t.balk },
   { key: 'wp', get: t => t.wp },
+  { key: 'kRate', get: t => t.kRateValue, digits: 2, qualified: true },
+  { key: 'bbRate', get: t => t.bbRateValue, digits: 2, lowerIsBetter: true, qualified: true },
+  { key: 'kbb', get: t => t.kbbValue, digits: 2, qualified: true },
+  { key: 'whip', get: t => t.whipValue, digits: 2, lowerIsBetter: true, qualified: true },
 ]
 
 const round = (v: number, digits: number) => Math.round(v * 10 ** digits) / 10 ** digits
