@@ -184,6 +184,8 @@ export default async function PlayersPage({
     const o = gs.filter(g => g.result === 'O').length
     const hits = bs.reduce((sum, b) => sum + (b.hits ?? 0), 0)
     const ab = bs.reduce((sum, b) => sum + (b.ab ?? 0), 0)
+    const sumB = (key: 'pa' | 'doubles' | 'triples' | 'hr' | 'bb' | 'k') => bs.reduce((sum, b) => sum + (b[key] ?? 0), 0)
+    const pa = sumB('pa')
     const er = ps.reduce((sum, p) => sum + (p.er ?? 0), 0)
     return {
       label,
@@ -191,9 +193,14 @@ export default async function PlayersPage({
       winPct: fmt(w, w + l),
       runsFor: gs.reduce((sum, g) => sum + (g.score_us ?? 0), 0),
       runsAgainst: gs.reduce((sum, g) => sum + (g.score_them ?? 0), 0),
+      pa,
       avg: fmt(hits, ab),
-      hr: bs.reduce((sum, b) => sum + (b.hr ?? 0), 0),
+      // 長打率 = 塁打数 / 打数。塁打数 = 単打 + 2×二塁打 + 3×三塁打 + 4×本塁打（hits は長打を含む総安打数。lib/stats.ts と同じ式）
+      slg: fmt(hits + sumB('doubles') + 2 * sumB('triples') + 3 * sumB('hr'), ab),
+      // 四球率・三振率は打席が分母（選手成績の三振率と同じ）
+      bbRate: fmt(sumB('bb'), pa),
       sb: bs.reduce((sum, b) => sum + (b.sb ?? 0), 0),
+      kRate: fmt(sumB('k'), pa),
       era: fmtEra(er, sumIp(ps.map(p => p.ip ?? 0)).outs),
     }
   }
