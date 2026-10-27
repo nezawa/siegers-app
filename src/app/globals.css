@@ -25,24 +25,49 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* クリックした手応え: 押している間だけ少し縮める。
-   <button> は全て自動で対象。ボタン風の <Link> には press クラスを付ける */
+/* クリックした手応え: 押している間だけ少し縮める（マウス操作の端末）。
+   <button> は全て自動で対象。ボタン風の <Link> には press クラスを付ける。
+   スマホのタップは一瞬で :active では見えないので、TapFeedback.tsx が tap-pop / tap-dim を付けて再生する */
 @utility press {
   transition-property: scale, color, background-color, border-color, box-shadow, opacity;
   transition-duration: 150ms;
-  &:active:not(:disabled) {
-    scale: 0.95;
+  @media (hover: hover) {
+    &:active:not(:disabled) {
+      scale: 0.95;
+    }
   }
 }
 
 @layer base {
-  button,
-  input[type=submit],
-  input[type=button],
-  input[type=reset] {
-    &:active:not(:disabled) {
-      scale: 0.95;
-      transition: scale 80ms;
+  @media (hover: hover) {
+    button,
+    input[type=submit],
+    input[type=button],
+    input[type=reset] {
+      &:active:not(:disabled) {
+        scale: 0.95;
+        transition: scale 80ms;
+      }
     }
   }
+}
+
+/* ボタン: 一度縮んでから戻る */
+.tap-pop {
+  animation: tap-pop 260ms ease-out;
+}
+@keyframes tap-pop {
+  0% { scale: 1; }
+  35% { scale: 0.92; }
+  100% { scale: 1; }
+}
+
+/* ボタン以外のリンク（カード・メニュー等）: 縮めると崩れるので一瞬薄くする */
+.tap-dim {
+  animation: tap-dim 300ms ease-out;
+}
+@keyframes tap-dim {
+  0% { opacity: 1; }
+  30% { opacity: 0.5; }
+  100% { opacity: 1; }
 }

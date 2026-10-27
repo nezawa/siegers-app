@@ -4,6 +4,7 @@ import { Noto_Sans_JP } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import TapFeedback from '@/components/TapFeedback'
 
 const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
@@ -42,6 +43,7 @@ export default function RootLayout({
           {children}
         </div>
         <Footer />
+        <TapFeedback />
       </body>
     </html>
   )
