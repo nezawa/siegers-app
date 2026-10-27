@@ -4,7 +4,7 @@ import { computeBatting, computePitching, outsToIp, type BattingTotals, type Pit
 //
 // ルール:
 //   - 公式戦のみで集計する
-//   - 打率・出塁率・長打率・OPS・得点圏打率は、その年の規定打席に届いた選手だけで比較する
+//   - 打率・出塁率・長打率・OPS・ISO・三振率・得点圏打率は、その年の規定打席に届いた選手だけで比較する
 //   - 防御率はその年の規定投球回に届いた選手だけ。小さいほど上位
 //   - 勝率は5勝以上の選手だけで比較する
 //   - それ以外は多いほど上位（三振・失策などのマイナス記録も「最多」を記録とする）
@@ -108,10 +108,12 @@ export function buildSeasonRecords(
     rate('slg', '長打率', t => t.slgValue),
     rate('risp_avg', '得点圏打率', t => t.rispAvgValue),
     rate('ops', 'OPS', t => t.opsValue),
+    rate('iso', 'ISO', t => t.isoValue),
     count('doubles', '二塁打'),
     count('triples', '三塁打'),
     count('tb', '塁打数'),
     count('k', '三振'),
+    rate('k_rate', '三振率', t => t.kRateValue),
     count('bb', '四球'),
     count('hbp', '死球'),
     count('sac_bunt', '犠打'),

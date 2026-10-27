@@ -15,7 +15,7 @@ export type BattingRow = {
   rbi: number; runs: number; sb: number; bb: number; hbp: number
   sac_fly: number; sac_bunt: number; k: number; gidp: number
   reach_on_error: number; errors: number; cs: number; tb: number
-  avg: string; obp: string; slg: string; ops: string; risp_avg: string
+  avg: string; obp: string; slg: string; ops: string; iso: string; k_rate: string; risp_avg: string
   attendance: string
   ranks: RankMap
 }
@@ -52,10 +52,12 @@ const COLS: ColDef[] = [
   { key: '長打率',    label: '長打率', rankKey: 'slg',    getValue: r => r.slg },
   { key: '得点圏打率',label: '得点圏打率', rankKey: 'risp_avg',getValue: r => r.risp_avg },
   { key: 'OPS',       label: 'OPS', rankKey: 'ops',       getValue: r => r.ops,       bold: true },
+  { key: 'ISO',       label: 'ISO', rankKey: 'iso',       getValue: r => r.iso },
   { key: '二塁打',    label: '二塁打', rankKey: 'doubles',    getValue: r => r.doubles },
   { key: '三塁打',    label: '三塁打', rankKey: 'triples',    getValue: r => r.triples },
   { key: '塁打数',    label: '塁打数', rankKey: 'tb',    getValue: r => r.tb },
   { key: '三振',      label: '三振', rankKey: 'k',      getValue: r => r.k },
+  { key: '三振率',    label: '三振率', rankKey: 'k_rate',    getValue: r => r.k_rate },
   { key: '四球',      label: '四球', rankKey: 'bb',      getValue: r => r.bb },
   { key: '死球',      label: '死球', rankKey: 'hbp',      getValue: r => r.hbp },
   { key: '犠打',      label: '犠打', rankKey: 'sac_bunt',      getValue: r => r.sac_bunt },

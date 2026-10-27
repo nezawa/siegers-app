@@ -122,7 +122,7 @@ export default function JsonGameForm({ players, tournaments }: { players: Player
             記録の流儀: <code className="bg-gray-100 px-1 rounded">hits</code>（安打）は二塁打・三塁打・本塁打を含めた総安打数、
             <code className="bg-gray-100 px-1 rounded">risp_ab</code>（得点圏打数）は打数ベース（四球・死球・犠打・犠飛は除く）、
             敵失での出塁も <code className="bg-gray-100 px-1 rounded">ab</code>（打数）に含めます。
-            塁打数・長打率・OPS・得点圏打率はこの前提で計算されます。
+            塁打数・長打率・OPS・ISO・得点圏打率はこの前提で計算されます。
           </span>
         </p>
         <textarea

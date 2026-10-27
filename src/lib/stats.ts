@@ -115,12 +115,18 @@ export function computeBatting(rows: StatRow[]) {
     obp: obpDenom > 0 ? fmt(obpNum, obpDenom) : '-',
     slg: ab > 0 ? fmt(tb, ab) : '-',
     ops: fmtOps(obp, slg),
+    // ISO（長打率 - 打率）= (塁打数 - 安打) / 打数。差を取ってから丸めると表示の長打率・打率と食い違うことがあるので、分子から直接出す
+    iso: fmt(tb - hits, ab),
+    // 三振率 = 三振 / 打席（四球・死球・犠打・犠飛も分母に含める）
+    k_rate: fmt(k, pa),
     risp_avg: fmt(risp_hits, risp_ab),
     // 比較用の数値（順位判定に使う）。表示用の文字列と式がずれないよう同じ値から作る
     avgValue: ab > 0 ? hits / ab : null,
     obpValue: obp,
     slgValue: slg,
     opsValue: obp !== null && slg !== null ? obp + slg : null,
+    isoValue: ab > 0 ? (tb - hits) / ab : null,
+    kRateValue: pa > 0 ? k / pa : null,
     rispAvgValue: risp_ab > 0 ? risp_hits / risp_ab : null,
   }
 }
