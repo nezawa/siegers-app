@@ -109,13 +109,20 @@ export default async function PlayersPage({
   const qualifiedPaRate = settings?.qualified_pa ?? 3.1
   const qualifiedPaThreshold = activeGames.length * qualifiedPaRate
 
+  // 出席率の分母。結果未確定の試合（未消化のスケジュール登録）は数えない
+  const playedActiveGames = (activeGames as (GameRow & { result: string | null })[]).filter(g => g.result != null).length
+
   // 打撃通算ヘルパー。順位は「いま表示している絞り込み結果の中での順位」
   const buildBattingRows = (stats: typeof allBStats, ranks: Record<string, Record<string, number>>) =>
-    playerList.map(player => ({
-      player,
-      ...computeBatting(stats.filter(b => b.player_id === player.id)),
-      ranks: ranks[player.id] ?? {},
-    }))
+    playerList.map(player => {
+      const totals = computeBatting(stats.filter(b => b.player_id === player.id))
+      return {
+        player,
+        ...totals,
+        attendance: playedActiveGames > 0 ? `${Math.round((totals.games / playedActiveGames) * 100)}%` : '-',
+        ranks: ranks[player.id] ?? {},
+      }
+    })
 
   const bStatsActive = attrFilterActive
     ? bStats.filter(s => matchesGameAttrs(s.games as GameAttrs))

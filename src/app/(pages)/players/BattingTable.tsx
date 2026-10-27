@@ -16,6 +16,7 @@ export type BattingRow = {
   sac_fly: number; sac_bunt: number; k: number; gidp: number
   reach_on_error: number; errors: number; cs: number; tb: number
   avg: string; obp: string; slg: string; ops: string; risp_avg: string
+  attendance: string
   ranks: RankMap
 }
 
@@ -63,6 +64,8 @@ const COLS: ColDef[] = [
   { key: '敵失',      label: '敵失', rankKey: 'reach_on_error',      getValue: r => r.reach_on_error },
   { key: '失策',      label: '失策', rankKey: 'errors',      getValue: r => r.errors },
   { key: '盗塁阻止',  label: '盗塁阻止', rankKey: 'cs',  getValue: r => r.cs },
+  // 出場試合数 ÷ 全試合数。並びは試合数と同じなので順位も試合数のものを使う
+  { key: '出席率',    label: '出席率', rankKey: 'games',  getValue: r => r.attendance },
 ]
 
 type Props = {
