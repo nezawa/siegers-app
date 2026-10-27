@@ -1,4 +1,4 @@
-// 連続試合記録（公式戦のみ）。通算記録室で使う。
+// 連続試合記録（公式戦のみ）。通算記録室と選手詳細（継続中の連続記録）で使う。
 //
 // 数え方:
 //   - 出場・登板: チームの公式戦（結果が入った試合）を順に見て、続けて出場・登板した試合数。
@@ -91,20 +91,50 @@ const DEFS: Def[] = [
   { key: 'wins', label: '勝利', sequence: own('pitching', r => Boolean(r.is_win)) },
 ]
 
+// 最後の試合まで条件を満たし続けている区間（なければ null）
+function currentRun(games: Game[], hit: (g: Game) => boolean) {
+  let start = games.length
+  while (start > 0 && hit(games[start - 1])) start--
+  const length = games.length - start
+  return length > 0 ? { length, from: games[start].date, to: games[games.length - 1].date } : null
+}
+
+const officialPlayers = (battingRows: StatRow[], pitchingRows: StatRow[]) => {
+  const bOfficial = battingRows.filter(isOfficial)
+  const pOfficial = pitchingRows.filter(isOfficial)
+  const playerIds = [...new Set([...bOfficial, ...pOfficial].map(r => String(r.player_id)))]
+  return playerIds.map(id => ({
+    id,
+    batting: bOfficial.filter(r => String(r.player_id) === id),
+    pitching: pOfficial.filter(r => String(r.player_id) === id),
+  }))
+}
+
+export type CurrentStreak = { key: string; label: string; length: number; from: string; to: string }
+
+// 1人の選手について、直近の試合まで続いている連続記録（2試合以上）を項目順に返す
+export function buildCurrentStreaks(
+  battingRows: StatRow[], // その選手の成績行
+  pitchingRows: StatRow[],
+  officialPlayedGames: Game[],
+): CurrentStreak[] {
+  const teamGames = [...officialPlayedGames].sort(byGameOrder)
+  const [player] = officialPlayers(battingRows, pitchingRows)
+  if (!player) return []
+  return DEFS.flatMap(def => {
+    const { games, hit } = def.sequence({ ...player, teamGames })
+    const run = currentRun(games, hit)
+    return run && run.length >= MIN_STREAK ? [{ key: def.key, label: def.label, ...run }] : []
+  })
+}
+
 export function buildStreakRecords(
   battingRows: StatRow[],
   pitchingRows: StatRow[],
   officialPlayedGames: Game[], // チームの公式戦（結果が入った試合）
 ): StreakRecord[] {
   const teamGames = [...officialPlayedGames].sort(byGameOrder)
-  const bOfficial = battingRows.filter(isOfficial)
-  const pOfficial = pitchingRows.filter(isOfficial)
-  const playerIds = [...new Set([...bOfficial, ...pOfficial].map(r => String(r.player_id)))]
-  const players = playerIds.map(id => ({
-    id,
-    batting: bOfficial.filter(r => String(r.player_id) === id),
-    pitching: pOfficial.filter(r => String(r.player_id) === id),
-  }))
+  const players = officialPlayers(battingRows, pitchingRows)
 
   return DEFS.map(def => {
     const candidates = players.flatMap(p => {

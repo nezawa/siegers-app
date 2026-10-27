@@ -4,6 +4,7 @@ import { computeBatting, computePitching, type BattingTotals, type PitchingTotal
 import { battingRanks, pitchingRanks, type RankMap } from '@/lib/ranking'
 import { rankBgClass } from '@/lib/rankStyle'
 import { buildMilestones } from '@/lib/milestones'
+import { buildCurrentStreaks } from '@/lib/streaks'
 import RankLegend from '@/components/RankLegend'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -134,9 +135,9 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   // 順位の判定にはチーム全員の成績が必要なので、成績は全件取得してから自分の分を絞り込む
   const [{ data: player }, allBatting, allPitching, allGames, { data: settings }] = await Promise.all([
     supabase.from('players').select('*').eq('id', id).single(),
-    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date)').order('id').range(from, to)),
-    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date)').order('id').range(from, to)),
-    fetchAllRows((from, to) => supabase.from('games').select('id, date').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('batting_stats').select('*, games(date, game_type)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('pitching_stats').select('*, games(date, game_type)').order('id').range(from, to)),
+    fetchAllRows((from, to) => supabase.from('games').select('id, date, game_type, result').order('id').range(from, to)),
     supabase.from('settings').select('qualified_pa, qualified_ip').eq('id', 1).single(),
   ])
 
@@ -192,6 +193,11 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const milestones = buildMilestones(battingTotal?.totals ?? null, pitchingTotal?.totals ?? null)
     .sort((a, b) => a.remainingValue - b.remainingValue)
     .slice(0, MILESTONE_COUNT)
+
+  // 直近の試合まで続いている連続試合記録（公式戦のみ。数え方は通算記録室と同じ）
+  const officialPlayedGames = (allGames as { id: string; date: string; game_type: string; result: string | null }[])
+    .filter(g => g.game_type === 'official' && g.result != null)
+  const currentStreaks = buildCurrentStreaks(bStats, pStats, officialPlayedGames)
 
   return (
     <div className="space-y-8">
@@ -269,6 +275,32 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       )}
 
       {(battingTotal || pitchingTotal) && <RankLegend />}
+
+      {/* 継続中の連続記録 */}
+      {currentStreaks.length > 0 && (
+        <div>
+          <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
+            <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
+            継続中の連続記録
+          </h2>
+          <ul className="divide-y divide-gray-100 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+            {currentStreaks.map(s => (
+              <li key={s.key} className="flex items-baseline justify-between gap-3 px-4 py-3">
+                <span className="font-bold text-gray-700">
+                  連続{s.label}
+                  <span className="ml-2 text-sm font-normal tabular-nums text-gray-500">
+                    {s.from.replaceAll('-', '/')}〜
+                  </span>
+                </span>
+                <span className="shrink-0 text-lg font-extrabold tabular-nums text-blue-950">{s.length}試合</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-gray-500">
+            公式戦のみ。出場・登板はチームの試合で連続、それ以外は本人が出場した試合の中で連続（欠場した試合は途切れない）
+          </p>
+        </div>
+      )}
 
       {!battingTotal && !pitchingTotal && (
         <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">
