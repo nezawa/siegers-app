@@ -5,6 +5,8 @@ import { battingRanks, pitchingRanks, type RankMap } from '@/lib/ranking'
 import { rankBgClass } from '@/lib/rankStyle'
 import { buildMilestones } from '@/lib/milestones'
 import { buildCurrentStreaks } from '@/lib/streaks'
+import { buildPlayerTitles, formatTitleYears } from '@/lib/titles'
+import { WIN_PCT_MIN_WINS } from '@/lib/seasonRecords'
 import RankLegend from '@/components/RankLegend'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -205,6 +207,11 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
     .filter(g => g.game_type === 'official' && g.result != null)
   const currentStreaks = buildCurrentStreaks(bStats, pStats, officialPlayedGames)
 
+  // 獲得タイトル（公式戦の年度別1位。判定は通算記録室の歴代シーズン記録と同じ）
+  const officialGamesInYear = (y: string) =>
+    (allGames as { date: string; game_type: string }[]).filter(g => g.game_type === 'official' && g.date?.startsWith(y)).length
+  const titles = buildPlayerTitles(allB, allP, id, officialGamesInYear, qualifiedPaRate, qualifiedIpRate)
+
   return (
     <div className="space-y-8">
       <div>
@@ -281,6 +288,27 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       )}
 
       {(battingTotal || pitchingTotal) && <RankLegend />}
+
+      {/* 獲得タイトル */}
+      {titles.length > 0 && (
+        <div>
+          <h2 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-gray-900">
+            <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
+            獲得タイトル
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {titles.map(t => (
+              <li key={t.key} className="rounded-full bg-band px-3.5 py-1.5 text-sm font-medium text-white shadow">
+                {t.label}
+                <span className="tabular-nums text-white/80">({formatTitleYears(t.years)})</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-gray-500">
+            公式戦のみ。各年度のチーム内1位（首位打者・最高出塁率は規定打席、最優秀防御率は規定投球回、最高勝率は{WIN_PCT_MIN_WINS}勝以上が対象。同率は全員）
+          </p>
+        </div>
+      )}
 
       {/* 継続中の連続記録 */}
       {currentStreaks.length > 0 && (
