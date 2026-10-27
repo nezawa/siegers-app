@@ -10,13 +10,14 @@ export default async function EditGamePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ year?: string; page?: string }>
+  searchParams: Promise<{ year?: string; opponent?: string; page?: string }>
 }) {
   const { id } = await params
-  // 一覧の表示状態（年度・ページ）。保存後の試合詳細へ引き継いで、そこから元のページに戻れるようにする
-  const { year, page } = await searchParams
+  // 一覧の表示状態（年度・対戦相手・ページ）。保存後の試合詳細へ引き継いで、そこから元のページに戻れるようにする
+  const { year, opponent, page } = await searchParams
   const listQuery = new URLSearchParams()
   if (year) listQuery.set('year', year)
+  if (opponent) listQuery.set('opponent', opponent)
   if (page) listQuery.set('page', page)
   const query = listQuery.toString()
 

@@ -37,11 +37,12 @@ function ResultBadge({ result }: { result: Game['result'] }) {
   return <span className={`${base} bg-gray-300 text-gray-600`}>-</span>
 }
 
-// 一覧の表示状態（年度・ページ）はURLに持たせる。
+// 一覧の表示状態（年度・対戦相手・ページ）はURLに持たせる。
 // 試合詳細から「一覧へ戻る」ときに、見ていたページへそのまま戻れるようにするため
-export function gamesListQuery(year: string, page: number): string {
+export function gamesListQuery(year: string, opponent: string, page: number): string {
   const params = new URLSearchParams()
   if (year && year !== 'all') params.set('year', year)
+  if (opponent) params.set('opponent', opponent)
   if (page > 1) params.set('page', String(page))
   return params.toString()
 }
@@ -58,12 +59,22 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
     return Array.from(set).sort((a, b) => Number(b) - Number(a))
   }, [games])
 
+  // 年度を切り替えても選択が消えないよう、対戦相手の候補は全試合から作る
+  const opponents = useMemo(
+    () => [...new Set(games.map(g => g.opponent).filter(Boolean))].sort(),
+    [games]
+  )
+
   const selectedYear = searchParams.get('year') ?? 'all'
+  const selectedOpponent = searchParams.get('opponent') ?? ''
   const PER_PAGE = 20
 
   const filteredGames = useMemo(
-    () => selectedYear === 'all' ? games : games.filter(g => g.date.startsWith(selectedYear)),
-    [games, selectedYear]
+    () => games.filter(g =>
+      (selectedYear === 'all' || g.date.startsWith(selectedYear)) &&
+      (!selectedOpponent || g.opponent === selectedOpponent)
+    ),
+    [games, selectedYear, selectedOpponent]
   )
 
   const totalPages = Math.max(1, Math.ceil(filteredGames.length / PER_PAGE))
@@ -75,25 +86,30 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
     [filteredGames, page]
   )
 
-  // 年度・ページの切り替えは URL だけ差し替える。
+  // 年度・対戦相手・ページの切り替えは URL だけ差し替える。
   // router.replace と違いサーバーへの再取得が走らないので、一覧の操作は今までどおり即座に切り替わる
   // （History API は Next のルーターと連携していて useSearchParams にも反映される）
-  const showList = (year: string, nextPage: number) =>
-    window.history.replaceState(null, '', withQuery('/games', gamesListQuery(year, nextPage)))
+  const showList = (year: string, opponent: string, nextPage: number) =>
+    window.history.replaceState(null, '', withQuery('/games', gamesListQuery(year, opponent, nextPage)))
 
   const openGame = (id: string) =>
-    router.push(withQuery(`/games/${id}`, gamesListQuery(selectedYear, page)))
-
-  function handleYearChange(year: string) {
-    showList(year, 1)
-  }
+    router.push(withQuery(`/games/${id}`, gamesListQuery(selectedYear, selectedOpponent, page)))
 
   const thCls = 'px-4 py-3 text-xs font-semibold text-white whitespace-nowrap'
+  const selectCls = 'cursor-pointer appearance-none rounded-full border border-gray-200 bg-white py-1.5 pl-4 pr-9 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40'
+  const selectChevron = (
+    <svg
+      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+      fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  )
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <h2 className="flex items-center gap-2.5 text-lg font-bold text-gray-900">
             <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             試合結果
@@ -101,21 +117,30 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
           <div className="relative">
             <select
               value={selectedYear}
-              onChange={e => handleYearChange(e.target.value)}
+              onChange={e => showList(e.target.value, selectedOpponent, 1)}
               aria-label="年度で絞り込む"
-              className="cursor-pointer appearance-none rounded-full border border-gray-200 bg-white py-1.5 pl-4 pr-9 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              className={selectCls}
             >
               <option value="all">全年度</option>
               {years.map(year => (
                 <option key={year} value={year}>{year}年</option>
               ))}
             </select>
-            <svg
-              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+            {selectChevron}
+          </div>
+          <div className="relative min-w-0">
+            <select
+              value={selectedOpponent}
+              onChange={e => showList(selectedYear, e.target.value, 1)}
+              aria-label="対戦相手で絞り込む"
+              className={`${selectCls} max-w-full`}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+              <option value="">全対戦相手</option>
+              {opponents.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            {selectChevron}
           </div>
         </div>
         {lastUpdated && (
@@ -240,7 +265,7 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
           {totalPages > 1 && (
             <div className="mt-5 flex items-center justify-center gap-1.5">
               <button
-                onClick={() => showList(selectedYear, page - 1)}
+                onClick={() => showList(selectedYear, selectedOpponent, page - 1)}
                 disabled={page === 1}
                 className="h-8 w-8 rounded-full text-sm text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
@@ -249,7 +274,7 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                 <button
                   key={p}
-                  onClick={() => showList(selectedYear, p)}
+                  onClick={() => showList(selectedYear, selectedOpponent, p)}
                   className={`h-8 w-8 rounded-full text-sm font-medium transition-colors ${
                     p === page
                       ? 'bg-band text-white shadow'
@@ -260,7 +285,7 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                 </button>
               ))}
               <button
-                onClick={() => showList(selectedYear, page + 1)}
+                onClick={() => showList(selectedYear, selectedOpponent, page + 1)}
                 disabled={page === totalPages}
                 className="h-8 w-8 rounded-full text-sm text-gray-600 transition-colors hover:bg-white hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >

@@ -74,13 +74,14 @@ export default async function GameDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ year?: string; page?: string }>
+  searchParams: Promise<{ year?: string; opponent?: string; page?: string }>
 }) {
   const { id } = await params
-  // 一覧から渡された表示状態（年度・ページ）。戻る・編集・削除で持ち回り、見ていたページへ帰れるようにする
-  const { year, page } = await searchParams
+  // 一覧から渡された表示状態（年度・対戦相手・ページ）。戻る・編集・削除で持ち回り、見ていたページへ帰れるようにする
+  const { year, opponent, page } = await searchParams
   const listQuery = new URLSearchParams()
   if (year) listQuery.set('year', year)
+  if (opponent) listQuery.set('opponent', opponent)
   if (page) listQuery.set('page', page)
   const query = listQuery.toString()
   const backHref = query ? `/games?${query}` : '/games'
