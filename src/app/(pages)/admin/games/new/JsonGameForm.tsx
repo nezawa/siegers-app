@@ -107,7 +107,8 @@ export default function JsonGameForm({ players, tournaments }: { players: Player
           以下の形式で JSON を貼り付けてください。<code className="bg-gray-100 px-1 rounded">number</code> は背番号です。
           省略した数値フィールドは 0 として扱われます。
           <code className="bg-gray-100 px-1 rounded">innings_us</code> / <code className="bg-gray-100 px-1 rounded">innings_them</code> がある場合、
-          スコアと結果はその合計から自動判定されます（矛盾する値が指定されているとエラーになります）。
+          スコアはその合計から自動計算されます（矛盾する値が指定されているとエラーになります）。
+          <code className="bg-gray-100 px-1 rounded">result</code> は省略するとスコアから自動判定され、スコアと食い違う値を指定した場合は警告を確認したうえで保存できます。
           <code className="bg-gray-100 px-1 rounded">is_home</code> は後攻なら <code className="bg-gray-100 px-1 rounded">true</code>（省略時は先攻）。
           後攻の最終回裏が不要なら「×」、サヨナラ勝ちは「得点+x」で表示されます。
           <code className="bg-gray-100 px-1 rounded">start_time</code>（開始時間 &quot;HH:MM&quot;）・

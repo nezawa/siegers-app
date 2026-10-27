@@ -198,20 +198,22 @@ export function validateJsonGame(
     errs.push('score_them（相手スコア）が必要です')
   }
 
-  // 結果はスコアから自動判定する。
-  // ただし "O"（その他：中止・没収試合など）はスコアと一致しないのが前提なので、明示指定を尊重する
+  // 結果は省略時のみスコアから自動判定する。
+  // 明示指定はスコアと食い違っても尊重する（没収試合・コールド・中止など、スコアと結果が一致しないケースがあるため）
   let result = d.result || undefined
   if (result === 'O') {
     // 何もしない（指定された "O" をそのまま使う）
   } else if (score_us !== undefined && score_them !== undefined) {
     const derived = score_us > score_them ? 'W' : score_us < score_them ? 'L' : 'D'
-    if (result && result !== derived) {
-      errs.push(
-        `result ("${result}") がスコアから判定した結果 ("${derived}") と一致しません` +
-        `（勝敗に数えない試合なら "O" を指定してください）`
+    if (!result) {
+      result = derived
+    } else if (result !== derived) {
+      // 打ち間違いに気づくための警告。意図した結果なら、このまま保存できる
+      warns.push(
+        `result ("${result}") がスコアから判定した結果 ("${derived}") と一致しません。` +
+        `没収試合などで意図した結果なら、このまま保存できます`
       )
     }
-    result = derived
   } else if (!result) {
     errs.push('result は "W" / "L" / "D" / "O" のいずれかです')
   }
