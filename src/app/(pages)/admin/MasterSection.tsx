@@ -111,27 +111,82 @@ export default function MasterSection({ title, table, items, withGameType = fals
   }
 
   const save = async () => {
-    // 空チェックと重複チェック
-    const seen = new Set<string>()
+    // 空チェック
     for (const item of items) {
-      const name = drafts[item.id]?.name.trim()
-      if (!name) {
+      if (!drafts[item.id]?.name.trim()) {
         setError(`「${item.name}」の名前が空です`)
         return
       }
-      if (seen.has(name)) {
-        setError(`「${name}」が重複しています`)
-        return
-      }
-      seen.add(name)
     }
+
+    // 同じ名前にそろえた項目は1つに統合する（表記揺れの整理）。
+    // 残すのは、もともとその名前だった項目（なければ先頭）。残りは試合の表記を寄せてからマスタから消す
+    const groups = new Map<string, Item[]>()
+    for (const item of items) {
+      const name = drafts[item.id].name.trim()
+      groups.set(name, [...(groups.get(name) ?? []), item])
+    }
+    const merges: { into: string; keep: Item; from: Item[] }[] = []
+    for (const [name, group] of groups) {
+      if (group.length < 2) continue
+      const keep = group.find(item => item.name === name) ?? group[0]
+      merges.push({ into: name, keep, from: group.filter(item => item !== keep) })
+    }
+    const mergedIds = new Set(merges.flatMap(m => m.from.map(item => item.id)))
 
     setLoading(true)
     setError('')
     setNotice('')
     const supabase = createClient()
 
+    if (merges.length > 0) {
+      const { count, error: countErr } = await supabase
+        .from('games')
+        .select('id', { count: 'exact', head: true })
+        .in(gameColumn, merges.flatMap(m => m.from.map(item => item.name)))
+      if (countErr) {
+        setError(`試合数の取得に失敗しました: ${countErr.message}`)
+        setLoading(false)
+        return
+      }
+      const lines = merges.map(m => `・${m.from.map(item => `「${item.name}」`).join('')} → 「${m.into}」`)
+      if (!confirm(`次の${title}を統合します。\n${lines.join('\n')}\n\n試合 ${count ?? 0}件の表記を書き換え、統合元は候補から削除します。よろしいですか？`)) {
+        setLoading(false)
+        return
+      }
+
+      for (const m of merges) {
+        for (const item of m.from) {
+          const { error: gameErr } = await supabase.from('games').update({ [gameColumn]: m.into }).eq(gameColumn, item.name)
+          if (gameErr) {
+            setError(`試合データの更新に失敗しました: ${gameErr.message}`)
+            setLoading(false)
+            return
+          }
+          // 下の改名より先に消しておく（残す側を統合元の名前に変えると、名前の一意制約にぶつかるため）
+          const { error: delErr } = await supabase.from(table).delete().eq('id', item.id)
+          if (delErr) {
+            setError(`統合元の削除に失敗しました: ${delErr.message}`)
+            setLoading(false)
+            return
+          }
+        }
+        // 統合元の試合も、残す側の大会の試合属性にそろえる（種別が未設定の試合だけ）
+        const keepType = drafts[m.keep.id].game_type
+        if (withGameType && keepType) {
+          try {
+            await applyGameType(supabase, m.into, keepType)
+          } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : String(e))
+            setLoading(false)
+            return
+          }
+        }
+      }
+    }
+
     const changed = items.filter(item => {
+      if (mergedIds.has(item.id)) return false
       const draft = drafts[item.id]
       return draft.name.trim() !== item.name || draft.game_type !== (item.game_type ?? '')
     })
@@ -177,7 +232,10 @@ export default function MasterSection({ title, table, items, withGameType = fals
       }
     }
 
-    if (applied.length > 0) setNotice(`試合種別が未設定だった試合に反映しました: ${applied.join('、')}`)
+    const notices: string[] = []
+    if (merges.length > 0) notices.push(`統合しました: ${merges.map(m => `「${m.into}」`).join('、')}`)
+    if (applied.length > 0) notices.push(`試合種別が未設定だった試合に反映しました: ${applied.join('、')}`)
+    if (notices.length > 0) setNotice(notices.join(' / '))
     setLoading(false)
     setEditing(false)
     router.refresh()
@@ -250,7 +308,7 @@ export default function MasterSection({ title, table, items, withGameType = fals
 
       {editing && (
         <p className="mb-2 text-xs text-gray-400">
-          名前を変更して保存すると、過去の試合の表記もまとめて更新されます
+          名前を変更して保存すると、過去の試合の表記もまとめて更新されます。既にある名前に変えると、その{title}に統合されます（表記揺れの整理）
           {withGameType && '。試合属性を変更すると、その大会名の試合のうち「試合種別が未設定のもの」だけに反映されます（試合ごとに種別を指定済みの試合と、属性を「未設定」に戻した場合は変更しません）'}
         </p>
       )}
