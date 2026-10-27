@@ -107,8 +107,12 @@ export default async function GameDetailPage({
   return (
     <div className="space-y-8">
       <div>
-        <Link href={backHref} className="inline-flex items-center gap-1 text-sm text-blue-700 transition-colors hover:text-blue-900 hover:underline">
-          ← 試合結果一覧
+        {/* News 詳細の「‹ News」と同じ見た目。スコアより目立たせない */}
+        <Link href={backHref} className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+          </svg>
+          試合結果
         </Link>
       </div>
 
