@@ -1,4 +1,6 @@
-// データ取得中に表示する共通スケルトン（各ページの loading.tsx から使う）。
+import LoadingHold from './LoadingHold'
+
+// データ取得中に表示する共通スケルトン（各ページの loading.tsx から使う）。表示中は画面中央にスピナーも出す。
 // header: 試合詳細・個人成績のようなバナーカードがあるページ用
 // filters: 成績ページのフィルターパネルがあるページ用
 export default function PageSkeleton({
@@ -12,6 +14,8 @@ export default function PageSkeleton({
 }) {
   return (
     <div role="status" aria-label="読み込み中" className="animate-pulse space-y-5">
+      <LoadingHold />
+
       {/* ページ見出し */}
       <div className="h-8 w-44 rounded-lg bg-gray-200" />
 

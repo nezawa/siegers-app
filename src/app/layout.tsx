@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { Noto_Sans_JP } from 'next/font/google'
+import { Suspense } from 'react'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import NavigationSpinner from '@/components/NavigationSpinner'
 import TapFeedback from '@/components/TapFeedback'
 
 const notoSansJP = Noto_Sans_JP({
@@ -43,6 +45,10 @@ export default function RootLayout({
           {children}
         </div>
         <Footer />
+        {/* useSearchParams を使うコンポーネントは Suspense で囲む決まり */}
+        <Suspense fallback={null}>
+          <NavigationSpinner />
+        </Suspense>
         <TapFeedback />
       </body>
     </html>

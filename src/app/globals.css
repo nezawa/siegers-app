@@ -3,6 +3,13 @@
 @theme {
   /* サイト全体のベース水色（ヘッダー・フッター・ホームの帯）。bg-band 等で使う */
   --color-band: #6c9dc6;
+
+  /* 画面遷移スピナー: すぐ終わる遷移ではちらつかないよう少し待ってから出す */
+  --animate-delayed-fade-in: delayed-fade-in 200ms ease-out 150ms both;
+  @keyframes delayed-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
 
 @theme inline {
