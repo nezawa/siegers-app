@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 // backHref は削除後に戻る一覧のURL（見ていた年度・ページを保つ）
-export default function DeleteGameButton({ gameId, backHref = '/games' }: { gameId: string; backHref?: string }) {
+// className を渡すと見た目を差し替える（既定はバナー上の白抜き。スマホは白い背景の上に置くため）
+export default function DeleteGameButton({ gameId, backHref = '/games', className }: { gameId: string; backHref?: string; className?: string }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -25,7 +26,7 @@ export default function DeleteGameButton({ gameId, backHref = '/games' }: { game
     <button
       onClick={handleDelete}
       disabled={loading}
-      className="rounded-lg px-3 py-1 text-sm text-red-300 ring-1 ring-red-400/50 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+      className={className ?? 'rounded-lg px-3 py-1 text-sm text-red-300 ring-1 ring-red-400/50 transition-colors hover:bg-red-500/10 disabled:opacity-50'}
     >
       {loading ? '削除中...' : '削除'}
     </button>
