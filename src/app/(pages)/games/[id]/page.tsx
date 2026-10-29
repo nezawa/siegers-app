@@ -283,7 +283,7 @@ export default async function GameDetailPage({
           )
         })()}
 
-        <GameStatsTabs teamName={TEAM_NAME} batting={battingData} pitching={pitchingData} />
+        <GameStatsTabs batting={battingData} pitching={pitchingData} />
       </div>
 
       {/* PC: 従来の表示 */}

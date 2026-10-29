@@ -63,7 +63,7 @@ function PitcherMarks({ stat }: { stat: Row }) {
 const val = (stat: Row, key: string) => (stat[key] as number | null | undefined) ?? '-'
 const mark = (on: unknown, cls: string) => (on ? <span className={`font-bold ${cls}`}>○</span> : '-')
 
-export default function GameStatsTabs({ teamName, batting, pitching }: { teamName: string; batting: Row[]; pitching: Row[] }) {
+export default function GameStatsTabs({ batting, pitching }: { batting: Row[]; pitching: Row[] }) {
   const [tab, setTab] = useState<'batting' | 'pitching'>('batting')
   const [detail, setDetail] = useState(false)
 
@@ -95,16 +95,6 @@ export default function GameStatsTabs({ teamName, batting, pitching }: { teamNam
           <button type="button" onClick={() => setTab('pitching')} className={tabCls(tab === 'pitching')}>投手成績</button>
         </div>
         <div className="overflow-hidden rounded-b-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <h2 className="border-l-4 border-band pl-2.5 font-bold text-gray-900">{teamName}</h2>
-            <Link
-              href={tab === 'batting' ? '/players' : '/players?tab=pitching'}
-              className="shrink-0 text-xs font-medium text-gray-500 transition-colors hover:text-blue-700"
-            >
-              通算成績 ›
-            </Link>
-          </div>
-
           {rows.length === 0 ? (
             <p className="py-10 text-center text-sm text-gray-400">
               {tab === 'batting' ? '打撃成績がありません' : '投手成績がありません'}
