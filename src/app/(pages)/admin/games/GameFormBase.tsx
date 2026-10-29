@@ -449,7 +449,9 @@ export default function GameFormBase({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">日付 *</label>
             <input type="date" required value={gameInfo.date}
-              onChange={e => setGameInfo({ ...gameInfo, date: e.target.value })} className={inputCls} />
+              onChange={e => setGameInfo({ ...gameInfo, date: e.target.value })}
+              // iOS Safari の日付欄は独自の最小幅・高さを持ち、2列の隣の欄にはみ出すため打ち消す
+              className={`${inputCls} min-w-0 appearance-none [&::-webkit-date-and-time-value]:min-h-5 [&::-webkit-date-and-time-value]:text-left`} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">開始時間</label>
