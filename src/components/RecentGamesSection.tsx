@@ -1,13 +1,20 @@
 'use client'
 
 import { useMemo } from 'react'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Game } from '@/types'
 import OpponentSearch from './OpponentSearch'
 
 const TEAM_NAME = '小雀シーガーズ'
 
-const DOW_JA =['日', '月', '火', '水', '木', '金', '土']
+// スマホの試合一覧で、シーガーズのチーム名のスコア側に添えるロゴ（相手チームのロゴは持っていない）。
+// width/height は表示サイズ（高さ 32px）に合わせる。元画像の 1125px を渡すと、その大きさの画像が配信されてしまう
+const teamLogo = (
+  <Image src="/logo1.png" alt="" width={34} height={32} className="h-8 w-auto shrink-0" />
+)
+
+const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -187,7 +194,10 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                     </div>
                     <div className="mt-2 flex items-center gap-1.5">
                       <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] items-center gap-2">
-                        <p className={`${teamCls(away.isUs)} text-right`}>{away.name}</p>
+                        <div className="flex min-w-0 items-center justify-end gap-1.5">
+                          <p className={`${teamCls(away.isUs)} min-w-0 text-right`}>{away.name}</p>
+                          {away.isUs && teamLogo}
+                        </div>
                         <div className="text-center">
                           {game.venue && <p className="truncate text-[11px] text-gray-500">{game.venue}</p>}
                           <p className="text-lg font-extrabold tabular-nums text-blue-950">
@@ -197,7 +207,10 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                             <ResultBadge result={game.result} />
                           </div>
                         </div>
-                        <p className={`${teamCls(home.isUs)} text-left`}>{home.name}</p>
+                        <div className="flex min-w-0 items-center justify-start gap-1.5">
+                          {home.isUs && teamLogo}
+                          <p className={`${teamCls(home.isUs)} min-w-0 text-left`}>{home.name}</p>
+                        </div>
                       </div>
                       <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
