@@ -180,20 +180,17 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                     className="cursor-pointer px-4 py-3 transition-colors active:bg-blue-50"
                   >
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold tabular-nums text-gray-900">
-                        {d.label}
-                        <span className={`ml-0.5 text-xs ${d.isSun ? 'text-red-500' : d.isSat ? 'text-blue-500' : 'text-gray-400'}`}>
-                          （{d.dow}）
-                        </span>
-                        {formatTime(game.start_time) && (
-                          <span className="text-xs font-medium text-gray-500">{formatTime(game.start_time)}〜</span>
-                        )}
-                      </p>
                       {badge && (
                         <span className={`inline-flex shrink-0 rounded px-2 py-0.5 text-xs font-bold text-white ${badge.cls}`}>
                           {badge.label}
                         </span>
                       )}
+                      <p className="text-sm font-bold tabular-nums text-gray-900">
+                        {d.label}
+                        <span className={`ml-0.5 text-xs ${d.isSun ? 'text-red-500' : d.isSat ? 'text-blue-500' : 'text-gray-400'}`}>
+                          （{d.dow}）
+                        </span>
+                      </p>
                     </div>
                     <div className="mt-2 flex items-center gap-1.5">
                       <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] items-center gap-2">
