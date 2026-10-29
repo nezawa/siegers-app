@@ -11,7 +11,14 @@ export default function Footer() {
         <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
           {/* width/height は最大表示サイズ（高さ 80px）に合わせる。元画像の大きさを渡すと、その大きさの画像が配信されてしまう */}
           <Image src="/logo1.png" alt="小雀シーガーズロゴ" width={85} height={80} className="h-16 w-auto sm:h-20" />
-          <Image src="/logo2.png" alt="小雀シーガーズロゴ" width={80} height={80} className="h-16 w-auto sm:h-20" />
+          <a
+            href="https://kumon.ac.jp/k-gakuen/kokusai/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-opacity hover:opacity-85"
+          >
+            <Image src="/logo2.png" alt="公文国際学園" width={80} height={80} className="h-16 w-auto sm:h-20" />
+          </a>
           <a
             href="https://www.instagram.com/kosuzume_siegers/"
             target="_blank"
