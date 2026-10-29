@@ -149,7 +149,8 @@ export default async function GameDetailPage({
         {(() => {
           const us = game.innings_us ?? []
           const them = game.innings_them ?? []
-          const len = Math.max(us.length, them.length, 9)
+          // 草野球は 7 回制。延長したときだけ 8 回以降の列が増える
+          const len = Math.max(us.length, them.length, 7)
           const innings = Array.from({ length: len }, (_, i) => i)
 
           // 安打・失策はシーガーズの成績から出す。相手の安打は投手の被安打の合計、相手の失策は記録がないので「-」
@@ -207,19 +208,19 @@ export default async function GameDetailPage({
           return (
             <div className="relative overflow-hidden rounded-3xl bg-band text-white shadow-xl shadow-blue-950/20">
               <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full border-[18px] border-white/10" />
-              <div className="relative p-5 sm:p-8">
+              <div className="relative p-4">
                 <div className="text-center">
                   <h1 className="text-lg font-bold sm:text-2xl">
                     <span className={awayRow.isUs ? 'text-amber-300' : ''}>{awayRow.label}</span>
                     <span className="mx-2 text-sm font-medium text-white/70 sm:text-base">vs</span>
                     <span className={homeRow.isUs ? 'text-amber-300' : ''}>{homeRow.label}</span>
                   </h1>
-                  <p className="mt-1 text-xs text-white/85 sm:text-sm">
-                    {(game.game_type || game.tournament) && (
-                      <span className="mr-1">
-                        [{[game.game_type && GAME_TYPE_LABEL[game.game_type], game.tournament].filter(Boolean).join('・')}]
-                      </span>
-                    )}
+                  {(game.game_type || game.tournament) && (
+                    <p className="mt-1 text-xs text-white/85">
+                      [{[game.game_type && GAME_TYPE_LABEL[game.game_type], game.tournament].filter(Boolean).join('・')}]
+                    </p>
+                  )}
+                  <p className="mt-0.5 text-xs text-white/85">
                     {formatDate(game.date)}
                     {game.start_time && ` ${game.start_time.slice(0, 5)}`}
                     {game.venue && ` ${game.venue}`}
@@ -236,22 +237,24 @@ export default async function GameDetailPage({
                 </div>
 
                 {hasInnings && (
-                  <div className="mt-6 overflow-x-auto">
-                    <table className="mx-auto w-full min-w-max border-separate border-spacing-1 text-sm sm:text-base">
+                  // 7回 + 計・安・失 は画面幅に収め、延長（8回以降）があるときだけ横スクロールになる。
+                  // チーム名は頭文字 1 文字にして、スクロール中も見えるよう左端に固定する
+                  <div className="-mx-1 mt-6 overflow-x-auto">
+                    <table className="w-full min-w-max border-separate border-spacing-[3px] text-sm">
                       <thead>
-                        <tr className="text-xs font-semibold text-white/80 sm:text-sm">
-                          <th></th>
-                          {innings.map(i => <th key={i} className="w-7 sm:w-10">{i + 1}</th>)}
-                          <th className="w-7 text-amber-300 sm:w-10">計</th>
-                          <th className="w-7 sm:w-10">安</th>
-                          <th className="w-7 sm:w-10">失</th>
+                        <tr className="text-xs font-semibold text-white/80">
+                          <th className="sticky left-0 z-10 bg-band"></th>
+                          {innings.map(i => <th key={i} className="min-w-6">{i + 1}</th>)}
+                          <th className="min-w-6 text-amber-300">計</th>
+                          <th className="min-w-6">安</th>
+                          <th className="min-w-6">失</th>
                         </tr>
                       </thead>
                       <tbody>
                         {rows.map(row => (
                           <tr key={row.label}>
-                            <td className={`max-w-[5.5rem] truncate pr-1 text-xs font-bold sm:max-w-40 sm:text-sm ${row.isUs ? 'text-amber-300' : ''}`}>
-                              {row.label}
+                            <td className={`sticky left-0 z-10 w-6 bg-band text-center font-bold ${row.isUs ? 'text-amber-300' : ''}`}>
+                              {Array.from(String(row.label))[0]}
                             </td>
                             {innings.map(i => (
                               <td key={i} className={boxCls}>{cell(row.scores, i, row.isHomeRow)}</td>
