@@ -114,33 +114,36 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
             <span className="inline-block h-5 w-1.5 rounded-full bg-band" />
             試合結果
           </h2>
-          <div className="relative">
-            <select
-              value={selectedYear}
-              onChange={e => showList(e.target.value, selectedOpponent, 1)}
-              aria-label="年度で絞り込む"
-              className={selectCls}
-            >
-              <option value="all">全年度</option>
-              {years.map(year => (
-                <option key={year} value={year}>{year}年</option>
-              ))}
-            </select>
-            {selectChevron}
-          </div>
-          <div className="relative min-w-0">
-            <select
-              value={selectedOpponent}
-              onChange={e => showList(selectedYear, e.target.value, 1)}
-              aria-label="対戦相手で絞り込む"
-              className={`${selectCls} max-w-full`}
-            >
-              <option value="">全対戦相手</option>
-              {opponents.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-            {selectChevron}
+          {/* スマホでは見出しの下の段で 2 つを横並びにし、対戦相手が残り幅を使う */}
+          <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
+            <div className="relative shrink-0">
+              <select
+                value={selectedYear}
+                onChange={e => showList(e.target.value, selectedOpponent, 1)}
+                aria-label="年度で絞り込む"
+                className={selectCls}
+              >
+                <option value="all">全年度</option>
+                {years.map(year => (
+                  <option key={year} value={year}>{year}年</option>
+                ))}
+              </select>
+              {selectChevron}
+            </div>
+            <div className="relative min-w-0 flex-1 sm:flex-none">
+              <select
+                value={selectedOpponent}
+                onChange={e => showList(selectedYear, e.target.value, 1)}
+                aria-label="対戦相手で絞り込む"
+                className={`${selectCls} w-full max-w-full sm:w-auto`}
+              >
+                <option value="">全対戦相手</option>
+                {opponents.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              {selectChevron}
+            </div>
           </div>
         </div>
         {lastUpdated && (
