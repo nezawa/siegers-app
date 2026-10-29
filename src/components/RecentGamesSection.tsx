@@ -9,9 +9,9 @@ import OpponentSearch from './OpponentSearch'
 const TEAM_NAME = '小雀シーガーズ'
 
 // スマホの試合一覧で、シーガーズのチーム名のスコア側に添えるロゴ（相手チームのロゴは持っていない）。
-// width/height は表示サイズ（高さ 32px）に合わせる。元画像の 1125px を渡すと、その大きさの画像が配信されてしまう
+// width/height は表示サイズ（高さ 28px）に合わせる。元画像の 1125px を渡すと、その大きさの画像が配信されてしまう
 const teamLogo = (
-  <Image src="/logo1.png" alt="" width={34} height={32} className="h-8 w-auto shrink-0" />
+  <Image src="/logo1.png" alt="" width={30} height={28} className="h-7 w-auto shrink-0" />
 )
 
 const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
@@ -158,8 +158,8 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
         <>
           {/* モバイル: 先攻を左・後攻を右に置き、間に球場・スコア・勝敗を出す */}
           <div className="sm:hidden overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-            {/* pr は行側の「>」アイコン幅 + 間隔ぶん。列の位置を行と揃える */}
-            <div className="grid grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] gap-2 bg-band py-2.5 pl-4 pr-[38px] text-center text-xs font-semibold text-white">
+            {/* 列の幅・間隔・左右の余白を行と揃える */}
+            <div className="grid grid-cols-[minmax(0,1fr)_4.25rem_minmax(0,1fr)] gap-1.5 bg-band px-3 py-2.5 text-center text-xs font-semibold text-white">
               <span>先攻</span>
               <span>スコア・勝敗</span>
               <span>後攻</span>
@@ -171,13 +171,14 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                 const us = { name: TEAM_NAME, score: game.score_us, isUs: true }
                 const them = { name: game.opponent, score: game.score_them, isUs: false }
                 const [away, home] = game.is_home ? [them, us] : [us, them]
+                // シーガーズはロゴと名前を 1 行に収める（狭すぎる画面では折り返さず末尾を省略）。相手は長い名前を折り返す
                 const teamCls = (isUs: boolean) =>
-                  `break-words text-sm font-bold leading-snug ${isUs ? 'text-blue-800' : 'text-gray-900'}`
+                  `min-w-0 text-[13px] font-bold leading-snug ${isUs ? 'truncate tracking-tight text-blue-800' : 'break-words text-gray-900'}`
                 return (
                   <div
                     key={game.id}
                     onClick={() => openGame(game.id)}
-                    className="cursor-pointer px-4 py-3 transition-colors active:bg-blue-50"
+                    className="cursor-pointer px-3 py-3 transition-colors active:bg-blue-50"
                   >
                     <div className="flex items-center gap-2">
                       {badge && (
@@ -192,10 +193,10 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                         </span>
                       </p>
                     </div>
-                    <div className="mt-2 flex items-center gap-1.5">
-                      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] items-center gap-2">
-                        <div className="flex min-w-0 items-center justify-end gap-1.5">
-                          <p className={`${teamCls(away.isUs)} min-w-0 text-right`}>{away.name}</p>
+                    <div className="mt-2">
+                      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_4.25rem_minmax(0,1fr)] items-center gap-1.5">
+                        <div className="flex min-w-0 items-center justify-end gap-1">
+                          <p className={`${teamCls(away.isUs)} text-right`}>{away.name}</p>
                           {away.isUs && teamLogo}
                         </div>
                         <div className="text-center">
@@ -207,14 +208,11 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                             <ResultBadge result={game.result} />
                           </div>
                         </div>
-                        <div className="flex min-w-0 items-center justify-start gap-1.5">
+                        <div className="flex min-w-0 items-center justify-start gap-1">
                           {home.isUs && teamLogo}
-                          <p className={`${teamCls(home.isUs)} min-w-0 text-left`}>{home.name}</p>
+                          <p className={`${teamCls(home.isUs)} text-left`}>{home.name}</p>
                         </div>
                       </div>
-                      <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                      </svg>
                     </div>
                   </div>
                 )
