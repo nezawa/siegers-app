@@ -10,9 +10,11 @@ const TEAM_NAME = '小雀シーガーズ'
 
 // スマホの試合一覧で、シーガーズのチーム名のスコア側に添えるロゴ（相手チームのロゴは持っていない）。
 // width/height は表示サイズ（高さ 28px）に合わせる。元画像の 1125px を渡すと、その大きさの画像が配信されてしまう
-const teamLogo = (
-  <Image src="/logo1.png" alt="" width={30} height={28} className="h-7 w-auto shrink-0" />
-)
+// 相手チームにはロゴがないので、同じ幅の空きを置いてチーム名の端の位置をそろえる
+const teamLogo = (isUs: boolean) =>
+  isUs
+    ? <Image src="/logo1.png" alt="" width={30} height={28} className="h-7 w-[30px] shrink-0 object-contain" />
+    : <span aria-hidden className="w-[30px] shrink-0" />
 
 const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
 
@@ -197,7 +199,7 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_4.25rem_minmax(0,1fr)] items-center gap-1.5">
                         <div className="flex min-w-0 items-center justify-end gap-1">
                           <p className={`${teamCls(away.isUs)} text-right`}>{away.name}</p>
-                          {away.isUs && teamLogo}
+                          {teamLogo(away.isUs)}
                         </div>
                         <div className="text-center">
                           {game.venue && <p className="truncate text-[11px] text-gray-500">{game.venue}</p>}
@@ -209,7 +211,7 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
                           </div>
                         </div>
                         <div className="flex min-w-0 items-center justify-start gap-1">
-                          {home.isUs && teamLogo}
+                          {teamLogo(home.isUs)}
                           <p className={`${teamCls(home.isUs)} text-left`}>{home.name}</p>
                         </div>
                       </div>
