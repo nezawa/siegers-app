@@ -9,8 +9,9 @@ export default function Footer() {
       <div className="flex flex-col items-center gap-6 px-4 py-8 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-8 md:px-8">
         <div className="hidden md:block" />
         <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8">
-          <Image src="/logo1.png" alt="小雀シーガーズロゴ" width={1125} height={1059} className="h-16 w-auto sm:h-20" />
-          <Image src="/logo2.png" alt="小雀シーガーズロゴ" width={624} height={624} className="h-16 w-auto sm:h-20" />
+          {/* width/height は最大表示サイズ（高さ 80px）に合わせる。元画像の大きさを渡すと、その大きさの画像が配信されてしまう */}
+          <Image src="/logo1.png" alt="小雀シーガーズロゴ" width={85} height={80} className="h-16 w-auto sm:h-20" />
+          <Image src="/logo2.png" alt="小雀シーガーズロゴ" width={80} height={80} className="h-16 w-auto sm:h-20" />
           <a
             href="https://www.instagram.com/kosuzume_siegers/"
             target="_blank"

@@ -12,7 +12,8 @@ export default async function Navbar() {
       {/* ロゴは左端、ナビは中央、管理系・ハンバーガーは右端に絶対配置 */}
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center">
         <Link href="/" className="group flex items-center">
-          <Image src="/logo.png" alt="小雀シーガーズ" width={2828} height={1192} priority className="h-10 w-auto" />
+          {/* width/height は表示サイズ（高さ 40px）に合わせる。元画像の大きさを渡すと、その大きさの画像が配信されてしまう */}
+          <Image src="/logo.png" alt="小雀シーガーズ" width={95} height={40} priority className="h-10 w-auto" />
         </Link>
         <NavClient isLoggedIn={!!user} />
       </div>
