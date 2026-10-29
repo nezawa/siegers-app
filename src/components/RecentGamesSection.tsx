@@ -4,7 +4,9 @@ import { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Game } from '@/types'
 
-const DOW_JA = ['日', '月', '火', '水', '木', '金', '土']
+const TEAM_NAME = '小雀シーガーズ'
+
+const DOW_JA =['日', '月', '火', '水', '木', '金', '土']
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -154,50 +156,58 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
         <div className="rounded-2xl bg-white py-16 text-center text-gray-400 shadow-sm ring-1 ring-gray-900/5">試合データがありません</div>
       ) : (
         <>
-          {/* モバイル: 2段組のコンパクト表示 */}
+          {/* モバイル: 先攻を左・後攻を右に置き、間に球場・スコア・勝敗を出す */}
           <div className="sm:hidden overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
-            <div className="flex items-center justify-between bg-band px-4 py-2.5 text-xs font-semibold text-white">
-              <span>試合日・対戦チーム</span>
-              {/* pr は行側の「>」アイコン幅 + 間隔ぶん。スコア・勝敗ブロックと中心を揃える */}
-              <span className="pr-[22px]">スコア・勝敗</span>
+            {/* pr は行側の「>」アイコン幅 + 間隔ぶん。列の位置を行と揃える */}
+            <div className="grid grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] gap-2 bg-band py-2.5 pl-4 pr-[38px] text-center text-xs font-semibold text-white">
+              <span>先攻</span>
+              <span>スコア・勝敗</span>
+              <span>後攻</span>
             </div>
             <div className="divide-y divide-gray-100">
               {pagedGames.map(game => {
                 const d = formatDate(game.date)
                 const badge = game.game_type ? GAME_TYPE_BADGE[game.game_type] : null
+                const us = { name: TEAM_NAME, score: game.score_us, isUs: true }
+                const them = { name: game.opponent, score: game.score_them, isUs: false }
+                const [away, home] = game.is_home ? [them, us] : [us, them]
+                const teamCls = (isUs: boolean) =>
+                  `break-words text-sm font-bold leading-snug ${isUs ? 'text-blue-800' : 'text-gray-900'}`
                 return (
                   <div
                     key={game.id}
                     onClick={() => openGame(game.id)}
-                    className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3.5 transition-colors active:bg-blue-50"
+                    className="cursor-pointer px-4 py-3 transition-colors active:bg-blue-50"
                   >
-                    <div className="min-w-0">
-                      <p className="font-bold tabular-nums text-gray-900">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold tabular-nums text-gray-900">
                         {d.label}
-                        <span className={`ml-1 text-xs ${d.isSun ? 'text-red-500' : d.isSat ? 'text-blue-500' : 'text-gray-400'}`}>
+                        <span className={`ml-0.5 text-xs ${d.isSun ? 'text-red-500' : d.isSat ? 'text-blue-500' : 'text-gray-400'}`}>
                           （{d.dow}）
                         </span>
                         {formatTime(game.start_time) && (
-                          <span className="ml-1 text-xs font-medium text-gray-500">{formatTime(game.start_time)}〜</span>
+                          <span className="text-xs font-medium text-gray-500">{formatTime(game.start_time)}〜</span>
                         )}
                       </p>
-                      <div className="mt-1.5 flex items-center gap-2">
-                        {badge && (
-                          <span className={`inline-flex shrink-0 rounded px-2 py-0.5 text-xs font-bold text-white ${badge.cls}`}>
-                            {badge.label}
-                          </span>
-                        )}
-                        <span className="truncate font-bold text-gray-900">{game.opponent}</span>
-                      </div>
+                      {badge && (
+                        <span className={`inline-flex shrink-0 rounded px-2 py-0.5 text-xs font-bold text-white ${badge.cls}`}>
+                          {badge.label}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <div className="text-center">
-                        <p className="text-lg font-extrabold tabular-nums text-blue-950">
-                          {game.result ? `${game.score_us} - ${game.score_them}` : '-'}
-                        </p>
-                        <div className="mt-1">
-                          <ResultBadge result={game.result} />
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)] items-center gap-2">
+                        <p className={`${teamCls(away.isUs)} text-right`}>{away.name}</p>
+                        <div className="text-center">
+                          {game.venue && <p className="truncate text-[11px] text-gray-500">{game.venue}</p>}
+                          <p className="text-lg font-extrabold tabular-nums text-blue-950">
+                            {game.result ? `${away.score} - ${home.score}` : '-'}
+                          </p>
+                          <div className="mt-0.5">
+                            <ResultBadge result={game.result} />
+                          </div>
                         </div>
+                        <p className={`${teamCls(home.isUs)} text-left`}>{home.name}</p>
                       </div>
                       <svg className="h-4 w-4 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
