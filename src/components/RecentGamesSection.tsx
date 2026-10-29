@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { Game } from '@/types'
+import OpponentSearch from './OpponentSearch'
 
 const TEAM_NAME = '小雀シーガーズ'
 
@@ -132,20 +133,12 @@ export default function RecentGamesSection({ games, lastUpdated }: { games: Game
               </select>
               {selectChevron}
             </div>
-            <div className="relative min-w-0 flex-1 sm:flex-none">
-              <select
-                value={selectedOpponent}
-                onChange={e => showList(selectedYear, e.target.value, 1)}
-                aria-label="対戦相手で絞り込む"
-                className={`${selectCls} w-full max-w-full sm:w-auto`}
-              >
-                <option value="">全対戦相手</option>
-                {opponents.map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </select>
-              {selectChevron}
-            </div>
+            <OpponentSearch
+              options={opponents}
+              value={selectedOpponent}
+              onChange={name => showList(selectedYear, name, 1)}
+              className="min-w-0 flex-1 sm:w-56 sm:flex-none"
+            />
           </div>
         </div>
         {lastUpdated && (
