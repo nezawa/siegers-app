@@ -17,6 +17,14 @@ function formatDate(dateStr: string) {
   return `${dateStr.replace(/-/g, '/')}(${DOW_JA[d.getDay()]})`
 }
 
+// 入力フォームは 9 回分の欄を保存するため、配列の後ろに未入力（null）の回が残る。
+// 表示する回数は「最後に点が入力された回」までとし、最低 7 回（草野球の規定回数）は出す
+function inningCount(...rows: ((number | null)[] | null)[]) {
+  let last = 0
+  rows.forEach(arr => arr?.forEach((v, i) => { if (v != null) last = Math.max(last, i + 1) }))
+  return Math.max(last, 7)
+}
+
 function ResultBadge({ result }: { result: Game['result'] }) {
   if (result === 'W') return <span className="rounded-full bg-red-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">勝利</span>
   if (result === 'L') return <span className="rounded-full bg-blue-600 px-3.5 py-1 text-sm font-bold text-white shadow-sm">敗戦</span>
@@ -149,8 +157,8 @@ export default async function GameDetailPage({
         {(() => {
           const us = game.innings_us ?? []
           const them = game.innings_them ?? []
-          // 草野球は 7 回制。延長したときだけ 8 回以降の列が増える
-          const len = Math.max(us.length, them.length, 7)
+          // 延長したときだけ 8 回以降の列が増える
+          const len = inningCount(us, them)
           const innings = Array.from({ length: len }, (_, i) => i)
 
           // 安打・失策はシーガーズの成績から出す。相手の安打は投手の被安打の合計、相手の失策は記録がないので「-」
@@ -335,7 +343,7 @@ export default async function GameDetailPage({
         {(game.innings_us || game.innings_them) && (() => {
           const us = game.innings_us ?? []
           const them = game.innings_them ?? []
-          const len = Math.max(us.length, them.length, 9)
+          const len = inningCount(us, them)
           const innings = Array.from({ length: len }, (_, i) => i)
 
           // 先攻（away）が上段、後攻（home）が下段
